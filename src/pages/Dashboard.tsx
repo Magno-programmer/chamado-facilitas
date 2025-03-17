@@ -1,16 +1,22 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
+import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings, Table as TableIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
 import { TicketWithDetails } from '@/lib/types';
 import TicketCard from '@/components/TicketCard';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import StatusBadge from '@/components/StatusBadge';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(mockDashboardStats);
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
+  const [userTickets, setUserTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if logged in
@@ -29,11 +35,25 @@ const Dashboard = () => {
       ).slice(0, 5);
       
       setRecentTickets(sorted);
+      
+      // Get user id from localStorage (in a real app this would come from auth context)
+      const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
+      
+      // Get all tickets for current user
+      const userTickets = enrichedTickets.filter(ticket => 
+        ticket.requesterId === userId || ticket.responsibleId === userId
+      );
+      
+      setUserTickets(userTickets);
       setIsLoading(false);
     }, 800);
 
     return () => clearTimeout(timer);
   }, [navigate]);
+
+  const formatDateTime = (dateString: string) => {
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  };
 
   const COLORS = ['#3b82f6', '#f59e0b', '#22c55e', '#ef4444'];
   const RADIAN = Math.PI / 180;
@@ -129,6 +149,89 @@ const Dashboard = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* User Tickets Table */}
+      <div className="bg-white rounded-xl border shadow-sm p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold flex items-center">
+            <TableIcon className="h-5 w-5 mr-2 text-primary" />
+            Meus Chamados
+          </h2>
+          <button 
+            onClick={() => navigate('/tickets')}
+            className="inline-flex items-center text-primary hover:underline text-sm font-medium"
+          >
+            <List className="h-4 w-4 mr-1" />
+            Ver Todos
+          </button>
+        </div>
+
+        {userTickets.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">ID</TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Setor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Criado Em</TableHead>
+                  <TableHead>Prazo</TableHead>
+                  <TableHead className="text-right">Progresso</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {userTickets.map((ticket) => (
+                  <TableRow 
+                    key={ticket.id} 
+                    className="cursor-pointer hover:bg-muted/60"
+                    onClick={() => navigate(`/tickets/${ticket.id}`)}
+                  >
+                    <TableCell className="font-medium">#{ticket.id}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{ticket.title}</TableCell>
+                    <TableCell>{ticket.sector?.name}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={ticket.status} />
+                    </TableCell>
+                    <TableCell>{formatDateTime(ticket.createdAt)}</TableCell>
+                    <TableCell>{formatDateTime(ticket.deadline)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-xs font-medium">{ticket.percentageRemaining}%</span>
+                        <Progress 
+                          value={ticket.percentageRemaining} 
+                          className="w-24"
+                          // Apply different colors based on percentage
+                          style={{
+                            "--progress-color": ticket.percentageRemaining > 50 
+                              ? "#22c55e" 
+                              : ticket.percentageRemaining > 20 
+                                ? "#f59e0b" 
+                                : ticket.percentageRemaining > 10 
+                                  ? "#ea580c" 
+                                  : "#dc2626"
+                          } as React.CSSProperties}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground text-sm">Você não possui chamados.</p>
+            <button
+              onClick={() => navigate('/tickets/new')}
+              className="mt-4 py-2 px-4 bg-primary/10 hover:bg-primary/20 text-primary font-medium rounded-lg transition-colors inline-flex items-center justify-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Chamado
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
