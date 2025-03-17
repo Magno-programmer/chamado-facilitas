@@ -1,9 +1,9 @@
 
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { supabase, signIn, signOut, getCurrentUser } from '@/lib/supabase';
-import { User } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@/lib/types';
+import { signIn, signOut, getCurrentUser } from '@/services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -30,43 +30,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { user: authUser, error } = await getCurrentUser();
         
         if (authUser) {
-          if (supabase) {
-            // If using real Supabase, get user profile from database
-            const { data, error: profileError } = await supabase
-              .from('usuarios')
-              .select('*')
-              .eq('email', authUser.email)
-              .single();
-              
-            if (data) {
-              setUser({
-                id: data.id,
-                name: data.nome,
-                email: data.email,
-                sectorId: data.setor_id,
-                role: data.role,
-              });
-              
-              localStorage.setItem('user', JSON.stringify({
-                id: data.id,
-                name: data.nome,
-                email: data.email,
-                sectorId: data.setor_id,
-                role: data.role,
-              }));
-              localStorage.setItem('isLoggedIn', 'true');
-            } else {
-              console.warn('User profile not found:', profileError);
-              // Fall back to mock data if profile not found
-              const mockUser = JSON.parse(localStorage.getItem('user') || '{}');
-              setUser(mockUser as User);
-            }
-          } else {
-            // Using mock data - get user from localStorage
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-              setUser(JSON.parse(storedUser));
-            }
+          // Get user from localStorage (already set by getCurrentUser or signIn)
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
           }
         } else {
           setUser(null);
@@ -84,29 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     
     checkUser();
-    
-    // Listen for auth changes if using real Supabase
-    let authUnsubscribe: (() => void) | null = null;
-    
-    if (supabase) {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          checkUser();
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          localStorage.removeItem('user');
-          localStorage.removeItem('isLoggedIn');
-        }
-      });
-      
-      authUnsubscribe = data.subscription.unsubscribe;
-    }
-    
-    return () => {
-      if (authUnsubscribe) {
-        authUnsubscribe();
-      }
-    };
   }, []);
   
   const login = async (email: string, password: string) => {
@@ -122,8 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
       
-      // The user state will be updated by the auth listener or local storage
-      navigate('/dashboard');
+      // Get the user from localStorage (set by signIn)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      }
       
       toast({
         title: 'Login bem-sucedido',

@@ -19,9 +19,11 @@ export const signIn = async (email: string, password: string) => {
         role: result.user.role
       };
       
+      // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('isLoggedIn', 'true');
       
+      // This format matches what our useAuth hook expects
       return {
         data: {
           session: {
