@@ -1,8 +1,28 @@
-
 import { User } from './types';
 
-// Base URL for the API
-const API_BASE_URL = 'http://192.168.15.6:5001'; // You may need to update this
+// Configuração para a API
+const API_CONFIG = {
+  // Base URL para a API (pode ser alterada conforme necessário)
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.15.6:5001',
+  
+  // Use true para adicionar um proxy CORS para desenvolvimento
+  USE_CORS_PROXY: true,
+  
+  // Proxy CORS para desenvolvimento
+  CORS_PROXY: 'https://corsproxy.io/?'
+};
+
+// Constrói a URL base conforme a configuração
+const getApiUrl = (endpoint: string): string => {
+  const baseUrl = API_CONFIG.BASE_URL;
+  
+  // Se estiver usando o proxy CORS, adicione-o à URL
+  if (API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:') {
+    return `${API_CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl + endpoint)}`;
+  }
+  
+  return baseUrl + endpoint;
+};
 
 // Store the JWT token
 let authToken: string | null = null;
@@ -24,7 +44,10 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    const apiUrl = getApiUrl(endpoint);
+    console.log('Requesting:', apiUrl);
+    
+    const response = await fetch(apiUrl, options);
     
     // Handle 401 Unauthorized - could be expired token
     if (response.status === 401) {
