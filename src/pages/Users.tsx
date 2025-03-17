@@ -1,21 +1,22 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRole, User } from '@/lib/types';
+import { UserRole, User, Sector } from '@/lib/types';
 import { Plus, RefreshCw, Search, Edit, Trash, FilePenLine, Users as UsersIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import UserForm from '@/components/UserForm';
-import { mockSectors } from '@/lib/mockData';
+import { getSectors } from '@/services/sectorService';
 
 const UsersPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSectors, setIsLoadingSectors] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -23,6 +24,23 @@ const UsersPage = () => {
   // Get current user role from localStorage
   const currentUserRole = JSON.parse(localStorage.getItem('user') || '{}')?.role;
   const isAdmin = currentUserRole === 'ADMIN';
+
+  // Fetch sectors
+  useEffect(() => {
+    const loadSectors = async () => {
+      try {
+        setIsLoadingSectors(true);
+        const sectorData = await getSectors();
+        setSectors(sectorData);
+      } catch (error) {
+        console.error('Error loading sectors:', error);
+      } finally {
+        setIsLoadingSectors(false);
+      }
+    };
+    
+    loadSectors();
+  }, []);
 
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -125,11 +143,11 @@ const UsersPage = () => {
   };
 
   const getSectorName = (sectorId: number) => {
-    const sector = mockSectors.find(s => s.id === sectorId);
+    const sector = sectors.find(s => s.id === sectorId);
     return sector ? sector.name : 'Setor não encontrado';
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingSectors) {
     return (
       <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20">
         <div className="flex items-center justify-center h-full">
