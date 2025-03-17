@@ -1,23 +1,24 @@
 
 import { User } from '@/lib/types';
+import { authApi, setAuthToken, getStoredAuthToken, clearAuthToken } from '@/lib/apiClient';
 
-// Mock authentication service without Node.js dependencies
+// Initialize auth from localStorage on app load
+getStoredAuthToken();
+
 export const signIn = async (email: string, password: string) => {
   try {
-    // Mock credentials for demo
-    if ((email === 'admin@example.com' && password === 'admin123') || 
-        (email === 'cliente@example.com' && password === 'cliente123')) {
-      
-      const isAdmin = email === 'admin@example.com';
+    const result = await authApi.login(email, password);
+    
+    if (result.token) {
+      // Store user info
       const user = {
-        id: isAdmin ? 1 : 2,
-        name: isAdmin ? 'Admin User' : 'Cliente User',
-        email,
-        sectorId: isAdmin ? 1 : 2,
-        role: isAdmin ? 'ADMIN' : 'CLIENT'
+        id: result.user.id,
+        name: result.user.nome,
+        email: result.user.email,
+        sectorId: result.user.setor_id,
+        role: result.user.role
       };
       
-      // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('isLoggedIn', 'true');
       
@@ -49,7 +50,10 @@ export const signIn = async (email: string, password: string) => {
 
 export const signOut = async () => {
   try {
+    await authApi.logout();
+    
     // Clear local storage
+    clearAuthToken();
     localStorage.removeItem('user');
     localStorage.removeItem('isLoggedIn');
     
@@ -71,6 +75,11 @@ export const getCurrentUser = async () => {
     
     const userData = JSON.parse(storedUser) as User;
     
+    // Check if token exists
+    if (!getStoredAuthToken()) {
+      return { user: null, error: null };
+    }
+    
     return { 
       user: {
         id: String(userData.id),
@@ -84,27 +93,24 @@ export const getCurrentUser = async () => {
   }
 };
 
-// This is a browser-compatible mock implementation
+// This function verifies credentials directly with the API
 export const verifyUserCredentials = async (email: string, password: string): Promise<User | null> => {
-  if ((email === 'admin@example.com' && password === 'admin123')) {
-    return { 
-      id: 1, 
-      name: 'Admin User', 
-      email: 'admin@example.com', 
-      sectorId: 1, 
-      role: 'ADMIN' 
-    };
+  try {
+    const result = await authApi.login(email, password);
+    
+    if (result.token) {
+      return { 
+        id: result.user.id, 
+        name: result.user.nome, 
+        email: result.user.email, 
+        sectorId: result.user.setor_id, 
+        role: result.user.role 
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error verifying credentials:', error);
+    return null;
   }
-  
-  if ((email === 'cliente@example.com' && password === 'cliente123')) {
-    return { 
-      id: 2, 
-      name: 'Cliente User', 
-      email: 'cliente@example.com', 
-      sectorId: 2, 
-      role: 'CLIENT' 
-    };
-  }
-  
-  return null;
 };

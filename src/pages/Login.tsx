@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
@@ -112,13 +113,13 @@ const Login = () => {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              <p>Credenciais de demonstração:</p>
+              <p>Credenciais para teste:</p>
               <div className="mt-2 space-y-1">
                 <p>
-                  <strong>Admin:</strong> admin@example.com / admin123
+                  <strong>Email:</strong> admin@example.com
                 </p>
                 <p>
-                  <strong>Cliente:</strong> cliente@example.com / cliente123
+                  <strong>Senha:</strong> senha123
                 </p>
               </div>
             </div>

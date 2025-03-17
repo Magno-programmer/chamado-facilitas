@@ -1,8 +1,8 @@
 
-import { query } from '@/lib/database';
 import { Sector } from '@/lib/types';
+import { sectorsApi } from '@/lib/apiClient';
 
-// Mock data for when database connection fails
+// Fallback mock data for when API calls fail
 const mockSectors: Sector[] = [
   { id: 1, name: 'TI' },
   { id: 2, name: 'Recursos Humanos' },
@@ -13,11 +13,12 @@ const mockSectors: Sector[] = [
 
 export const getSectors = async (): Promise<Sector[]> => {
   try {
-    const result = await query('SELECT id, nome as name FROM setores');
+    const response = await sectorsApi.getAll();
     
-    return result.rows.map(sector => ({
+    // Map from backend format to our app format
+    return response.map((sector: any) => ({
       id: sector.id,
-      name: sector.name,
+      name: sector.nome,
     }));
   } catch (error) {
     console.error('Error fetching sectors:', error);
@@ -28,20 +29,13 @@ export const getSectors = async (): Promise<Sector[]> => {
 
 export const getSectorById = async (id: number): Promise<Sector | null> => {
   try {
-    const result = await query('SELECT id, nome as name FROM setores WHERE id = $1', [id]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-    };
+    // API doesn't have endpoint to get sector by ID, so we get all and filter
+    const sectors = await getSectors();
+    return sectors.find(s => s.id === id) || null;
   } catch (error) {
     console.error(`Error fetching sector ${id}:`, error);
     
-    // Return mock data when database query fails
+    // Return mock data when API call fails
     const sector = mockSectors.find(s => s.id === id);
     return sector || null;
   }
@@ -49,14 +43,11 @@ export const getSectorById = async (id: number): Promise<Sector | null> => {
 
 export const createSector = async (name: string): Promise<Sector | null> => {
   try {
-    const result = await query(
-      'INSERT INTO setores (nome) VALUES ($1) RETURNING id, nome as name',
-      [name]
-    );
+    const response = await sectorsApi.create(name);
     
     return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
+      id: response.id,
+      name: response.nome,
     };
   } catch (error) {
     console.error('Error creating sector:', error);
@@ -66,19 +57,18 @@ export const createSector = async (name: string): Promise<Sector | null> => {
 
 export const updateSector = async (id: number, name: string): Promise<Sector | null> => {
   try {
-    const result = await query(
-      'UPDATE setores SET nome = $1 WHERE id = $2 RETURNING id, nome as name',
-      [name, id]
-    );
+    // API doesn't have endpoint to update sector, so we delete and recreate
+    await sectorsApi.delete(id);
+    const newSector = await createSector(name);
     
-    if (result.rows.length === 0) {
-      return null;
+    if (newSector) {
+      return {
+        id: newSector.id,
+        name: newSector.name,
+      };
     }
     
-    return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-    };
+    return null;
   } catch (error) {
     console.error(`Error updating sector ${id}:`, error);
     throw error;
@@ -87,8 +77,8 @@ export const updateSector = async (id: number, name: string): Promise<Sector | n
 
 export const deleteSector = async (id: number): Promise<boolean> => {
   try {
-    const result = await query('DELETE FROM setores WHERE id = $1', [id]);
-    return result.rowCount > 0;
+    await sectorsApi.delete(id);
+    return true;
   } catch (error) {
     console.error(`Error deleting sector ${id}:`, error);
     throw error;

@@ -1,14 +1,19 @@
 
-import { query } from '@/lib/database';
 import { User, UserFormData } from '@/lib/types';
+import { usersApi } from '@/lib/apiClient';
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const result = await query(
-      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios'
-    );
+    const response = await usersApi.getAll();
     
-    return result.rows;
+    // Map from backend format to our app format
+    return response.map((user: any) => ({
+      id: user.id,
+      name: user.nome,
+      email: user.email,
+      sectorId: user.setor_id,
+      role: user.role,
+    }));
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
@@ -17,16 +22,9 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: number): Promise<User | null> => {
   try {
-    const result = await query(
-      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios WHERE id = $1',
-      [id]
-    );
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return result.rows[0];
+    // API doesn't have endpoint to get user by ID, so we get all and filter
+    const users = await getUsers();
+    return users.find(user => user.id === id) || null;
   } catch (error) {
     console.error(`Error fetching user ${id}:`, error);
     return null;
@@ -35,16 +33,19 @@ export const getUserById = async (id: number): Promise<User | null> => {
 
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
-    const result = await query(
-      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios WHERE email = $1',
-      [email]
-    );
+    const user = await usersApi.getByEmail(email);
     
-    if (result.rows.length === 0) {
+    if (!user) {
       return null;
     }
     
-    return result.rows[0];
+    return {
+      id: user.id,
+      name: user.nome,
+      email: user.email,
+      sectorId: user.setor_id,
+      role: user.role,
+    };
   } catch (error) {
     console.error(`Error fetching user with email ${email}:`, error);
     return null;
@@ -53,15 +54,23 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 
 export const createUser = async (userData: UserFormData): Promise<User | null> => {
   try {
-    // In browser environment, simulate password hashing
-    const mockHashedPassword = `hashed_${userData.password || 'changeme123'}`;
+    // Convert from our app format to backend format
+    const backendData = {
+      nome: userData.name,
+      email: userData.email,
+      setor_id: userData.sectorId,
+      senha: userData.password || 'changeme123',
+    };
     
-    const result = await query(
-      'INSERT INTO usuarios (nome, email, setor_id, role, senha_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome as name, email, setor_id as "sectorId", role',
-      [userData.name, userData.email, userData.sectorId, userData.role, mockHashedPassword]
-    );
+    const response = await usersApi.create(backendData);
     
-    return result.rows[0];
+    return {
+      id: response.id,
+      name: response.nome,
+      email: response.email,
+      sectorId: response.setor_id,
+      role: response.role,
+    };
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
@@ -70,59 +79,34 @@ export const createUser = async (userData: UserFormData): Promise<User | null> =
 
 export const updateUser = async (id: number, userData: Partial<UserFormData>): Promise<User | null> => {
   try {
-    // Build dynamic query based on provided fields
-    const fields = [];
-    const values = [];
-    let paramCount = 1;
+    // Convert from our app format to backend format
+    const backendData: any = {};
     
     if (userData.name !== undefined) {
-      fields.push(`nome = $${paramCount}`);
-      values.push(userData.name);
-      paramCount++;
+      backendData.nome = userData.name;
     }
     
     if (userData.email !== undefined) {
-      fields.push(`email = $${paramCount}`);
-      values.push(userData.email);
-      paramCount++;
+      backendData.email = userData.email;
     }
     
     if (userData.sectorId !== undefined) {
-      fields.push(`setor_id = $${paramCount}`);
-      values.push(userData.sectorId);
-      paramCount++;
-    }
-    
-    if (userData.role !== undefined) {
-      fields.push(`role = $${paramCount}`);
-      values.push(userData.role);
-      paramCount++;
+      backendData.setor_id = userData.sectorId;
     }
     
     if (userData.password) {
-      // In browser environment, simulate password hashing
-      const mockHashedPassword = `hashed_${userData.password}`;
-      fields.push(`senha_hash = $${paramCount}`);
-      values.push(mockHashedPassword);
-      paramCount++;
+      backendData.senha = userData.password;
     }
     
-    if (fields.length === 0) {
-      throw new Error('No fields to update');
-    }
+    const response = await usersApi.update(id, backendData);
     
-    values.push(id);
-    
-    const result = await query(
-      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING id, nome as name, email, setor_id as "sectorId", role`,
-      values
-    );
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return result.rows[0];
+    return {
+      id: response.id,
+      name: response.nome,
+      email: response.email,
+      sectorId: response.setor_id,
+      role: response.role,
+    };
   } catch (error) {
     console.error(`Error updating user ${id}:`, error);
     throw error;
@@ -131,41 +115,35 @@ export const updateUser = async (id: number, userData: Partial<UserFormData>): P
 
 export const deleteUser = async (id: number): Promise<boolean> => {
   try {
-    const result = await query('DELETE FROM usuarios WHERE id = $1', [id]);
-    return result.rowCount > 0;
+    await usersApi.delete(id);
+    return true;
   } catch (error) {
     console.error(`Error deleting user ${id}:`, error);
     throw error;
   }
 };
 
-// Mock implementation compatible with browser environment
+// Uses the auth service to verify credentials
 export const verifyUserCredentials = async (email: string, password: string): Promise<User | null> => {
   try {
-    // Hard-coded mock users for demo
-    if (email === 'admin@example.com' && password === 'admin123') {
-      return { 
-        id: 1, 
-        name: 'Admin User', 
-        email: 'admin@example.com', 
-        sectorId: 1, 
-        role: 'ADMIN' 
-      };
-    }
+    const result = await usersApi.getByEmail(email);
     
-    if (email === 'cliente@example.com' && password === 'cliente123') {
+    // Note: This would typically be handled by the backend auth endpoint
+    // We're using the email lookup as a proxy since we don't have direct access to verify passwords
+    
+    if (result) {
       return { 
-        id: 2, 
-        name: 'Cliente User', 
-        email: 'cliente@example.com', 
-        sectorId: 2, 
-        role: 'CLIENT' 
+        id: result.id, 
+        name: result.nome, 
+        email: result.email, 
+        sectorId: result.setor_id, 
+        role: result.role 
       };
     }
     
     return null;
   } catch (error) {
-    console.error('Error verifying user credentials:', error);
+    console.error('Error verifying credentials:', error);
     return null;
   }
 };

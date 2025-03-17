@@ -1,8 +1,7 @@
-
-import { query } from '@/lib/database';
 import { Deadline } from '@/lib/types';
+import { deadlinesApi } from '@/lib/apiClient';
 
-// Mock data for when database connection fails
+// Fallback mock data for when API calls fail
 const mockDeadlines: Deadline[] = [
   { id: 1, title: 'Urgente', sectorId: 1, deadline: 'PT3600S' },  // 1 hora
   { id: 2, title: 'Alta Prioridade', sectorId: 1, deadline: 'PT14400S' },  // 4 horas
@@ -12,11 +11,15 @@ const mockDeadlines: Deadline[] = [
 
 export const getDeadlines = async (): Promise<Deadline[]> => {
   try {
-    const result = await query(
-      'SELECT id, titulo as title, setor_id as "sectorId", prazo as deadline FROM prazos'
-    );
+    const response = await deadlinesApi.getAll();
     
-    return result.rows;
+    // Map from backend format to our app format
+    return response.map((deadline: any) => ({
+      id: deadline.id,
+      title: deadline.titulo,
+      sectorId: deadline.setor_id,
+      deadline: convertMinutesToIsoDuration(deadline.prazo),
+    }));
   } catch (error) {
     console.error('Error fetching deadlines:', error);
     console.log('Using mock deadline data instead');
@@ -26,12 +29,9 @@ export const getDeadlines = async (): Promise<Deadline[]> => {
 
 export const getDeadlinesBySector = async (sectorId: number): Promise<Deadline[]> => {
   try {
-    const result = await query(
-      'SELECT id, titulo as title, setor_id as "sectorId", prazo as deadline FROM prazos WHERE setor_id = $1',
-      [sectorId]
-    );
-    
-    return result.rows;
+    // API doesn't have endpoint to get deadlines by sector, so we get all and filter
+    const deadlines = await getDeadlines();
+    return deadlines.filter(d => d.sectorId === sectorId);
   } catch (error) {
     console.error(`Error fetching deadlines for sector ${sectorId}:`, error);
     
@@ -42,12 +42,23 @@ export const getDeadlinesBySector = async (sectorId: number): Promise<Deadline[]
 
 export const createDeadline = async (deadlineData: Omit<Deadline, 'id'>): Promise<Deadline | null> => {
   try {
-    const result = await query(
-      'INSERT INTO prazos (titulo, setor_id, prazo) VALUES ($1, $2, $3) RETURNING id, titulo as title, setor_id as "sectorId", prazo as deadline',
-      [deadlineData.title, deadlineData.sectorId, deadlineData.deadline]
-    );
+    // Convert from ISO duration format to minutes for backend
+    const minutes = parseIsoDurationToMinutes(deadlineData.deadline);
     
-    return result.rows[0];
+    const backendData = {
+      titulo: deadlineData.title,
+      setor_id: deadlineData.sectorId,
+      prazo: String(minutes),
+    };
+    
+    const response = await deadlinesApi.create(backendData);
+    
+    return {
+      id: response.id,
+      title: response.titulo,
+      sectorId: response.setor_id,
+      deadline: convertMinutesToIsoDuration(response.prazo),
+    };
   } catch (error) {
     console.error('Error creating deadline:', error);
     throw error;
@@ -56,57 +67,86 @@ export const createDeadline = async (deadlineData: Omit<Deadline, 'id'>): Promis
 
 export const updateDeadline = async (id: number, deadlineData: Partial<Deadline>): Promise<Deadline | null> => {
   try {
-    // Build dynamic query based on provided fields
-    const fields = [];
-    const values = [];
-    let paramCount = 1;
+    // The API doesn't have an update endpoint for deadlines
+    // We'll have to delete and recreate
+    await deleteSectore(id);
     
-    if (deadlineData.title !== undefined) {
-      fields.push(`titulo = $${paramCount}`);
-      values.push(deadlineData.title);
-      paramCount++;
+    if (!deadlineData.title || !deadlineData.sectorId || !deadlineData.deadline) {
+      // We need the complete data to recreate
+      const existingDeadlines = await getDeadlines();
+      const existingDeadline = existingDeadlines.find(d => d.id === id);
+      
+      if (!existingDeadline) {
+        throw new Error('Deadline not found');
+      }
+      
+      // Merge existing data with updated data
+      const updatedData = {
+        title: deadlineData.title || existingDeadline.title,
+        sectorId: deadlineData.sectorId || existingDeadline.sectorId,
+        deadline: deadlineData.deadline || existingDeadline.deadline,
+      };
+      
+      return createDeadline(updatedData);
     }
     
-    if (deadlineData.sectorId !== undefined) {
-      fields.push(`setor_id = $${paramCount}`);
-      values.push(deadlineData.sectorId);
-      paramCount++;
-    }
-    
-    if (deadlineData.deadline !== undefined) {
-      fields.push(`prazo = $${paramCount}`);
-      values.push(deadlineData.deadline);
-      paramCount++;
-    }
-    
-    if (fields.length === 0) {
-      throw new Error('No fields to update');
-    }
-    
-    values.push(id);
-    
-    const result = await query(
-      `UPDATE prazos SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING id, titulo as title, setor_id as "sectorId", prazo as deadline`,
-      values
-    );
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return result.rows[0];
+    return createDeadline(deadlineData as Omit<Deadline, 'id'>);
   } catch (error) {
     console.error(`Error updating deadline ${id}:`, error);
     throw error;
   }
 };
 
-export const deleteDeadline = async (id: number): Promise<boolean> => {
+export const deleteSectore = async (id: number): Promise<boolean> => {
   try {
-    const result = await query('DELETE FROM prazos WHERE id = $1', [id]);
-    return result.rowCount > 0;
+    await deadlinesApi.delete(id);
+    return true;
   } catch (error) {
     console.error(`Error deleting deadline ${id}:`, error);
     throw error;
   }
+};
+
+// Helper to delete deadlines
+export const deleteDeadline = async (id: number): Promise<boolean> => {
+  return deleteSectore(id);
+};
+
+// Helper function to convert minutes to ISO 8601 duration format
+const convertMinutesToIsoDuration = (minutes: string): string => {
+  const mins = parseInt(minutes);
+  
+  if (isNaN(mins)) {
+    return 'PT60M'; // Default 60 minutes
+  }
+  
+  if (mins >= 1440) {
+    // Convert to days if >= 24 hours
+    const days = Math.floor(mins / 1440);
+    return `P${days}D`;
+  } else if (mins >= 60) {
+    // Convert to hours if >= 60 minutes
+    const hours = Math.floor(mins / 60);
+    return `PT${hours}H`;
+  } else {
+    // Keep as minutes
+    return `PT${mins}M`;
+  }
+};
+
+// Helper function to parse ISO 8601 duration to minutes
+const parseIsoDurationToMinutes = (isoDuration: string): number => {
+  const minuteMatch = isoDuration.match(/PT(\d+)M/);
+  const hourMatch = isoDuration.match(/PT(\d+)H/);
+  const dayMatch = isoDuration.match(/P(\d+)D/);
+  
+  if (minuteMatch) {
+    return parseInt(minuteMatch[1]);
+  } else if (hourMatch) {
+    return parseInt(hourMatch[1]) * 60;
+  } else if (dayMatch) {
+    return parseInt(dayMatch[1]) * 1440;
+  }
+  
+  return 60; // Default 60 minutes
 };
