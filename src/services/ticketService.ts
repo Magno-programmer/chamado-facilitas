@@ -1,7 +1,8 @@
-import { supabase } from '@/lib/supabase';
+
 import { Ticket, TicketFormData, TicketWithDetails, TicketStatus } from '@/lib/types';
 import { addSeconds } from 'date-fns';
 import { getEnrichedTickets } from '@/lib/mockData';
+import { query } from '@/lib/database';
 
 // Helper to parse ISO 8601 duration to seconds
 const parseIsoDuration = (isoDuration: string): number => {
@@ -42,226 +43,96 @@ const calculatePercentageRemaining = (ticket: any): number => {
 };
 
 export const getTickets = async (userId: number, isAdmin: boolean): Promise<TicketWithDetails[]> => {
-  if (supabase) {
-    // If admin, get all tickets, otherwise only user's tickets
-    const query = supabase
-      .from('chamados')
-      .select(`
-        *,
-        setores: setor_id(id, nome),
-        solicitante: solicitante_id(id, nome, email, setor_id, role),
-        responsavel: responsavel_id(id, nome, email, setor_id, role)
-      `);
-    
-    // Apply filter if not admin
-    const { data, error } = isAdmin 
-      ? await query
-      : await query.eq('solicitante_id', userId);
-
-    if (error) {
-      console.error('Error fetching tickets:', error);
-      throw error;
-    }
-
-    return data.map(ticket => {
-      return {
-        id: ticket.id,
-        title: ticket.titulo,
-        description: ticket.descricao,
-        sectorId: ticket.setor_id,
-        requesterId: ticket.solicitante_id,
-        responsibleId: ticket.responsavel_id,
-        status: ticket.status as TicketStatus,
-        createdAt: ticket.data_criacao,
-        deadline: ticket.prazo,
-        sector: {
-          id: ticket.setores.id,
-          name: ticket.setores.nome
-        },
-        requester: {
-          id: ticket.solicitante.id,
-          name: ticket.solicitante.nome,
-          email: ticket.solicitante.email,
-          sectorId: ticket.solicitante.setor_id,
-          role: ticket.solicitante.role
-        },
-        responsible: ticket.responsavel ? {
-          id: ticket.responsavel.id,
-          name: ticket.responsavel.nome,
-          email: ticket.responsavel.email,
-          sectorId: ticket.responsavel.setor_id,
-          role: ticket.responsavel.role
-        } : null,
-        percentageRemaining: calculatePercentageRemaining(ticket)
-      };
-    });
-  } else {
-    // Use mock data when Supabase is not available
-    console.log('Using mock ticket data');
-    const mockTickets = getEnrichedTickets();
-    return isAdmin 
-      ? mockTickets
-      : mockTickets.filter(t => t.requesterId === userId || t.responsibleId === userId);
-  }
+  // Use mock data since we can't connect to PostgreSQL in browser
+  console.log('Using mock ticket data');
+  const mockTickets = getEnrichedTickets();
+  return isAdmin 
+    ? mockTickets
+    : mockTickets.filter(t => t.requesterId === userId || t.responsibleId === userId);
 };
 
 export const getTicketById = async (id: number): Promise<TicketWithDetails | null> => {
-  const { data, error } = await supabase
-    .from('chamados')
-    .select(`
-      *,
-      setores: setor_id(id, nome),
-      solicitante: solicitante_id(id, nome, email, setor_id, role),
-      responsavel: responsavel_id(id, nome, email, setor_id, role)
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error(`Error fetching ticket ${id}:`, error);
-    return null;
-  }
-
-  return {
-    id: data.id,
-    title: data.titulo,
-    description: data.descricao,
-    sectorId: data.setor_id,
-    requesterId: data.solicitante_id,
-    responsibleId: data.responsavel_id,
-    status: data.status as TicketStatus,
-    createdAt: data.data_criacao,
-    deadline: data.prazo,
-    sector: {
-      id: data.setores.id,
-      name: data.setores.nome
-    },
-    requester: {
-      id: data.solicitante.id,
-      name: data.solicitante.nome,
-      email: data.solicitante.email,
-      sectorId: data.solicitante.setor_id,
-      role: data.solicitante.role
-    },
-    responsible: data.responsavel ? {
-      id: data.responsavel.id,
-      name: data.responsavel.nome,
-      email: data.responsavel.email,
-      sectorId: data.responsavel.setor_id,
-      role: data.responsavel.role
-    } : null,
-    percentageRemaining: calculatePercentageRemaining(data)
-  };
+  // Use mock data
+  const mockTickets = getEnrichedTickets();
+  const ticket = mockTickets.find(t => t.id === id);
+  return ticket || null;
 };
 
 export const createTicket = async (ticketData: TicketFormData, userId: number): Promise<Ticket | null> => {
-  // Get deadline details to calculate end time
-  const { data: deadlineData, error: deadlineError } = await supabase
-    .from('prazos')
-    .select('prazo')
-    .eq('id', ticketData.deadlineId)
-    .single();
+  try {
+    // Simulate ticket creation
+    const now = new Date();
+    const deadlineId = ticketData.deadlineId;
+    
+    // Find deadline from mock data
+    const deadlineData = {
+      prazo: deadlineId === 1 ? 'PT3600S' : 
+             deadlineId === 2 ? 'PT14400S' : 
+             deadlineId === 3 ? 'PT86400S' : 'PT259200S'
+    };
+    
+    const durationInSeconds = parseIsoDuration(deadlineData.prazo);
+    const deadlineDate = addSeconds(now, durationInSeconds);
 
-  if (deadlineError) {
-    console.error('Error fetching deadline for ticket creation:', deadlineError);
-    throw deadlineError;
-  }
+    // Create a new mock ticket
+    const newTicket = {
+      id: Math.floor(Math.random() * 1000) + 100,
+      title: ticketData.title,
+      description: ticketData.description,
+      sectorId: ticketData.sectorId,
+      requesterId: userId,
+      responsibleId: null,
+      status: 'Aberto' as TicketStatus,
+      createdAt: now.toISOString(),
+      deadline: deadlineDate.toISOString(),
+    };
 
-  const now = new Date();
-  const durationInSeconds = parseIsoDuration(deadlineData.prazo);
-  const deadlineDate = addSeconds(now, durationInSeconds);
-
-  const { data, error } = await supabase
-    .from('chamados')
-    .insert({
-      titulo: ticketData.title,
-      descricao: ticketData.description,
-      setor_id: ticketData.sectorId,
-      solicitante_id: userId,
-      responsavel_id: null, // Initially no responsible person
-      status: 'Aberto', // Initial status
-      data_criacao: now.toISOString(),
-      prazo: deadlineDate.toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) {
+    return newTicket;
+  } catch (error) {
     console.error('Error creating ticket:', error);
     throw error;
   }
-
-  return {
-    id: data.id,
-    title: data.titulo,
-    description: data.descricao,
-    sectorId: data.setor_id,
-    requesterId: data.solicitante_id,
-    responsibleId: data.responsavel_id,
-    status: data.status as TicketStatus,
-    createdAt: data.data_criacao,
-    deadline: data.prazo,
-  };
 };
 
 export const updateTicketStatus = async (id: number, status: TicketStatus, responsibleId?: number): Promise<Ticket | null> => {
-  const updateData: any = { status };
-  
-  if (responsibleId) {
-    updateData.responsavel_id = responsibleId;
-  }
-
-  const { data, error } = await supabase
-    .from('chamados')
-    .update(updateData)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    // Simulate updating a ticket
+    const mockTickets = getEnrichedTickets();
+    const ticketIndex = mockTickets.findIndex(t => t.id === id);
+    
+    if (ticketIndex === -1) {
+      return null;
+    }
+    
+    const updatedTicket = {
+      ...mockTickets[ticketIndex],
+      status,
+      responsibleId: responsibleId || mockTickets[ticketIndex].responsibleId
+    };
+    
+    return updatedTicket;
+  } catch (error) {
     console.error(`Error updating ticket ${id} status:`, error);
     throw error;
   }
-
-  return {
-    id: data.id,
-    title: data.titulo,
-    description: data.descricao,
-    sectorId: data.setor_id,
-    requesterId: data.solicitante_id,
-    responsibleId: data.responsavel_id,
-    status: data.status as TicketStatus,
-    createdAt: data.data_criacao,
-    deadline: data.prazo,
-  };
 };
 
 export const getDashboardStats = async (): Promise<any> => {
-  // Get all tickets to compute statistics
-  const { data, error } = await supabase
-    .from('chamados')
-    .select(`
-      *,
-      setores: setor_id(id, nome)
-    `);
-
-  if (error) {
-    console.error('Error fetching tickets for dashboard:', error);
-    throw error;
-  }
+  // Get mock tickets to compute statistics
+  const mockTickets = getEnrichedTickets();
 
   // Calculate statistics
-  const totalTickets = data.length;
-  const openTickets = data.filter(t => t.status === 'Aberto').length;
-  const inProgressTickets = data.filter(t => t.status === 'Em Andamento').length;
-  const completedTickets = data.filter(t => t.status === 'Concluído').length;
-  const lateTickets = data.filter(t => t.status === 'Atrasado').length;
+  const totalTickets = mockTickets.length;
+  const openTickets = mockTickets.filter(t => t.status === 'Aberto').length;
+  const inProgressTickets = mockTickets.filter(t => t.status === 'Em Andamento').length;
+  const completedTickets = mockTickets.filter(t => t.status === 'Concluído').length;
+  const lateTickets = mockTickets.filter(t => t.status === 'Atrasado').length;
 
   // Group tickets by sector
   const sectorMap = new Map();
-  data.forEach(ticket => {
-    const sectorId = ticket.setor_id;
-    const sectorName = ticket.setores.nome;
+  mockTickets.forEach(ticket => {
+    const sectorId = ticket.sectorId;
+    const sectorName = ticket.sector.name;
     
     if (!sectorMap.has(sectorId)) {
       sectorMap.set(sectorId, { sectorId, sectorName, count: 0 });
