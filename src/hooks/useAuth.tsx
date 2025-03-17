@@ -71,6 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        
+        // Verificar se o usuário é admin (role pode estar em maiúsculas no backend)
+        const isUserAdmin = userData.role?.toUpperCase() === 'ADMIN';
+        
+        toast({
+          title: 'Login bem-sucedido',
+          description: `Bem-vindo, ${userData.name}!`,
+        });
+        
+        return true;
       }
       
       toast({
@@ -119,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         logout,
-        isAdmin: user?.role === 'ADMIN',
+        isAdmin: user?.role?.toUpperCase() === 'ADMIN',
       }}
     >
       {children}
@@ -136,3 +146,4 @@ export const useAuth = () => {
 };
 
 export default useAuth;
+

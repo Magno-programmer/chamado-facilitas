@@ -63,7 +63,7 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
     // Handle other errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || `API Error: ${response.status}`);
+      throw new Error(errorData?.erro || errorData?.message || `API Error: ${response.status}`);
     }
     
     // For successful responses, try to parse as JSON, but handle empty responses
@@ -97,19 +97,19 @@ export const clearAuthToken = () => {
   localStorage.removeItem('authToken');
 };
 
-// Authentication API
+// Authentication API - Adaptado para o backend Flask
 export const authApi = {
   login: async (email: string, password: string) => {
-    const data = await fetchWithAuth('/auth/login', {
+    const response = await fetchWithAuth('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
     
-    if (data.token) {
-      setAuthToken(data.token);
+    if (response.token) {
+      setAuthToken(response.token);
     }
     
-    return data;
+    return response;
   },
   
   logout: async () => {

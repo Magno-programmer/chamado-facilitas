@@ -1,4 +1,3 @@
-
 import { User } from '@/lib/types';
 import { authApi, setAuthToken, getStoredAuthToken, clearAuthToken } from '@/lib/apiClient';
 
@@ -10,20 +9,19 @@ export const signIn = async (email: string, password: string) => {
     const result = await authApi.login(email, password);
     
     if (result.token) {
-      // Store user info
+      // Store user info com base na resposta do backend Flask
       const user = {
-        id: result.user.id,
-        name: result.user.nome,
-        email: result.user.email,
-        sectorId: result.user.setor_id,
-        role: result.user.role
+        id: result.userId || result.user?.id,
+        name: result.user?.nome || result.nome || email.split('@')[0], // Fallback para nome
+        email: result.email || email,
+        sectorId: result.user?.setor_id || result.setor_id || 0,
+        role: result.role || result.user?.role || 'USER'
       };
       
       // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('isLoggedIn', 'true');
       
-      // This format matches what our useAuth hook expects
       return {
         data: {
           session: {
@@ -39,7 +37,7 @@ export const signIn = async (email: string, password: string) => {
     
     return {
       data: { session: null },
-      error: new Error('Credenciais inválidas')
+      error: new Error(result.erro || 'Credenciais inválidas')
     };
   } catch (error) {
     console.error('Sign in error:', error);
