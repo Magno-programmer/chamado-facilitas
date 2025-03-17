@@ -48,7 +48,12 @@ const TicketDetail = () => {
           navigate('/tickets');
         }
       } else {
-        setIsLoading(false);
+        // If ticket is not found, show a message and don't navigate
+        toast({
+          title: 'Chamado não encontrado',
+          description: 'O chamado solicitado não foi encontrado.',
+          variant: 'destructive',
+        });
       }
       
       setIsLoading(false);
