@@ -86,10 +86,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkUser();
     
     // Listen for auth changes if using real Supabase
-    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+    let authUnsubscribe: (() => void) | null = null;
     
     if (supabase) {
-      authListener = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           checkUser();
         } else if (event === 'SIGNED_OUT') {
@@ -98,11 +98,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.removeItem('isLoggedIn');
         }
       });
+      
+      authUnsubscribe = data.subscription.unsubscribe;
     }
     
     return () => {
-      if (authListener) {
-        authListener.subscription.unsubscribe();
+      if (authUnsubscribe) {
+        authUnsubscribe();
       }
     };
   }, []);

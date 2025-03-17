@@ -1,62 +1,32 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Function to handle login - using mock authentication for now
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Mock login service - to be replaced with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simplified validation
       if (!email || !password) {
         throw new Error('Por favor, preencha todos os campos');
       }
 
-      // Mock authentication for demo - would be replaced with an API call
-      if (email === 'admin@example.com' && password === 'admin123') {
-        // Mock admin user
-        const mockUser = {
-          id: 1,
-          name: 'Administrador',
-          email: 'admin@example.com',
-          sectorId: 1,
-          role: 'ADMIN'
-        };
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        localStorage.setItem('isLoggedIn', 'true');
-        toast({
-          title: 'Login realizado com sucesso',
-          description: 'Bem-vindo ao sistema de chamados!',
-          variant: 'default',
-        });
-        navigate('/dashboard');
-      } else if (email === 'cliente@example.com' && password === 'cliente123') {
-        // Mock client user
-        const mockUser = {
-          id: 2,
-          name: 'Cliente Padrão',
-          email: 'cliente@example.com',
-          sectorId: 2,
-          role: 'CLIENT'
-        };
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        localStorage.setItem('isLoggedIn', 'true');
+      const success = await login(email, password);
+      
+      if (success) {
         toast({
           title: 'Login realizado com sucesso',
           description: 'Bem-vindo ao sistema de chamados!',

@@ -1,144 +1,170 @@
 
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/database';
 import { User, UserFormData } from '@/lib/types';
+import bcrypt from 'bcryptjs';
 
 export const getUsers = async (): Promise<User[]> => {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .select('*');
-
-  if (error) {
+  try {
+    const result = await query(
+      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios'
+    );
+    
+    return result.rows;
+  } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
   }
-
-  return data.map(user => ({
-    id: user.id,
-    name: user.nome,
-    email: user.email,
-    sectorId: user.setor_id,
-    role: user.role,
-  }));
 };
 
 export const getUserById = async (id: number): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
+  try {
+    const result = await query(
+      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios WHERE id = $1',
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
     console.error(`Error fetching user ${id}:`, error);
     return null;
   }
+};
 
-  return {
-    id: data.id,
-    name: data.nome,
-    email: data.email,
-    sectorId: data.setor_id,
-    role: data.role,
-  };
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  try {
+    const result = await query(
+      'SELECT id, nome as name, email, setor_id as "sectorId", role FROM usuarios WHERE email = $1',
+      [email]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error(`Error fetching user with email ${email}:`, error);
+    return null;
+  }
 };
 
 export const createUser = async (userData: UserFormData): Promise<User | null> => {
-  // First create auth user
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: userData.email,
-    password: userData.password || 'changeme123',
-    email_confirm: true,
-  });
-
-  if (authError) {
-    console.error('Error creating auth user:', authError);
-    throw authError;
-  }
-
-  // Then create profile in the usuarios table
-  const { data, error } = await supabase
-    .from('usuarios')
-    .insert({
-      nome: userData.name,
-      email: userData.email,
-      setor_id: userData.sectorId,
-      role: userData.role,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating user profile:', error);
+  try {
+    // Hash the password before storing it
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(userData.password || 'changeme123', salt);
+    
+    const result = await query(
+      'INSERT INTO usuarios (nome, email, setor_id, role, senha_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome as name, email, setor_id as "sectorId", role',
+      [userData.name, userData.email, userData.sectorId, userData.role, hashedPassword]
+    );
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error creating user:', error);
     throw error;
   }
-
-  return {
-    id: data.id,
-    name: data.nome,
-    email: data.email,
-    sectorId: data.setor_id,
-    role: data.role,
-  };
 };
 
 export const updateUser = async (id: number, userData: Partial<UserFormData>): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .update({
-      nome: userData.name,
-      email: userData.email,
-      setor_id: userData.sectorId,
-      role: userData.role,
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
+  try {
+    // Build dynamic query based on provided fields
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+    
+    if (userData.name !== undefined) {
+      fields.push(`nome = $${paramCount}`);
+      values.push(userData.name);
+      paramCount++;
+    }
+    
+    if (userData.email !== undefined) {
+      fields.push(`email = $${paramCount}`);
+      values.push(userData.email);
+      paramCount++;
+    }
+    
+    if (userData.sectorId !== undefined) {
+      fields.push(`setor_id = $${paramCount}`);
+      values.push(userData.sectorId);
+      paramCount++;
+    }
+    
+    if (userData.role !== undefined) {
+      fields.push(`role = $${paramCount}`);
+      values.push(userData.role);
+      paramCount++;
+    }
+    
+    if (userData.password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(userData.password, salt);
+      fields.push(`senha_hash = $${paramCount}`);
+      values.push(hashedPassword);
+      paramCount++;
+    }
+    
+    if (fields.length === 0) {
+      throw new Error('No fields to update');
+    }
+    
+    values.push(id);
+    
+    const result = await query(
+      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING id, nome as name, email, setor_id as "sectorId", role`,
+      values
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
     console.error(`Error updating user ${id}:`, error);
     throw error;
   }
-
-  return {
-    id: data.id,
-    name: data.nome,
-    email: data.email,
-    sectorId: data.setor_id,
-    role: data.role,
-  };
 };
 
 export const deleteUser = async (id: number): Promise<boolean> => {
-  // Get user email first
-  const { data: userData, error: fetchError } = await supabase
-    .from('usuarios')
-    .select('email')
-    .eq('id', id)
-    .single();
-
-  if (fetchError) {
-    console.error(`Error fetching user ${id} for deletion:`, fetchError);
-    throw fetchError;
+  try {
+    const result = await query('DELETE FROM usuarios WHERE id = $1', [id]);
+    return result.rowCount > 0;
+  } catch (error) {
+    console.error(`Error deleting user ${id}:`, error);
+    throw error;
   }
+};
 
-  // Delete from usuarios table
-  const { error: profileError } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('id', id);
-
-  if (profileError) {
-    console.error(`Error deleting user profile ${id}:`, profileError);
-    throw profileError;
+export const verifyUserCredentials = async (email: string, password: string): Promise<User | null> => {
+  try {
+    const result = await query(
+      'SELECT id, nome as name, email, setor_id as "sectorId", role, senha_hash FROM usuarios WHERE email = $1',
+      [email]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const user = result.rows[0];
+    const isPasswordValid = await bcrypt.compare(password, user.senha_hash);
+    
+    if (!isPasswordValid) {
+      return null;
+    }
+    
+    // Don't return the password hash
+    delete user.senha_hash;
+    
+    return user;
+  } catch (error) {
+    console.error('Error verifying user credentials:', error);
+    return null;
   }
-
-  // Delete auth user
-  const { error: authError } = await supabase.auth.admin.deleteUser(userData.email);
-
-  if (authError) {
-    console.error(`Error deleting auth user ${userData.email}:`, authError);
-    throw authError;
-  }
-
-  return true;
 };

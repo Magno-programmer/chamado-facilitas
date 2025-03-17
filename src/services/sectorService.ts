@@ -1,8 +1,8 @@
 
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/database';
 import { Sector } from '@/lib/types';
 
-// Mock data for when Supabase is not connected
+// Mock data for when database connection fails
 const mockSectors: Sector[] = [
   { id: 1, name: 'TI' },
   { id: 2, name: 'Recursos Humanos' },
@@ -12,126 +12,85 @@ const mockSectors: Sector[] = [
 ];
 
 export const getSectors = async (): Promise<Sector[]> => {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('setores')
-      .select('*');
-
-    if (error) {
-      console.error('Error fetching sectors:', error);
-      throw error;
-    }
-
-    return data.map(sector => ({
+  try {
+    const result = await query('SELECT id, nome as name FROM setores');
+    
+    return result.rows.map(sector => ({
       id: sector.id,
-      name: sector.nome,
+      name: sector.name,
     }));
-  } else {
-    // Return mock data when Supabase is not available
-    console.log('Using mock sector data');
+  } catch (error) {
+    console.error('Error fetching sectors:', error);
+    console.log('Using mock sector data instead');
     return [...mockSectors];
   }
 };
 
 export const getSectorById = async (id: number): Promise<Sector | null> => {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('setores')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error(`Error fetching sector ${id}:`, error);
+  try {
+    const result = await query('SELECT id, nome as name FROM setores WHERE id = $1', [id]);
+    
+    if (result.rows.length === 0) {
       return null;
     }
-
+    
     return {
-      id: data.id,
-      name: data.nome,
+      id: result.rows[0].id,
+      name: result.rows[0].name,
     };
-  } else {
-    // Return mock data when Supabase is not available
+  } catch (error) {
+    console.error(`Error fetching sector ${id}:`, error);
+    
+    // Return mock data when database query fails
     const sector = mockSectors.find(s => s.id === id);
     return sector || null;
   }
 };
 
 export const createSector = async (name: string): Promise<Sector | null> => {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('setores')
-      .insert({ nome: name })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating sector:', error);
-      throw error;
-    }
-
+  try {
+    const result = await query(
+      'INSERT INTO setores (nome) VALUES ($1) RETURNING id, nome as name',
+      [name]
+    );
+    
     return {
-      id: data.id,
-      name: data.nome,
+      id: result.rows[0].id,
+      name: result.rows[0].name,
     };
-  } else {
-    // Simulate creating a sector with mock data
-    const newId = Math.max(...mockSectors.map(s => s.id)) + 1;
-    const newSector = { id: newId, name };
-    mockSectors.push(newSector);
-    return newSector;
+  } catch (error) {
+    console.error('Error creating sector:', error);
+    throw error;
   }
 };
 
 export const updateSector = async (id: number, name: string): Promise<Sector | null> => {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('setores')
-      .update({ nome: name })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Error updating sector ${id}:`, error);
-      throw error;
+  try {
+    const result = await query(
+      'UPDATE setores SET nome = $1 WHERE id = $2 RETURNING id, nome as name',
+      [name, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return null;
     }
-
+    
     return {
-      id: data.id,
-      name: data.nome,
+      id: result.rows[0].id,
+      name: result.rows[0].name,
     };
-  } else {
-    // Simulate updating a sector with mock data
-    const index = mockSectors.findIndex(s => s.id === id);
-    if (index >= 0) {
-      mockSectors[index].name = name;
-      return mockSectors[index];
-    }
-    return null;
+  } catch (error) {
+    console.error(`Error updating sector ${id}:`, error);
+    throw error;
   }
 };
 
 export const deleteSector = async (id: number): Promise<boolean> => {
-  if (supabase) {
-    const { error } = await supabase
-      .from('setores')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error(`Error deleting sector ${id}:`, error);
-      throw error;
-    }
-
-    return true;
-  } else {
-    // Simulate deleting a sector with mock data
-    const index = mockSectors.findIndex(s => s.id === id);
-    if (index >= 0) {
-      mockSectors.splice(index, 1);
-      return true;
-    }
-    return false;
+  try {
+    const result = await query('DELETE FROM setores WHERE id = $1', [id]);
+    return result.rowCount > 0;
+  } catch (error) {
+    console.error(`Error deleting sector ${id}:`, error);
+    throw error;
   }
 };
