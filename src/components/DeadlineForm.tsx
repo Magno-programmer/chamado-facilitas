@@ -21,7 +21,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
       id: 0,
       title: '',
       sectorId: 1,
-      deadline: 'PT60M', // Default to 60 minutes
+      deadline: 'PT3600S', // Default to 60 minutes (3600 seconds)
     }
   });
 
@@ -31,25 +31,32 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
         id: 0,
         title: '',
         sectorId: 1,
-        deadline: 'PT60M', // Default to 60 minutes
+        deadline: 'PT3600S', // Default to 60 minutes (3600 seconds)
       });
     }
   }, [isOpen, deadline, reset]);
 
   const onSubmit = (data: Deadline) => {
-    // Format deadline to ISO duration format if minutes value is provided
+    // Format deadline to ISO duration format in seconds
     if (data.deadline.match(/^\d+$/)) {
-      data.deadline = `PT${data.deadline}M`;
+      // Convert minutes input to seconds for backend storage
+      const minutes = parseInt(data.deadline);
+      const seconds = minutes * 60;
+      data.deadline = `PT${seconds}S`;
     }
     onSave(data);
   };
 
   // Parse ISO duration to minutes for the form
   const parseDuration = (duration: string): string => {
+    const secondMatch = duration.match(/PT(\d+)S/);
     const minuteMatch = duration.match(/PT(\d+)M/);
     const dayMatch = duration.match(/P(\d+)D/);
     
-    if (minuteMatch) {
+    if (secondMatch) {
+      // Convert seconds to minutes for display
+      return String(Math.floor(parseInt(secondMatch[1]) / 60));
+    } else if (minuteMatch) {
       return minuteMatch[1];
     } else if (dayMatch) {
       // Convert days to minutes (1 day = 1440 minutes)
@@ -103,7 +110,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
                   message: 'O prazo deve ser de pelo menos 1 minuto'
                 }
               })}
-              defaultValue={parseDuration(deadline?.deadline || 'PT60M')}
+              defaultValue={parseDuration(deadline?.deadline || 'PT3600S')}
               placeholder="Número de minutos"
             />
             {errors.deadline && <p className="text-sm text-destructive">{errors.deadline.message}</p>}
