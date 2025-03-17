@@ -1,20 +1,29 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
+import { Filter, Plus, RefreshCw, Search, Trash, Clock, Edit } from 'lucide-react';
 import { TicketStatus, TicketWithDetails } from '@/lib/types';
 import { getEnrichedTickets, mockSectors } from '@/lib/mockData';
 import TicketCard from '@/components/TicketCard';
 import StatusBadge from '@/components/StatusBadge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 const Tickets = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   const [sectorFilter, setSectorFilter] = useState<number | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   // Check if logged in
   useEffect(() => {
@@ -60,6 +69,42 @@ const Tickets = () => {
 
     setFilteredTickets(result);
   }, [searchTerm, statusFilter, sectorFilter, tickets]);
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  };
+
+  const deleteTicket = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Get current user from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const ticket = tickets.find(t => t.id === id);
+    
+    if (!ticket) return;
+    
+    // Check if user has permission to delete
+    const isAdmin = currentUser?.role === 'ADMIN';
+    const isRequester = ticket.requesterId === currentUser?.id;
+    
+    if (!isAdmin && !isRequester) {
+      toast({
+        title: 'Acesso negado',
+        description: 'Você não tem permissão para excluir este chamado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // In a real app, this would be an API call
+    setTickets(tickets.filter(t => t.id !== id));
+    setFilteredTickets(filteredTickets.filter(t => t.id !== id));
+    
+    toast({
+      title: 'Chamado excluído',
+      description: `O chamado #${id} foi excluído com sucesso.`,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -140,17 +185,105 @@ const Tickets = () => {
         </div>
       </div>
 
+      {/* View mode tabs */}
+      <Tabs defaultValue="table" className="mb-6" onValueChange={(value) => setViewMode(value as 'cards' | 'table')}>
+        <TabsList className="bg-white border">
+          <TabsTrigger value="table">Tabela</TabsTrigger>
+          <TabsTrigger value="cards">Cartões</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Results */}
       {filteredTickets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTickets.map(ticket => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              onClick={() => navigate(`/tickets/${ticket.id}`)}
-            />
-          ))}
-        </div>
+        <>
+          {viewMode === 'cards' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTickets.map(ticket => (
+                <TicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  onClick={() => navigate(`/tickets/${ticket.id}`)}
+                />
+              ))}
+            </div>
+          )}
+
+          {viewMode === 'table' && (
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Setor</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Solicitante</TableHead>
+                      <TableHead>Criação</TableHead>
+                      <TableHead>Prazo</TableHead>
+                      <TableHead>Progresso</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTickets.map(ticket => (
+                      <TableRow 
+                        key={ticket.id}
+                        className="cursor-pointer hover:bg-muted/60"
+                        onClick={() => navigate(`/tickets/${ticket.id}`)}
+                      >
+                        <TableCell className="font-medium">#{ticket.id}</TableCell>
+                        <TableCell className="max-w-[150px] truncate">{ticket.title}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{ticket.description}</TableCell>
+                        <TableCell><StatusBadge status={ticket.status} /></TableCell>
+                        <TableCell>{ticket.sector?.name}</TableCell>
+                        <TableCell>{ticket.responsible?.name || "Não atribuído"}</TableCell>
+                        <TableCell>{ticket.requester?.name}</TableCell>
+                        <TableCell>{formatDate(ticket.createdAt)}</TableCell>
+                        <TableCell>{formatDate(ticket.deadline)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium">{ticket.percentageRemaining}%</span>
+                            <Progress 
+                              value={ticket.percentageRemaining} 
+                              className="w-24"
+                              color={
+                                ticket.percentageRemaining > 50 ? "#22c55e" : 
+                                ticket.percentageRemaining > 20 ? "#f59e0b" : 
+                                ticket.percentageRemaining > 10 ? "#ea580c" : "#dc2626"
+                              }
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => navigate(`/tickets/${ticket.id}`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={(e) => deleteTicket(ticket.id, e)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center py-12">
           <div className="bg-secondary rounded-full p-4 mb-4">

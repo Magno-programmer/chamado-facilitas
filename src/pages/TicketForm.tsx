@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Deadline, TicketFormData } from '@/lib/types';
 import { ArrowLeft, Save, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -17,9 +16,7 @@ const TicketForm = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [sectorId, setSectorId] = useState<number>(1);
   const [deadlineId, setDeadlineId] = useState<number>(0);
   const [availableDeadlines, setAvailableDeadlines] = useState<Deadline[]>([]);
   const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null);
@@ -45,12 +42,10 @@ const TicketForm = () => {
         { id: 6, title: 'Prioridade Alta - Vendas', sectorId: 4, deadline: 'P1D' }, // 1 day
       ];
       
-      // Filter deadlines for selected sector
-      const filteredDeadlines = mockDeadlines.filter(d => d.sectorId === 1);
-      setAvailableDeadlines(filteredDeadlines);
-      if (filteredDeadlines.length > 0) {
-        setDeadlineId(filteredDeadlines[0].id);
-        setSelectedDeadline(filteredDeadlines[0]);
+      setAvailableDeadlines(mockDeadlines);
+      if (mockDeadlines.length > 0) {
+        setDeadlineId(mockDeadlines[0].id);
+        setSelectedDeadline(mockDeadlines[0]);
       }
       
       setIsLoading(false);
@@ -58,33 +53,6 @@ const TicketForm = () => {
 
     return () => clearTimeout(timer);
   }, [navigate]);
-
-  // Update available deadlines when sector changes
-  useEffect(() => {
-    if (isLoading) return;
-    
-    // Mock deadlines data
-    const mockDeadlines: Deadline[] = [
-      { id: 1, title: 'Prioridade Alta - TI', sectorId: 1, deadline: 'P1D' },  // 1 day
-      { id: 2, title: 'Prioridade Média - TI', sectorId: 1, deadline: 'P3D' }, // 3 days
-      { id: 3, title: 'Prioridade Baixa - TI', sectorId: 1, deadline: 'P7D' }, // 7 days
-      { id: 4, title: 'Prioridade Alta - RH', sectorId: 3, deadline: 'P2D' },  // 2 days
-      { id: 5, title: 'Prioridade Média - RH', sectorId: 3, deadline: 'P5D' }, // 5 days
-      { id: 6, title: 'Prioridade Alta - Vendas', sectorId: 4, deadline: 'P1D' }, // 1 day
-    ];
-    
-    // Filter deadlines for selected sector
-    const filteredDeadlines = mockDeadlines.filter(d => d.sectorId === sectorId);
-    setAvailableDeadlines(filteredDeadlines);
-    
-    if (filteredDeadlines.length > 0) {
-      setDeadlineId(filteredDeadlines[0].id);
-      setSelectedDeadline(filteredDeadlines[0]);
-    } else {
-      setDeadlineId(0);
-      setSelectedDeadline(null);
-    }
-  }, [sectorId, isLoading]);
 
   // Update selected deadline when deadlineId changes
   useEffect(() => {
@@ -94,15 +62,6 @@ const TicketForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title.trim()) {
-      toast({
-        title: 'Erro de validação',
-        description: 'O título do chamado é obrigatório.',
-        variant: 'destructive',
-      });
-      return;
-    }
     
     if (!description.trim()) {
       toast({
@@ -129,9 +88,9 @@ const TicketForm = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const ticketData: TicketFormData = {
-        title,
+        title: selectedDeadline.title, // Use the deadline title as the ticket title
         description,
-        sectorId,
+        sectorId: selectedDeadline.sectorId,
         deadlineId,
       };
       
@@ -191,42 +150,14 @@ const TicketForm = () => {
         
         <h1 className="text-3xl font-bold">Novo Chamado</h1>
         <p className="text-muted-foreground mt-1">
-          Crie um novo chamado para um setor específico
+          Crie um novo chamado utilizando um prazo pré-definido
         </p>
       </div>
       
       <div className="bg-white rounded-xl border shadow-sm p-6 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title">Título</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Digite o título do chamado"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="sector">Setor</Label>
-            <select
-              id="sector"
-              value={sectorId}
-              onChange={(e) => setSectorId(Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-            >
-              {mockSectors.map(sector => (
-                <option key={sector.id} value={sector.id}>
-                  {sector.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="deadline">Prazo</Label>
+            <Label htmlFor="deadline">Tipo de Prazo</Label>
             <select
               id="deadline"
               value={deadlineId}
@@ -238,31 +169,35 @@ const TicketForm = () => {
               {availableDeadlines.length > 0 ? (
                 availableDeadlines.map(deadline => (
                   <option key={deadline.id} value={deadline.id}>
-                    {deadline.title}
+                    {deadline.title} - {mockSectors.find(s => s.id === deadline.sectorId)?.name}
                   </option>
                 ))
               ) : (
-                <option value="">Não há prazos disponíveis para este setor</option>
+                <option value="">Não há prazos disponíveis</option>
               )}
             </select>
             
             {selectedDeadline && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Data limite: {calculateDeadlineDate(selectedDeadline.deadline)}
-              </p>
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm">
+                <p className="font-medium text-blue-800">Detalhes do prazo selecionado:</p>
+                <p className="mt-1">Setor: {mockSectors.find(s => s.id === selectedDeadline.sectorId)?.name}</p>
+                <p>Prazo: {parseDuration(selectedDeadline.deadline)} dias (até {calculateDeadlineDate(selectedDeadline.deadline)})</p>
+              </div>
             )}
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição do Chamado</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o problema ou solicitação com detalhes"
+              placeholder="Descreva seu problema ou solicitação detalhadamente (máximo 200 caracteres)"
               className="min-h-[150px]"
+              maxLength={200}
               required
             />
+            <p className="text-xs text-muted-foreground text-right">{description.length}/200 caracteres</p>
           </div>
           
           <div className="pt-4 flex justify-end gap-2">
@@ -287,6 +222,15 @@ const TicketForm = () => {
       </div>
     </div>
   );
+};
+
+// Helper to parse ISO duration to days
+const parseDuration = (duration: string): string => {
+  const dayMatch = duration.match(/P(\d+)D/);
+  if (dayMatch) {
+    return dayMatch[1];
+  }
+  return '1';
 };
 
 export default TicketForm;
