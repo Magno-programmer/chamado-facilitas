@@ -1,57 +1,48 @@
 
-import { verifyUserCredentials } from './userService';
 import { User } from '@/lib/types';
-import jwt from 'jsonwebtoken';
 
-// Secret key for JWT (in production, this should be in environment variables)
-const JWT_SECRET = 'your-secret-key';
-const TOKEN_EXPIRY = '24h';
-
+// Mock authentication service without Node.js dependencies
 export const signIn = async (email: string, password: string) => {
   try {
-    // Verify user credentials against database
-    const user = await verifyUserCredentials(email, password);
-    
-    if (!user) {
+    // Mock credentials for demo
+    if ((email === 'admin@example.com' && password === 'admin123') || 
+        (email === 'cliente@example.com' && password === 'cliente123')) {
+      
+      const isAdmin = email === 'admin@example.com';
+      const user = {
+        id: isAdmin ? 1 : 2,
+        name: isAdmin ? 'Admin User' : 'Cliente User',
+        email,
+        sectorId: isAdmin ? 1 : 2,
+        role: isAdmin ? 'ADMIN' : 'CLIENT'
+      };
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('isLoggedIn', 'true');
+      
       return {
-        data: { session: null },
-        error: new Error('Invalid credentials')
+        data: {
+          session: {
+            user: {
+              id: String(user.id),
+              email: user.email,
+            }
+          }
+        },
+        error: null
       };
     }
     
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      JWT_SECRET,
-      { expiresIn: TOKEN_EXPIRY }
-    );
-    
-    // Store user in local storage
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
-    localStorage.setItem('isLoggedIn', 'true');
-    
     return {
-      data: {
-        session: {
-          user: {
-            id: String(user.id),
-            email: user.email,
-          },
-          token
-        }
-      },
-      error: null
+      data: { session: null },
+      error: new Error('Credenciais inválidas')
     };
   } catch (error) {
     console.error('Sign in error:', error);
     return {
       data: { session: null },
-      error: new Error('Authentication failed')
+      error: new Error('Falha na autenticação')
     };
   }
 };
@@ -60,7 +51,6 @@ export const signOut = async () => {
   try {
     // Clear local storage
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
     localStorage.removeItem('isLoggedIn');
     
     return { error: null };
@@ -73,36 +63,48 @@ export const signOut = async () => {
 export const getCurrentUser = async () => {
   try {
     // Check if user is stored in local storage
-    const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
-    if (!token || !storedUser) {
+    if (!storedUser) {
       return { user: null, error: null };
     }
     
-    try {
-      // Verify token
-      jwt.verify(token, JWT_SECRET);
-      
-      // Token is valid, return user
-      const userData = JSON.parse(storedUser) as User;
-      
-      return { 
-        user: {
-          id: String(userData.id),
-          email: userData.email,
-        }, 
-        error: null 
-      };
-    } catch (tokenError) {
-      // Token is invalid or expired
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('isLoggedIn');
-      return { user: null, error: new Error('Session expired') };
-    }
+    const userData = JSON.parse(storedUser) as User;
+    
+    return { 
+      user: {
+        id: String(userData.id),
+        email: userData.email,
+      }, 
+      error: null 
+    };
   } catch (error) {
     console.error('Get current user error:', error);
     return { user: null, error };
   }
+};
+
+// This is a browser-compatible mock implementation
+export const verifyUserCredentials = async (email: string, password: string): Promise<User | null> => {
+  if ((email === 'admin@example.com' && password === 'admin123')) {
+    return { 
+      id: 1, 
+      name: 'Admin User', 
+      email: 'admin@example.com', 
+      sectorId: 1, 
+      role: 'ADMIN' 
+    };
+  }
+  
+  if ((email === 'cliente@example.com' && password === 'cliente123')) {
+    return { 
+      id: 2, 
+      name: 'Cliente User', 
+      email: 'cliente@example.com', 
+      sectorId: 2, 
+      role: 'CLIENT' 
+    };
+  }
+  
+  return null;
 };
