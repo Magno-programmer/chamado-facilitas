@@ -2,92 +2,109 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { mockLogin } from '@/lib/mockData';
-import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
-  // Check if already logged in
-  React.useEffect(() => {
-    if (localStorage.getItem('isLoggedIn') === 'true') {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Function to handle login - using mock authentication for now
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      // Mock login for demonstration
-      const user = mockLogin(email, password);
+    try {
+      // Mock login service - to be replaced with actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (user) {
+      // Simplified validation
+      if (!email || !password) {
+        throw new Error('Por favor, preencha todos os campos');
+      }
+
+      // Mock authentication for demo - would be replaced with an API call
+      if (email === 'admin@example.com' && password === 'admin123') {
+        // Mock admin user
+        const mockUser = {
+          id: 1,
+          name: 'Administrador',
+          email: 'admin@example.com',
+          sectorId: 1,
+          role: 'ADMIN'
+        };
+        localStorage.setItem('user', JSON.stringify(mockUser));
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('user', JSON.stringify(user));
-        
         toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo, ${user.name}!`,
+          title: 'Login realizado com sucesso',
+          description: 'Bem-vindo ao sistema de chamados!',
+          variant: 'default',
         });
-        
+        navigate('/dashboard');
+      } else if (email === 'cliente@example.com' && password === 'cliente123') {
+        // Mock client user
+        const mockUser = {
+          id: 2,
+          name: 'Cliente Padrão',
+          email: 'cliente@example.com',
+          sectorId: 2,
+          role: 'CLIENT'
+        };
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        localStorage.setItem('isLoggedIn', 'true');
+        toast({
+          title: 'Login realizado com sucesso',
+          description: 'Bem-vindo ao sistema de chamados!',
+          variant: 'default',
+        });
         navigate('/dashboard');
       } else {
-        toast({
-          title: "Erro ao fazer login",
-          description: "Email ou senha inválidos.",
-          variant: "destructive",
-        });
+        throw new Error('Credenciais inválidas');
       }
-      
+    } catch (error) {
+      toast({
+        title: 'Erro de autenticação',
+        description: error instanceof Error ? error.message : 'Ocorreu um erro ao fazer login',
+        variant: 'destructive',
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
-      
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
       <div className="w-full max-w-md">
-        <div className="bg-white/80 backdrop-blur-sm border rounded-2xl shadow-xl p-8 animate-scale-in">
+        <div className="bg-white rounded-xl shadow-lg p-8 border animate-fade-in">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-                Facilitas
-              </span>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
+              Facilitas
             </h1>
-            <p className="text-muted-foreground">
-              Entre com suas credenciais para acessar o sistema
-            </p>
+            <p className="text-muted-foreground mt-2">Sistema de Gerenciamento de Chamados</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <input
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
                   id="email"
                   type="email"
+                  placeholder="seu@email.com"
+                  className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border bg-white px-3 py-2 pl-10 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="seu@email.com"
-                  required
+                  disabled={isLoading}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use o email: admin@example.com ou client@example.com
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -95,22 +112,21 @@ const Login = () => {
                 Senha
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <Lock className="h-5 w-5" />
-                </div>
-                <input
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="pl-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border bg-white px-3 py-2 pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="••••••••"
-                  required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -119,48 +135,25 @@ const Login = () => {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Qualquer senha funciona para esta demonstração
-              </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/50"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-muted-foreground">
-                  Lembrar-me
-                </label>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Entrando...' : 'Entrar'}
+            </Button>
+
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Credenciais de demonstração:</p>
+              <div className="mt-2 space-y-1">
+                <p>
+                  <strong>Admin:</strong> admin@example.com / admin123
+                </p>
+                <p>
+                  <strong>Cliente:</strong> cliente@example.com / cliente123
+                </p>
               </div>
-
-              <a href="#" className="text-sm text-primary hover:text-primary/80">
-                Esqueceu a senha?
-              </a>
             </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              {isLoading ? "Entrando..." : "Entrar"}
-            </button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Não tem uma conta?{" "}
-            <a href="#" className="font-medium text-primary hover:text-primary/80">
-              Registre-se
-            </a>
-          </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Facilitas. Todos os direitos reservados.
-        </p>
       </div>
     </div>
   );

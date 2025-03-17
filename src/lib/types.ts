@@ -54,3 +54,42 @@ export interface DashboardStats {
     count: number;
   }[];
 }
+
+// Adicionar novas interfaces para gerenciar formulários
+
+export interface UserFormData {
+  name: string;
+  email: string;
+  sectorId: number;
+  role: UserRole;
+  password?: string;
+}
+
+export interface SectorFormData {
+  name: string;
+}
+
+export interface DeadlineFormData {
+  title: string;
+  sectorId: number;
+  deadline: string;
+}
+
+export interface TicketFormData {
+  title: string;
+  description: string;
+  sectorId: number;
+  deadlineId: number;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  message?: string;
+  success: boolean;
+}

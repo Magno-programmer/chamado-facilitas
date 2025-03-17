@@ -10,6 +10,11 @@ import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
+import Users from "./pages/Users";
+import Sectors from "./pages/Sectors";
+import Deadlines from "./pages/Deadlines";
+import TicketDetail from "./pages/TicketDetail";
+import TicketForm from "./pages/TicketForm";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +30,11 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tickets" element={<Tickets />} />
+          <Route path="/tickets/:id" element={<TicketDetail />} />
+          <Route path="/tickets/new" element={<TicketForm />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/sectors" element={<Sectors />} />
+          <Route path="/deadlines" element={<Deadlines />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
