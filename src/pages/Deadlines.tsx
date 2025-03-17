@@ -2,19 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Deadline } from '@/lib/types';
-import { Plus, RefreshCw, Search, Edit, Trash, Clock } from 'lucide-react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DeadlineForm from '@/components/DeadlineForm';
-import { mockSectors } from '@/lib/mockData';
+import DeadlinesTable from '@/components/DeadlinesTable';
 
 const DeadlinesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
-  const [filteredDeadlines, setFilteredDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,26 +41,11 @@ const DeadlinesPage = () => {
       ];
       
       setDeadlines(mockDeadlines);
-      setFilteredDeadlines(mockDeadlines);
       setIsLoading(false);
     }, 800);
 
     return () => clearTimeout(timer);
   }, [navigate]);
-
-  // Apply search filter when searchTerm changes
-  useEffect(() => {
-    if (deadlines.length === 0) return;
-
-    if (searchTerm) {
-      const filtered = deadlines.filter(deadline => 
-        deadline.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredDeadlines(filtered);
-    } else {
-      setFilteredDeadlines(deadlines);
-    }
-  }, [searchTerm, deadlines]);
 
   const handleAddDeadline = () => {
     setCurrentDeadline(null);
@@ -79,9 +62,6 @@ const DeadlinesPage = () => {
     if (window.confirm('Tem certeza que deseja excluir este prazo?')) {
       const updatedDeadlines = deadlines.filter(deadline => deadline.id !== deadlineId);
       setDeadlines(updatedDeadlines);
-      setFilteredDeadlines(updatedDeadlines.filter(deadline => 
-        deadline.title.toLowerCase().includes(searchTerm.toLowerCase())
-      ));
       
       toast({
         title: 'Prazo excluído',
@@ -116,32 +96,7 @@ const DeadlinesPage = () => {
     }
     
     setDeadlines(updatedDeadlines);
-    setFilteredDeadlines(updatedDeadlines.filter(deadline => 
-      deadline.title.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
     setIsModalOpen(false);
-  };
-
-  const getSectorName = (sectorId: number) => {
-    const sector = mockSectors.find(s => s.id === sectorId);
-    return sector ? sector.name : 'Setor não encontrado';
-  };
-
-  const formatDeadline = (deadline: string) => {
-    // Format ISO duration string to human readable format
-    // Example: P1D -> 1 dia, P2D -> 2 dias, PT12H -> 12 horas
-    const dayMatch = deadline.match(/P(\d+)D/);
-    const hourMatch = deadline.match(/PT(\d+)H/);
-    
-    if (dayMatch) {
-      const days = parseInt(dayMatch[1]);
-      return days === 1 ? '1 dia' : `${days} dias`;
-    } else if (hourMatch) {
-      const hours = parseInt(hourMatch[1]);
-      return hours === 1 ? '1 hora' : `${hours} horas`;
-    }
-    
-    return deadline;
   };
 
   if (isLoading) {
@@ -158,7 +113,7 @@ const DeadlinesPage = () => {
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Prazos</h1>
+          <h1 className="text-3xl font-bold mb-2">⏳ Gerenciar Prazos</h1>
           <p className="text-muted-foreground">{isAdmin ? 'Gerencie os prazos do sistema' : 'Visualize os prazos do sistema'}</p>
         </div>
         {isAdmin && (
@@ -187,63 +142,16 @@ const DeadlinesPage = () => {
         </div>
       </div>
 
-      {/* Deadlines Table */}
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Setor</TableHead>
-              <TableHead>Prazo</TableHead>
-              {isAdmin && <TableHead className="text-right">Ações</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredDeadlines.length > 0 ? (
-              filteredDeadlines.map(deadline => (
-                <TableRow key={deadline.id}>
-                  <TableCell className="font-medium">{deadline.id}</TableCell>
-                  <TableCell>{deadline.title}</TableCell>
-                  <TableCell>{getSectorName(deadline.sectorId)}</TableCell>
-                  <TableCell>{formatDeadline(deadline.deadline)}</TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditDeadline(deadline)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteDeadline(deadline.id)}>
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-10">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="bg-secondary rounded-full p-4 mb-4">
-                      <Clock className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Nenhum prazo encontrado</h3>
-                    <p className="text-muted-foreground text-center max-w-md mb-6">
-                      Não encontramos prazos com os critérios de busca atuais.
-                    </p>
-                    {searchTerm && (
-                      <Button variant="outline" onClick={() => setSearchTerm('')}>
-                        Limpar Filtros
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Deadlines Table with Title */}
+      <h3 className="text-xl font-semibold mb-4">📋 Prazos Cadastrados</h3>
+      <DeadlinesTable 
+        deadlines={deadlines} 
+        isAdmin={isAdmin} 
+        onEdit={handleEditDeadline} 
+        onDelete={handleDeleteDeadline} 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+      />
 
       {/* Deadline Form Modal */}
       {isModalOpen && (

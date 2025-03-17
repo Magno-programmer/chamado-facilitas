@@ -71,7 +71,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="sectorId">Setor</Label>
+            <Label htmlFor="sectorId">Setor Responsável</Label>
             <select
               id="sectorId"
               {...register('sectorId', { required: 'Setor é obrigatório' })}
