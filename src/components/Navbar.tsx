@@ -55,6 +55,7 @@ const Navbar = () => {
               <NavItem to="/dashboard" label="Dashboard" currentPath={location.pathname} />
               <NavItem to="/tickets" label="Chamados" currentPath={location.pathname} />
               <NavItem to="/sectors" label="Setores" currentPath={location.pathname} />
+              <NavItem to="/deadlines" label="Prazos" currentPath={location.pathname} />
               <NavItem to="/users" label="Usuários" currentPath={location.pathname} />
               
               <button 
@@ -113,6 +114,13 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Setores
+                </Link>
+                <Link 
+                  to="/deadlines" 
+                  className="px-4 py-2 rounded-md hover:bg-secondary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Prazos
                 </Link>
                 <Link 
                   to="/users" 
