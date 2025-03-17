@@ -1,7 +1,7 @@
-
 import { supabase } from '@/lib/supabase';
 import { Ticket, TicketFormData, TicketWithDetails, TicketStatus } from '@/lib/types';
 import { addSeconds } from 'date-fns';
+import { getEnrichedTickets } from '@/lib/mockData';
 
 // Helper to parse ISO 8601 duration to seconds
 const parseIsoDuration = (isoDuration: string): number => {
@@ -21,8 +21,8 @@ const parseIsoDuration = (isoDuration: string): number => {
 // Calculate the percentage remaining for a ticket
 const calculatePercentageRemaining = (ticket: any): number => {
   const now = new Date();
-  const created = new Date(ticket.data_criacao);
-  const deadline = new Date(ticket.prazo);
+  const created = new Date(ticket.data_criacao || ticket.createdAt);
+  const deadline = new Date(ticket.prazo || ticket.deadline);
   
   // If the deadline has passed
   if (now > deadline) {
@@ -42,58 +42,67 @@ const calculatePercentageRemaining = (ticket: any): number => {
 };
 
 export const getTickets = async (userId: number, isAdmin: boolean): Promise<TicketWithDetails[]> => {
-  // If admin, get all tickets, otherwise only user's tickets
-  const query = supabase
-    .from('chamados')
-    .select(`
-      *,
-      setores: setor_id(id, nome),
-      solicitante: solicitante_id(id, nome, email, setor_id, role),
-      responsavel: responsavel_id(id, nome, email, setor_id, role)
-    `);
-  
-  // Apply filter if not admin
-  const { data, error } = isAdmin 
-    ? await query
-    : await query.eq('solicitante_id', userId);
+  if (supabase) {
+    // If admin, get all tickets, otherwise only user's tickets
+    const query = supabase
+      .from('chamados')
+      .select(`
+        *,
+        setores: setor_id(id, nome),
+        solicitante: solicitante_id(id, nome, email, setor_id, role),
+        responsavel: responsavel_id(id, nome, email, setor_id, role)
+      `);
+    
+    // Apply filter if not admin
+    const { data, error } = isAdmin 
+      ? await query
+      : await query.eq('solicitante_id', userId);
 
-  if (error) {
-    console.error('Error fetching tickets:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching tickets:', error);
+      throw error;
+    }
+
+    return data.map(ticket => {
+      return {
+        id: ticket.id,
+        title: ticket.titulo,
+        description: ticket.descricao,
+        sectorId: ticket.setor_id,
+        requesterId: ticket.solicitante_id,
+        responsibleId: ticket.responsavel_id,
+        status: ticket.status as TicketStatus,
+        createdAt: ticket.data_criacao,
+        deadline: ticket.prazo,
+        sector: {
+          id: ticket.setores.id,
+          name: ticket.setores.nome
+        },
+        requester: {
+          id: ticket.solicitante.id,
+          name: ticket.solicitante.nome,
+          email: ticket.solicitante.email,
+          sectorId: ticket.solicitante.setor_id,
+          role: ticket.solicitante.role
+        },
+        responsible: ticket.responsavel ? {
+          id: ticket.responsavel.id,
+          name: ticket.responsavel.nome,
+          email: ticket.responsavel.email,
+          sectorId: ticket.responsavel.setor_id,
+          role: ticket.responsavel.role
+        } : null,
+        percentageRemaining: calculatePercentageRemaining(ticket)
+      };
+    });
+  } else {
+    // Use mock data when Supabase is not available
+    console.log('Using mock ticket data');
+    const mockTickets = getEnrichedTickets();
+    return isAdmin 
+      ? mockTickets
+      : mockTickets.filter(t => t.requesterId === userId || t.responsibleId === userId);
   }
-
-  return data.map(ticket => {
-    return {
-      id: ticket.id,
-      title: ticket.titulo,
-      description: ticket.descricao,
-      sectorId: ticket.setor_id,
-      requesterId: ticket.solicitante_id,
-      responsibleId: ticket.responsavel_id,
-      status: ticket.status as TicketStatus,
-      createdAt: ticket.data_criacao,
-      deadline: ticket.prazo,
-      sector: {
-        id: ticket.setores.id,
-        name: ticket.setores.nome
-      },
-      requester: {
-        id: ticket.solicitante.id,
-        name: ticket.solicitante.nome,
-        email: ticket.solicitante.email,
-        sectorId: ticket.solicitante.setor_id,
-        role: ticket.solicitante.role
-      },
-      responsible: ticket.responsavel ? {
-        id: ticket.responsavel.id,
-        name: ticket.responsavel.nome,
-        email: ticket.responsavel.email,
-        sectorId: ticket.responsavel.setor_id,
-        role: ticket.responsavel.role
-      } : null,
-      percentageRemaining: calculatePercentageRemaining(ticket)
-    };
-  });
 };
 
 export const getTicketById = async (id: number): Promise<TicketWithDetails | null> => {

@@ -30,36 +30,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { user: authUser, error } = await getCurrentUser();
         
         if (authUser) {
-          // Get user profile from our usuarios table
-          const { data, error: profileError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', authUser.email)
-            .single();
-            
-          if (data) {
-            setUser({
-              id: data.id,
-              name: data.nome,
-              email: data.email,
-              sectorId: data.setor_id,
-              role: data.role,
-            });
-            
-            // Save to localStorage for easy access
-            localStorage.setItem('user', JSON.stringify({
-              id: data.id,
-              name: data.nome,
-              email: data.email,
-              sectorId: data.setor_id,
-              role: data.role,
-            }));
-            localStorage.setItem('isLoggedIn', 'true');
+          if (supabase) {
+            // If using real Supabase, get user profile from database
+            const { data, error: profileError } = await supabase
+              .from('usuarios')
+              .select('*')
+              .eq('email', authUser.email)
+              .single();
+              
+            if (data) {
+              setUser({
+                id: data.id,
+                name: data.nome,
+                email: data.email,
+                sectorId: data.setor_id,
+                role: data.role,
+              });
+              
+              localStorage.setItem('user', JSON.stringify({
+                id: data.id,
+                name: data.nome,
+                email: data.email,
+                sectorId: data.setor_id,
+                role: data.role,
+              }));
+              localStorage.setItem('isLoggedIn', 'true');
+            } else {
+              console.warn('User profile not found:', profileError);
+              // Fall back to mock data if profile not found
+              const mockUser = JSON.parse(localStorage.getItem('user') || '{}');
+              setUser(mockUser as User);
+            }
           } else {
-            console.error('User profile not found:', profileError);
-            setUser(null);
-            localStorage.removeItem('user');
-            localStorage.removeItem('isLoggedIn');
+            // Using mock data - get user from localStorage
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+              setUser(JSON.parse(storedUser));
+            }
           }
         } else {
           setUser(null);
@@ -78,19 +85,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     checkUser();
     
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        checkUser();
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('isLoggedIn');
-      }
-    });
+    // Listen for auth changes if using real Supabase
+    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+    
+    if (supabase) {
+      authListener = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          checkUser();
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('isLoggedIn');
+        }
+      });
+    }
     
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListener) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
   
@@ -107,8 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
       
-      // The user state will be updated by the auth listener
-      // Navigate to dashboard after successful login
+      // The user state will be updated by the auth listener or local storage
       navigate('/dashboard');
       
       toast({
