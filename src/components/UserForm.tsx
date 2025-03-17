@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { getSectors } from '@/services/sectorService';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -17,11 +19,26 @@ interface UserFormProps {
   user: User | null;
 }
 
+// Define the form validation schema
+const userFormSchema = z.object({
+  id: z.number(),
+  name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
+  email: z.string().email({ message: 'Email inválido' }),
+  sectorId: z.number().min(1, { message: 'Selecione um setor' }),
+  role: z.enum(['ADMIN', 'CLIENT']),
+  password: z.string().optional().refine(password => {
+    // Password is required for new users, but optional when editing
+    if (password === undefined) return true;
+    return password.length >= 6;
+  }, { message: 'Senha deve ter pelo menos 6 caracteres' }),
+});
+
 const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSave, user }) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [isLoadingSectors, setIsLoadingSectors] = useState(true);
   
   const form = useForm<User & { password?: string }>({
+    resolver: zodResolver(userFormSchema),
     defaultValues: user || {
       id: 0,
       name: '',
