@@ -36,16 +36,22 @@ const DeadlinesTable: React.FC<DeadlinesTableProps> = ({
 
   const formatDeadline = (deadline: string) => {
     // Format ISO duration string to human readable format
-    // Example: P1D -> 1 dia, P2D -> 2 dias, PT12H -> 12 horas
+    // Example: PT60M -> 60 minutos, PT120M -> 120 minutos, P1D -> 1440 minutos
+    const minuteMatch = deadline.match(/PT(\d+)M/);
     const dayMatch = deadline.match(/P(\d+)D/);
     const hourMatch = deadline.match(/PT(\d+)H/);
     
-    if (dayMatch) {
+    if (minuteMatch) {
+      const minutes = parseInt(minuteMatch[1]);
+      return minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+    } else if (dayMatch) {
       const days = parseInt(dayMatch[1]);
-      return days === 1 ? '1 dia' : `${days} dias`;
+      const minutes = days * 1440; // 1 day = 1440 minutes
+      return `${minutes} minutos (${days} ${days === 1 ? 'dia' : 'dias'})`;
     } else if (hourMatch) {
       const hours = parseInt(hourMatch[1]);
-      return hours === 1 ? '1 hora' : `${hours} horas`;
+      const minutes = hours * 60; // 1 hour = 60 minutes
+      return `${minutes} minutos (${hours} ${hours === 1 ? 'hora' : 'horas'})`;
     }
     
     return deadline;

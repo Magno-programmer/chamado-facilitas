@@ -21,7 +21,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
       id: 0,
       title: '',
       sectorId: 1,
-      deadline: 'P1D', // Default to 1 day
+      deadline: 'PT60M', // Default to 60 minutes
     }
   });
 
@@ -31,25 +31,31 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
         id: 0,
         title: '',
         sectorId: 1,
-        deadline: 'P1D', // Default to 1 day
+        deadline: 'PT60M', // Default to 60 minutes
       });
     }
   }, [isOpen, deadline, reset]);
 
   const onSubmit = (data: Deadline) => {
-    // Format deadline to ISO duration format if days value is provided
+    // Format deadline to ISO duration format if minutes value is provided
     if (data.deadline.match(/^\d+$/)) {
-      data.deadline = `P${data.deadline}D`;
+      data.deadline = `PT${data.deadline}M`;
     }
     onSave(data);
   };
 
-  // Parse ISO duration to days for the form
+  // Parse ISO duration to minutes for the form
   const parseDuration = (duration: string): string => {
+    const minuteMatch = duration.match(/PT(\d+)M/);
     const dayMatch = duration.match(/P(\d+)D/);
-    if (dayMatch) {
-      return dayMatch[1];
+    
+    if (minuteMatch) {
+      return minuteMatch[1];
+    } else if (dayMatch) {
+      // Convert days to minutes (1 day = 1440 minutes)
+      return String(parseInt(dayMatch[1]) * 1440);
     }
+    
     return duration;
   };
 
@@ -85,7 +91,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="deadline">Prazo (dias)</Label>
+            <Label htmlFor="deadline">Prazo (minutos)</Label>
             <Input
               id="deadline"
               type="number"
@@ -94,11 +100,11 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
                 required: 'Prazo é obrigatório',
                 min: {
                   value: 1,
-                  message: 'O prazo deve ser de pelo menos 1 dia'
+                  message: 'O prazo deve ser de pelo menos 1 minuto'
                 }
               })}
-              defaultValue={parseDuration(deadline?.deadline || 'P1D')}
-              placeholder="Número de dias"
+              defaultValue={parseDuration(deadline?.deadline || 'PT60M')}
+              placeholder="Número de minutos"
             />
             {errors.deadline && <p className="text-sm text-destructive">{errors.deadline.message}</p>}
           </div>

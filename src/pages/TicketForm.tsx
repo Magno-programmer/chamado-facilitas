@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { mockSectors } from '@/lib/mockData';
-import { format, addDays } from 'date-fns';
+import { format, addMinutes } from 'date-fns';
 
 const TicketForm = () => {
   const navigate = useNavigate();
@@ -34,12 +34,12 @@ const TicketForm = () => {
     const timer = setTimeout(() => {
       // Mock deadlines data based on selected sector
       const mockDeadlines: Deadline[] = [
-        { id: 1, title: 'Prioridade Alta - TI', sectorId: 1, deadline: 'P1D' },  // 1 day
-        { id: 2, title: 'Prioridade Média - TI', sectorId: 1, deadline: 'P3D' }, // 3 days
-        { id: 3, title: 'Prioridade Baixa - TI', sectorId: 1, deadline: 'P7D' }, // 7 days
-        { id: 4, title: 'Prioridade Alta - RH', sectorId: 3, deadline: 'P2D' },  // 2 days
-        { id: 5, title: 'Prioridade Média - RH', sectorId: 3, deadline: 'P5D' }, // 5 days
-        { id: 6, title: 'Prioridade Alta - Vendas', sectorId: 4, deadline: 'P1D' }, // 1 day
+        { id: 1, title: 'Prioridade Alta - TI', sectorId: 1, deadline: 'PT60M' },  // 60 minutes
+        { id: 2, title: 'Prioridade Média - TI', sectorId: 1, deadline: 'PT180M' }, // 180 minutes
+        { id: 3, title: 'Prioridade Baixa - TI', sectorId: 1, deadline: 'PT1440M' }, // 1440 minutes (24 hours)
+        { id: 4, title: 'Prioridade Alta - RH', sectorId: 3, deadline: 'PT120M' },  // 120 minutes
+        { id: 5, title: 'Prioridade Média - RH', sectorId: 3, deadline: 'PT360M' }, // 360 minutes (6 hours)
+        { id: 6, title: 'Prioridade Alta - Vendas', sectorId: 4, deadline: 'PT60M' }, // 60 minutes
       ];
       
       setAvailableDeadlines(mockDeadlines);
@@ -117,13 +117,24 @@ const TicketForm = () => {
   const calculateDeadlineDate = (deadlineStr: string | undefined) => {
     if (!deadlineStr) return '';
     
+    // Parse different ISO duration formats
+    const minuteMatch = deadlineStr.match(/PT(\d+)M/);
+    const hourMatch = deadlineStr.match(/PT(\d+)H/);
     const dayMatch = deadlineStr.match(/P(\d+)D/);
-    if (dayMatch) {
-      const days = parseInt(dayMatch[1]);
-      return format(addDays(new Date(), days), 'dd/MM/yyyy');
+    
+    let minutes = 0;
+    
+    if (minuteMatch) {
+      minutes = parseInt(minuteMatch[1]);
+    } else if (hourMatch) {
+      minutes = parseInt(hourMatch[1]) * 60;
+    } else if (dayMatch) {
+      minutes = parseInt(dayMatch[1]) * 1440;
+    } else {
+      return '';
     }
     
-    return '';
+    return format(addMinutes(new Date(), minutes), 'dd/MM/yyyy HH:mm');
   };
 
   if (isLoading) {
@@ -181,7 +192,7 @@ const TicketForm = () => {
               <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm">
                 <p className="font-medium text-blue-800">Detalhes do prazo selecionado:</p>
                 <p className="mt-1">Setor: {mockSectors.find(s => s.id === selectedDeadline.sectorId)?.name}</p>
-                <p>Prazo: {parseDuration(selectedDeadline.deadline)} dias (até {calculateDeadlineDate(selectedDeadline.deadline)})</p>
+                <p>Prazo: {parseDuration(selectedDeadline.deadline)} minutos (até {calculateDeadlineDate(selectedDeadline.deadline)})</p>
               </div>
             )}
           </div>
@@ -224,13 +235,21 @@ const TicketForm = () => {
   );
 };
 
-// Helper to parse ISO duration to days
+// Helper to parse ISO duration to minutes
 const parseDuration = (duration: string): string => {
+  const minuteMatch = duration.match(/PT(\d+)M/);
+  const hourMatch = duration.match(/PT(\d+)H/);
   const dayMatch = duration.match(/P(\d+)D/);
-  if (dayMatch) {
-    return dayMatch[1];
+  
+  if (minuteMatch) {
+    return minuteMatch[1];
+  } else if (hourMatch) {
+    return String(parseInt(hourMatch[1]) * 60); // Convert hours to minutes
+  } else if (dayMatch) {
+    return String(parseInt(dayMatch[1]) * 1440); // Convert days to minutes
   }
-  return '1';
+  
+  return '60'; // Default to 60 minutes
 };
 
 export default TicketForm;

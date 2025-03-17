@@ -1,4 +1,3 @@
-
 import { User, Sector, Deadline, Ticket, TicketStatus, DashboardStats } from './types';
 
 export const mockUsers: User[] = [
@@ -33,10 +32,10 @@ export const mockSectors: Sector[] = [
 ];
 
 export const mockDeadlines: Deadline[] = [
-  { id: 1, title: 'Urgente', sectorId: 3, deadline: 'PT24H' }, // 24 hours
-  { id: 2, title: 'Alta Prioridade', sectorId: 3, deadline: 'P3D' }, // 3 days
-  { id: 3, title: 'Normal', sectorId: 2, deadline: 'P7D' }, // 7 days
-  { id: 4, title: 'Baixa Prioridade', sectorId: 2, deadline: 'P14D' }, // 14 days
+  { id: 1, title: 'Urgente', sectorId: 3, deadline: 'PT60M' }, // 60 minutes
+  { id: 2, title: 'Alta Prioridade', sectorId: 3, deadline: 'PT180M' }, // 180 minutes (3 hours)
+  { id: 3, title: 'Normal', sectorId: 2, deadline: 'PT720M' }, // 720 minutes (12 hours)
+  { id: 4, title: 'Baixa Prioridade', sectorId: 2, deadline: 'PT1440M' }, // 1440 minutes (24 hours)
 ];
 
 const getRandomStatus = (): TicketStatus => {
