@@ -4,7 +4,7 @@ import { User } from './types';
 // Configuração para a API
 const API_CONFIG = {
   // Base URL para a API (pode ser alterada conforme necessário)
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.15.6:5001',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://192.168.15.6:5001',
   
   // Use true para adicionar um proxy CORS para desenvolvimento
   USE_CORS_PROXY: true,
