@@ -6,8 +6,8 @@ const API_CONFIG = {
   // Base URL para a API (pode ser alterada conforme necessário)
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://192.168.15.6:5001',
   
-  // Use true para adicionar um proxy CORS para desenvolvimento
-  USE_CORS_PROXY: true,
+  // Desabilitar o proxy CORS já que o backend já está configurado com CORS
+  USE_CORS_PROXY: false,
   
   // Proxy CORS para desenvolvimento
   CORS_PROXY: 'https://corsproxy.io/?'
@@ -43,6 +43,9 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
       'Content-Type': 'application/json',
     };
   }
+
+  // Adicionar credenciais para que cookies sejam enviados
+  options.credentials = 'include';
 
   try {
     const apiUrl = getApiUrl(endpoint);
