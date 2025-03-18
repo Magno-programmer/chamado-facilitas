@@ -1,19 +1,21 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Create a Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ryskqkqgjvzcloibkykl.supabase.co';
+// Set Supabase URL and anonymous key
+// Using the provided URL and adding empty string fallback for the anonymous key
+const supabaseUrl = 'https://ryskqkqgjvzcloibkykl.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Check if Supabase environment variables are available
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+// Since we're setting the URL directly, we only check if the anon key is configured
+export const isSupabaseConfigured = Boolean(supabaseAnonKey);
 
-// Create and export the Supabase client if configured, otherwise set to null
-export const supabase = isSupabaseConfigured 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Create and export the Supabase client
+// Even without an anon key, we'll create a client with the URL to avoid the "supabaseUrl is required" error
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Export indicator for mock data usage
+// This ensures we use mock data when Supabase is not fully configured
 export const isUsingMockData = !isSupabaseConfigured;
 
 // Authentication functions using Supabase
@@ -49,7 +51,7 @@ export const signIn = async (email: string, password: string) => {
   }
   
   try {
-    const { data, error } = await supabase!.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
@@ -79,7 +81,7 @@ export const signOut = async () => {
   }
   
   try {
-    const { error } = await supabase!.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     return { error };
   } catch (error) {
     console.error('📝 [supabase] Erro ao tentar logout:', error);
@@ -109,7 +111,7 @@ export const getCurrentUser = async () => {
   }
   
   try {
-    const { data, error } = await supabase!.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
     
     if (error || !data.user) {
       console.log('📝 [supabase] Nenhum usuário encontrado');
