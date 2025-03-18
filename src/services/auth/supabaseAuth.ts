@@ -1,10 +1,57 @@
 
 import { User } from '@/lib/types';
-import { supabase, signIn as supabaseSignIn, signOut as supabaseSignOut, getCurrentUser as supabaseGetCurrentUser } from '@/lib/supabase';
+import { 
+  supabase, 
+  signIn as supabaseSignIn, 
+  signOut as supabaseSignOut, 
+  getCurrentUser as supabaseGetCurrentUser,
+  isSupabaseConfigured
+} from '@/lib/supabase';
 
 // Sign in with Supabase
 export const signInWithSupabase = async (email: string, password: string) => {
   console.log('📝 [supabaseAuth] Iniciando login com:', { email });
+  
+  if (!isSupabaseConfigured) {
+    console.log('📝 [supabaseAuth] Supabase não configurado, simulando resposta');
+    
+    // Mock response for demo/development purposes
+    if (email === 'admin@example.com' && password === 'senha123') {
+      const mockUser = {
+        id: '1',
+        name: 'Admin User',
+        email: email,
+        sectorId: 1,
+        role: 'ADMIN' as 'ADMIN' | 'CLIENT'
+      };
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('isLoggedIn', 'true');
+      
+      return { 
+        data: { 
+          session: { 
+            user: {
+              id: '1',
+              email: email,
+              user_metadata: {
+                name: 'Admin User',
+                role: 'ADMIN',
+                sector_id: 1
+              }
+            } 
+          } 
+        }, 
+        error: null 
+      };
+    } else {
+      return {
+        data: { session: null },
+        error: new Error('Credenciais inválidas')
+      };
+    }
+  }
   
   try {
     const { data, error } = await supabaseSignIn(email, password);
@@ -53,6 +100,16 @@ export const signInWithSupabase = async (email: string, password: string) => {
 // Sign out with Supabase
 export const signOutWithSupabase = async () => {
   try {
+    if (!isSupabaseConfigured) {
+      console.log('📝 [supabaseAuth] Supabase não configurado, simulando logout');
+      
+      // Clear local storage
+      localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
+      
+      return { error: null };
+    }
+    
     const { error } = await supabaseSignOut();
     
     // Clear local storage
@@ -69,6 +126,25 @@ export const signOutWithSupabase = async () => {
 // Get current user with Supabase
 export const getCurrentUserWithSupabase = async () => {
   try {
+    if (!isSupabaseConfigured) {
+      console.log('📝 [supabaseAuth] Supabase não configurado, verificando localStorage');
+      const storedUser = localStorage.getItem('user');
+      
+      if (!storedUser) {
+        return { user: null, error: null };
+      }
+      
+      const userData = JSON.parse(storedUser) as User;
+      
+      return { 
+        user: {
+          id: userData.id,
+          email: userData.email,
+        }, 
+        error: null 
+      };
+    }
+    
     const { user, error } = await supabaseGetCurrentUser();
     
     if (error || !user) {
@@ -106,6 +182,21 @@ export const getCurrentUserWithSupabase = async () => {
 // Verify credentials directly with Supabase
 export const verifyCredentialsWithSupabase = async (email: string, password: string): Promise<User | null> => {
   console.log('📝 [supabaseAuth] Verificando credenciais para:', email);
+  
+  if (!isSupabaseConfigured) {
+    console.log('📝 [supabaseAuth] Supabase não configurado, simulando verificação');
+    
+    if (email === 'admin@example.com' && password === 'senha123') {
+      return { 
+        id: 1, 
+        name: 'Admin User', 
+        email: email, 
+        sectorId: 1, 
+        role: 'ADMIN' 
+      };
+    }
+    return null;
+  }
   
   try {
     const { data, error } = await supabaseSignIn(email, password);
