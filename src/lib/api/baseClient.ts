@@ -2,7 +2,7 @@
 // Base URL and configuration for API calls
 export const API_CONFIG = {
   // Base URL for the API (can be altered as needed)
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://192.168.15.6:5001',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.15.6:5001',
   
   // Disable CORS proxy since the backend is already configured with CORS
   USE_CORS_PROXY: false,
