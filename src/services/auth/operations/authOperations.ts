@@ -1,4 +1,3 @@
-
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/lib/types';
 import { createUserFromSupabaseData, storeUserData, getUserFromStorage } from '../utils/authUtils';
@@ -67,7 +66,7 @@ export const signOutWithSupabase = async () => {
       return { error: null };
     }
     
-    const { error } = await supabase!.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     
     // Clear local storage
     localStorage.removeItem('user');

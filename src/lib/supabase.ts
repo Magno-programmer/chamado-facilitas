@@ -1,21 +1,17 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Set Supabase URL and anonymous key
-// Using the provided URL and adding empty string fallback for the anonymous key
 const supabaseUrl = 'https://ryskqkqgjvzcloibkykl.supabase.co';
+// Always provide at least an empty string for the key to avoid "supabaseKey is required" error
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Check if Supabase environment variables are available
-// Since we're setting the URL directly, we only check if the anon key is configured
-export const isSupabaseConfigured = Boolean(supabaseAnonKey);
+// Check if Supabase anon key is configured
+export const isSupabaseConfigured = Boolean(supabaseAnonKey && supabaseAnonKey !== '');
 
-// Create and export the Supabase client
-// Even without an anon key, we'll create a client with the URL to avoid the "supabaseUrl is required" error
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create and export the Supabase client with a valid key (even if empty)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey || ' ');
 
 // Export indicator for mock data usage
-// This ensures we use mock data when Supabase is not fully configured
 export const isUsingMockData = !isSupabaseConfigured;
 
 // Authentication functions using Supabase
