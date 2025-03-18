@@ -1,18 +1,13 @@
+
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/lib/types';
 import { createUserFromSupabaseData, storeUserData, getUserFromStorage } from '../utils/authUtils';
-import { handleMockSignIn, verifyMockCredentials } from '../utils/mockAuth';
 
 /**
- * Sign in with Supabase or mock if not configured
+ * Sign in with Supabase
  */
 export const signInWithSupabase = async (email: string, password: string) => {
   console.log('📝 [authOperations] Iniciando login com:', { email });
-  
-  if (!isSupabaseConfigured) {
-    console.log('📝 [authOperations] Supabase não configurado, simulando resposta');
-    return handleMockSignIn(email, password);
-  }
   
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -55,17 +50,10 @@ export const signInWithSupabase = async (email: string, password: string) => {
 };
 
 /**
- * Sign out from Supabase or clear data if not configured
+ * Sign out from Supabase
  */
 export const signOutWithSupabase = async () => {
   try {
-    if (!isSupabaseConfigured) {
-      console.log('📝 [authOperations] Supabase não configurado, simulando logout');
-      localStorage.removeItem('user');
-      localStorage.removeItem('isLoggedIn');
-      return { error: null };
-    }
-    
     const { error } = await supabase.auth.signOut();
     
     // Clear local storage
@@ -80,28 +68,11 @@ export const signOutWithSupabase = async () => {
 };
 
 /**
- * Get current user from Supabase or localStorage if not configured
+ * Get current user from Supabase
  */
 export const getCurrentUserWithSupabase = async () => {
   try {
-    if (!isSupabaseConfigured) {
-      console.log('📝 [authOperations] Supabase não configurado, verificando localStorage');
-      const userData = getUserFromStorage();
-      
-      if (!userData) {
-        return { user: null, error: null };
-      }
-      
-      return { 
-        user: {
-          id: userData.id,
-          email: userData.email,
-        }, 
-        error: null 
-      };
-    }
-    
-    const { data, error } = await supabase!.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
     
     if (error || !data.user) {
       return { user: null, error: null };
@@ -124,18 +95,13 @@ export const getCurrentUserWithSupabase = async () => {
 };
 
 /**
- * Verify credentials with Supabase or mock if not configured
+ * Verify credentials with Supabase
  */
 export const verifyCredentialsWithSupabase = async (email: string, password: string): Promise<User | null> => {
   console.log('📝 [authOperations] Verificando credenciais para:', email);
   
-  if (!isSupabaseConfigured) {
-    console.log('📝 [authOperations] Supabase não configurado, simulando verificação');
-    return verifyMockCredentials(email, password);
-  }
-  
   try {
-    const { data, error } = await supabase!.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
