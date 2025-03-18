@@ -1,6 +1,6 @@
 
 import { Ticket, TicketFormData, TicketWithDetails, TicketStatus } from '@/lib/types';
-import { ticketsApi } from '@/lib/apiClient';
+import { ticketsApi } from '@/lib/api';
 import { getEnrichedTickets } from '@/lib/mockData';
 import { getSectorById } from './sectorService';
 import { getUserById } from './userService';

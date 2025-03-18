@@ -1,6 +1,6 @@
 
 import { User } from '@/lib/types';
-import { authApi, setAuthToken, getStoredAuthToken, clearAuthToken } from '@/lib/apiClient';
+import { authApi, setAuthToken, getStoredAuthToken, clearAuthToken } from '@/lib/api';
 
 // Initialize auth from localStorage on app load
 getStoredAuthToken();

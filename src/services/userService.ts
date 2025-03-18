@@ -1,6 +1,5 @@
-
 import { User, UserFormData } from '@/lib/types';
-import { usersApi } from '@/lib/apiClient';
+import { usersApi } from '@/lib/api';
 
 export const getUsers = async (): Promise<User[]> => {
   try {

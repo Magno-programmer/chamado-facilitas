@@ -1,6 +1,5 @@
-
 import { Sector } from '@/lib/types';
-import { sectorsApi } from '@/lib/apiClient';
+import { sectorsApi } from '@/lib/api';
 
 // Fallback mock data for when API calls fail
 const mockSectors: Sector[] = [

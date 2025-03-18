@@ -1,5 +1,5 @@
 import { Deadline } from '@/lib/types';
-import { deadlinesApi } from '@/lib/apiClient';
+import { deadlinesApi } from '@/lib/api';
 
 // Fallback mock data for when API calls fail
 const mockDeadlines: Deadline[] = [
