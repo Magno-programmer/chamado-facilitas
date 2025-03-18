@@ -18,16 +18,21 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📝 [Login] Formulário de login enviado:', { email, password: '••••••••' });
     setIsLoading(true);
 
     try {
       if (!email || !password) {
+        console.log('📝 [Login] Campos vazios detectados');
         throw new Error('Por favor, preencha todos os campos');
       }
 
+      console.log('📝 [Login] Chamando função de login');
       const success = await login(email, password);
+      console.log('📝 [Login] Resultado do login:', success);
       
       if (success) {
+        console.log('📝 [Login] Login bem-sucedido, redirecionando para dashboard');
         toast({
           title: 'Login realizado com sucesso',
           description: 'Bem-vindo ao sistema de chamados!',
@@ -35,19 +40,24 @@ const Login = () => {
         });
         navigate('/dashboard');
       } else {
+        console.log('📝 [Login] Login falhou');
         throw new Error('Credenciais inválidas');
       }
     } catch (error) {
+      console.error('📝 [Login] Erro no processo de login:', error);
       toast({
         title: 'Erro de autenticação',
         description: error instanceof Error ? error.message : 'Ocorreu um erro ao fazer login',
         variant: 'destructive',
       });
     } finally {
+      console.log('📝 [Login] Finalizando processo de login');
       setIsLoading(false);
     }
   };
 
+  console.log('📝 [Login] Renderizando componente Login');
+  
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
       <div className="w-full max-w-md">

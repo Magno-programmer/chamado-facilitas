@@ -24,24 +24,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Check for user session on mount
     const checkUser = async () => {
+      console.log('📝 [useAuth] Verificando sessão do usuário');
       setIsLoading(true);
       
       try {
         const { user: authUser, error } = await getCurrentUser();
+        console.log('📝 [useAuth] Resultado da verificação:', { authUser, error });
         
         if (authUser) {
           // Get user from localStorage (already set by getCurrentUser or signIn)
           const storedUser = localStorage.getItem('user');
+          console.log('📝 [useAuth] Usuário encontrado no localStorage:', storedUser);
+          
           if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            console.log('📝 [useAuth] Definindo usuário do estado:', parsedUser);
             setUser(JSON.parse(storedUser));
           }
         } else {
+          console.log('📝 [useAuth] Nenhum usuário encontrado, resetando estado');
           setUser(null);
           localStorage.removeItem('user');
           localStorage.removeItem('isLoggedIn');
         }
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('📝 [useAuth] Erro na verificação de autenticação:', error);
         setUser(null);
         localStorage.removeItem('user');
         localStorage.removeItem('isLoggedIn');
@@ -54,10 +61,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const login = async (email: string, password: string) => {
+    console.log('📝 [useAuth] Iniciando login para:', email);
     try {
       const { data, error } = await signIn(email, password);
+      console.log('📝 [useAuth] Resultado do login:', { data, error });
       
       if (error) {
+        console.log('📝 [useAuth] Erro no login:', error.message);
         toast({
           title: 'Erro de login',
           description: error.message,
@@ -68,12 +78,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Get the user from localStorage (set by signIn)
       const storedUser = localStorage.getItem('user');
+      console.log('📝 [useAuth] Usuário recuperado após login:', storedUser);
+      
       if (storedUser) {
         const userData = JSON.parse(storedUser);
+        console.log('📝 [useAuth] Definindo usuário no estado após login:', userData);
         setUser(userData);
         
         // Verificar se o usuário é admin (role pode estar em maiúsculas no backend)
         const isUserAdmin = userData.role?.toUpperCase() === 'ADMIN';
+        console.log('📝 [useAuth] Usuário é admin?', isUserAdmin, 'Role:', userData.role);
         
         toast({
           title: 'Login bem-sucedido',
@@ -83,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return true;
       }
       
+      console.log('📝 [useAuth] Login bem-sucedido mas sem dados de usuário no localStorage');
       toast({
         title: 'Login bem-sucedido',
         description: 'Bem-vindo de volta!',
@@ -90,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('📝 [useAuth] Erro durante o login:', error);
       toast({
         title: 'Erro de login',
         description: 'Ocorreu um erro ao fazer login. Tente novamente.',
@@ -101,8 +116,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const logout = async () => {
+    console.log('📝 [useAuth] Iniciando logout');
     try {
       await signOut();
+      console.log('📝 [useAuth] Logout bem-sucedido, limpando estado');
       setUser(null);
       localStorage.removeItem('user');
       localStorage.removeItem('isLoggedIn');
@@ -113,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: 'Você foi desconectado com sucesso.',
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('📝 [useAuth] Erro durante logout:', error);
       toast({
         title: 'Erro ao sair',
         description: 'Ocorreu um erro ao fazer logout. Tente novamente.',
@@ -121,6 +138,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   };
+  
+  console.log('📝 [useAuth] Estado atual do usuário:', user);
+  console.log('📝 [useAuth] isAdmin:', user?.role?.toUpperCase() === 'ADMIN');
   
   return (
     <AuthContext.Provider
@@ -146,4 +166,3 @@ export const useAuth = () => {
 };
 
 export default useAuth;
-

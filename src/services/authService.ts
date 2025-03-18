@@ -6,10 +6,15 @@ import { authApi, setAuthToken, getStoredAuthToken, clearAuthToken } from '@/lib
 getStoredAuthToken();
 
 export const signIn = async (email: string, password: string) => {
+  console.log('📝 [authService] Iniciando login com:', { email });
   try {
+    console.log('📝 [authService] Enviando requisição para API...');
     const result = await authApi.login(email, password);
+    console.log('📝 [authService] Resposta da API:', result);
     
     if (result.token) {
+      console.log('📝 [authService] Token recebido:', result.token?.substring(0, 15) + '...');
+      
       // Store user info com base na resposta do backend Flask
       const user = {
         id: result.userId || result.user?.id,
@@ -19,9 +24,12 @@ export const signIn = async (email: string, password: string) => {
         role: result.role || result.user?.role || 'USER'
       };
       
+      console.log('📝 [authService] Dados do usuário construídos:', user);
+      
       // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('isLoggedIn', 'true');
+      console.log('📝 [authService] Dados salvos no localStorage');
       
       return {
         data: {
@@ -36,12 +44,13 @@ export const signIn = async (email: string, password: string) => {
       };
     }
     
+    console.log('📝 [authService] Login falhou - sem token na resposta');
     return {
       data: { session: null },
       error: new Error(result.erro || 'Credenciais inválidas')
     };
   } catch (error) {
-    console.error('Sign in error:', error);
+    console.error('📝 [authService] Erro de login:', error);
     return {
       data: { session: null },
       error: new Error('Falha na autenticação')
@@ -96,10 +105,13 @@ export const getCurrentUser = async () => {
 
 // This function verifies credentials directly with the API
 export const verifyUserCredentials = async (email: string, password: string): Promise<User | null> => {
+  console.log('📝 [authService] Verificando credenciais para:', email);
   try {
     const result = await authApi.login(email, password);
+    console.log('📝 [authService] Resultado da verificação de credenciais:', result);
     
     if (result.token) {
+      console.log('📝 [authService] Verificação bem-sucedida, retornando dados do usuário');
       return { 
         id: result.user.id, 
         name: result.user.nome, 
@@ -109,9 +121,10 @@ export const verifyUserCredentials = async (email: string, password: string): Pr
       };
     }
     
+    console.log('📝 [authService] Verificação falhou - sem token');
     return null;
   } catch (error) {
-    console.error('Error verifying credentials:', error);
+    console.error('📝 [authService] Erro verificando credenciais:', error);
     return null;
   }
 };
