@@ -8,7 +8,13 @@ export const API_CONFIG = {
   USE_CORS_PROXY: false,
   
   // CORS proxy for development
-  CORS_PROXY: 'https://corsproxy.io/?'
+  CORS_PROXY: 'https://corsproxy.io/?',
+
+  // Maximum number of retry attempts for failed requests
+  MAX_RETRY_ATTEMPTS: 3,
+  
+  // Delay between retry attempts (in ms)
+  RETRY_DELAY: 1000,
 };
 
 // Store the JWT token
@@ -26,7 +32,10 @@ export const getApiUrl = (endpoint: string): string => {
   return baseUrl + endpoint;
 };
 
-// Helper for making authenticated requests
+// Sleep function for retry delays
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper for making authenticated requests with retry functionality
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   // Add authorization header if token exists
   if (authToken) {
@@ -45,37 +54,63 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   // Add credentials so cookies are sent
   options.credentials = 'include';
 
-  try {
-    const apiUrl = getApiUrl(endpoint);
-    console.log('Requesting:', apiUrl);
-    
-    const response = await fetch(apiUrl, options);
-    
-    // Handle 401 Unauthorized - could be expired token
-    if (response.status === 401) {
-      // Clear token and redirect to login
-      authToken = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('isLoggedIn');
-      window.location.href = '/login';
-      throw new Error('Unauthorized: Login required');
+  let lastError: Error | null = null;
+  let retryCount = 0;
+
+  while (retryCount <= API_CONFIG.MAX_RETRY_ATTEMPTS) {
+    try {
+      const apiUrl = getApiUrl(endpoint);
+      console.log(`Requesting (Attempt ${retryCount + 1}/${API_CONFIG.MAX_RETRY_ATTEMPTS + 1}):`, apiUrl);
+      
+      const response = await fetch(apiUrl, options);
+      
+      // Handle 401 Unauthorized - could be expired token
+      if (response.status === 401) {
+        // Clear token and redirect to login
+        authToken = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/login';
+        throw new Error('Unauthorized: Login required');
+      }
+      
+      // Handle other errors
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.erro || 
+          errorData?.message || 
+          `API Error: ${response.status} - ${response.statusText}`
+        );
+      }
+      
+      // For successful responses, try to parse as JSON, but handle empty responses
+      return response.text().then(text => {
+        return text ? JSON.parse(text) : {};
+      });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry for 401 errors or if we've reached max retries
+      if (lastError.message.includes('Unauthorized') || retryCount >= API_CONFIG.MAX_RETRY_ATTEMPTS) {
+        console.error('API request failed after retries:', lastError);
+        throw lastError;
+      }
+      
+      // Log retry attempt
+      console.warn(`Request failed, retrying (${retryCount + 1}/${API_CONFIG.MAX_RETRY_ATTEMPTS}):`, lastError.message);
+      
+      // Wait before retrying with exponential backoff
+      const delayTime = API_CONFIG.RETRY_DELAY * Math.pow(2, retryCount);
+      await sleep(delayTime);
+      retryCount++;
     }
-    
-    // Handle other errors
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.erro || errorData?.message || `API Error: ${response.status}`);
-    }
-    
-    // For successful responses, try to parse as JSON, but handle empty responses
-    return response.text().then(text => {
-      return text ? JSON.parse(text) : {};
-    });
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
   }
+  
+  // If we get here, all retries failed
+  console.error('API request failed after max retries:', lastError);
+  throw lastError;
 };
 
 // Set the auth token (called after login)
