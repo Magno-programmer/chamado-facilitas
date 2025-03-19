@@ -1,29 +1,29 @@
 
 import { User } from '@/lib/types';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import {
-  signInWithSupabase as signInOperation,
-  signOutWithSupabase as signOutOperation,
-  getCurrentUserWithSupabase as getCurrentUserOperation,
-  verifyCredentialsWithSupabase as verifyCredentialsOperation
-} from './operations/authOperations';
+import { signInWithApi, signOutWithApi, getCurrentUserFromStorage } from './apiAuth';
 
-// Sign in with Supabase
+// These functions now directly use the API authentication instead of Supabase
 export const signInWithSupabase = async (email: string, password: string) => {
-  return signInOperation(email, password);
+  return signInWithApi(email, password);
 };
 
-// Sign out with Supabase
 export const signOutWithSupabase = async () => {
-  return signOutOperation();
+  return signOutWithApi();
 };
 
-// Get current user with Supabase
 export const getCurrentUserWithSupabase = async () => {
-  return getCurrentUserOperation();
+  return getCurrentUserFromStorage();
 };
 
-// Verify credentials directly with Supabase
 export const verifyCredentialsWithSupabase = async (email: string, password: string): Promise<User | null> => {
-  return verifyCredentialsOperation(email, password);
+  try {
+    const response = await signInWithApi(email, password);
+    if (response.data?.session?.user) {
+      return response.data.session.user as User;
+    }
+    return null;
+  } catch (error) {
+    console.error('📝 [supabaseAuth] Erro ao verificar credenciais:', error);
+    return null;
+  }
 };

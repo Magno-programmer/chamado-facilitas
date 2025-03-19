@@ -1,7 +1,7 @@
 
 // Base URL and configuration for API calls
 export const API_CONFIG = {
-  // Base URL for the API (can be altered as needed)
+  // Base URL for the API
   BASE_URL: 'http://192.168.15.7:5001',
   
   // Disable CORS proxy since the backend is already configured with CORS
