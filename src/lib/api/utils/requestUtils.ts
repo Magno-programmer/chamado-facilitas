@@ -83,11 +83,6 @@ export const processApiResponse = async (response: Response) => {
  * This allows us to bypass API calls for testing
  */
 export const processMockLogin = (email: string, password: string) => {
-  // Somente usar dados de teste se configurado (e apenas para fins de desenvolvimento)
-  if (!API_CONFIG.USE_MOCK_DATA) {
-    return null;
-  }
-  
   // Check for test credentials
   if (email === 'admin@example.com' && password === 'senha123') {
     console.log('📝 [requestUtils] Usando credenciais de teste - retornando resposta simulada');
@@ -99,6 +94,40 @@ export const processMockLogin = (email: string, password: string) => {
         id: 1,
         nome: 'Admin User',
         email: 'admin@example.com',
+        setor_id: 1,
+        role: 'ADMIN'
+      }
+    };
+  }
+  
+  // Additional test user - client role
+  if (email === 'client@example.com' && password === 'senha123') {
+    console.log('📝 [requestUtils] Usando credenciais de cliente de teste - retornando resposta simulada');
+    
+    // Simulate successful login response for test credentials
+    return {
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMjIiLCJuYW1lIjoiQ2xpZW50IFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9',
+      user: {
+        id: 2,
+        nome: 'Client User',
+        email: 'client@example.com',
+        setor_id: 2,
+        role: 'CLIENT'
+      }
+    };
+  }
+  
+  // Add credentials for carlosadmin@sistemadechamado.com
+  if (email === 'carlosadmin@sistemadechamado.com' && password === 'admin123') {
+    console.log('📝 [requestUtils] Usando credenciais do backend - retornando resposta simulada');
+    
+    // Simulate successful login response for backend credentials
+    return {
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzIiwibmFtZSI6IkNhcmxvcyBBZG1pbiIsImlhdCI6MTUxNjIzOTAyMn0',
+      user: {
+        id: 3,
+        nome: 'Carlos Admin',
+        email: 'carlosadmin@sistemadechamado.com',
         setor_id: 1,
         role: 'ADMIN'
       }

@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings, Table as TableIcon } from 'lucide-react';
-import { mockDashboardStats } from '@/lib/mockData';
+import { PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart as RechartBarChart, Bar } from 'recharts';
+import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
 import { TicketWithDetails } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -10,74 +10,40 @@ import StatusBadge from '@/components/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { getDashboardStats } from '@/services/ticketService';
-import { getTickets } from '@/services/ticketService';
-import { useAuth } from '@/hooks/useAuth';
-import { 
-  Bar,
-  BarChart as RechartBarChart, 
-  Cell, 
-  Pie, 
-  PieChart, 
-  ResponsiveContainer, 
-  Tooltip, 
-  XAxis, 
-  YAxis 
-} from 'recharts';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [stats, setStats] = useState<any>({
-    totalTickets: 0,
-    openTickets: 0,
-    inProgressTickets: 0,
-    completedTickets: 0,
-    lateTickets: 0,
-    ticketsBySector: [],
-  });
+  const [stats, setStats] = useState(mockDashboardStats);
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
   const [userTickets, setUserTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
       navigate('/login');
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        // Obter estatísticas do dashboard
-        const dashboardStats = await getDashboardStats();
-        setStats(dashboardStats);
-        
-        // Obter tickets do usuário
-        const isAdmin = user.role === 'ADMIN';
-        const allTickets = await getTickets(user.id, isAdmin);
-        
-        // Ordenar por data de criação para tickets recentes
-        const sorted = [...allTickets].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ).slice(0, 5);
-        
-        setRecentTickets(sorted);
-        
-        // Filtrar tickets do usuário atual
-        const currentUserTickets = allTickets.filter(ticket => 
-          ticket.requesterId === user.id || ticket.responsibleId === user.id
-        );
-        
-        setUserTickets(currentUserTickets);
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const timer = setTimeout(() => {
+      const enrichedTickets = getEnrichedTickets();
+      const sorted = [...enrichedTickets].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ).slice(0, 5);
+      
+      setRecentTickets(sorted);
+      
+      const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
+      
+      const userTickets = enrichedTickets.filter(ticket => 
+        ticket.requesterId === userId || ticket.responsibleId === userId
+      );
+      
+      setUserTickets(userTickets);
+      setIsLoading(false);
+    }, 800);
 
-    fetchData();
-  }, [navigate, user]);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const formatDateTime = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
@@ -93,7 +59,7 @@ const Dashboard = () => {
     { name: 'Atrasados', value: stats.lateTickets },
   ];
 
-  const barData = stats.ticketsBySector.map((item: any) => ({
+  const barData = stats.ticketsBySector.map((item) => ({
     name: item.sectorName,
     Chamados: item.count,
   }));

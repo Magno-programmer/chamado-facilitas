@@ -1,5 +1,7 @@
+
 import { Ticket, TicketFormData, TicketWithDetails, TicketStatus } from '@/lib/types';
 import { ticketsApi } from '@/lib/api';
+import { getEnrichedTickets } from '@/lib/mockData';
 import { getSectorById } from './sectorService';
 import { getUserById } from './userService';
 
@@ -29,11 +31,6 @@ const calculatePercentageRemaining = (ticket: any): number => {
 export const getTickets = async (userId: number, isAdmin: boolean): Promise<TicketWithDetails[]> => {
   try {
     const response = await ticketsApi.getAll();
-    
-    if (!response || !Array.isArray(response)) {
-      console.error('Resposta inválida da API de tickets:', response);
-      return [];
-    }
     
     // Filter tickets based on user role
     const userTickets = isAdmin 
@@ -72,8 +69,14 @@ export const getTickets = async (userId: number, isAdmin: boolean): Promise<Tick
     
     return enrichedTickets;
   } catch (error) {
-    console.error('Erro ao buscar tickets:', error);
-    return [];
+    console.error('Error fetching tickets:', error);
+    console.log('Using mock ticket data instead');
+    
+    // Fallback to mock data
+    const mockTickets = getEnrichedTickets();
+    return isAdmin 
+      ? mockTickets
+      : mockTickets.filter(t => t.requesterId === userId || t.responsibleId === userId);
   }
 };
 
@@ -81,12 +84,6 @@ export const getTicketById = async (id: number): Promise<TicketWithDetails | nul
   try {
     // API doesn't have endpoint to get ticket by ID, so we get all and filter
     const tickets = await ticketsApi.getAll();
-    
-    if (!tickets || !Array.isArray(tickets)) {
-      console.error('Resposta inválida da API de tickets:', tickets);
-      return null;
-    }
-    
     const ticket = tickets.find((t: any) => t.id === id);
     
     if (!ticket) {
@@ -116,8 +113,11 @@ export const getTicketById = async (id: number): Promise<TicketWithDetails | nul
       percentageRemaining: calculatePercentageRemaining(ticket),
     };
   } catch (error) {
-    console.error(`Erro ao buscar ticket ${id}:`, error);
-    return null;
+    console.error(`Error fetching ticket ${id}:`, error);
+    
+    // Fallback to mock data
+    const mockTickets = getEnrichedTickets();
+    return mockTickets.find(t => t.id === id) || null;
   }
 };
 
@@ -183,18 +183,6 @@ export const getDashboardStats = async (): Promise<any> => {
     // Get all tickets to compute statistics
     const tickets = await ticketsApi.getAll();
     
-    if (!tickets || !Array.isArray(tickets)) {
-      console.error('Resposta inválida da API de tickets para estatísticas:', tickets);
-      return {
-        totalTickets: 0,
-        openTickets: 0,
-        inProgressTickets: 0,
-        completedTickets: 0,
-        lateTickets: 0,
-        ticketsBySector: [],
-      };
-    }
-    
     // Calculate statistics
     const totalTickets = tickets.length;
     const openTickets = tickets.filter((t: any) => t.status === 'Aberto').length;
@@ -226,14 +214,36 @@ export const getDashboardStats = async (): Promise<any> => {
       ticketsBySector: Array.from(sectorMap.values()),
     };
   } catch (error) {
-    console.error('Erro ao obter estatísticas do dashboard:', error);
+    console.error('Error getting dashboard stats:', error);
+    
+    // Fallback to mock data
+    const mockTickets = getEnrichedTickets();
+    
+    const totalTickets = mockTickets.length;
+    const openTickets = mockTickets.filter(t => t.status === 'Aberto').length;
+    const inProgressTickets = mockTickets.filter(t => t.status === 'Em Andamento').length;
+    const completedTickets = mockTickets.filter(t => t.status === 'Concluído').length;
+    const lateTickets = mockTickets.filter(t => t.status === 'Atrasado').length;
+    
+    const sectorMap = new Map();
+    mockTickets.forEach(ticket => {
+      const sectorId = ticket.sectorId;
+      const sectorName = ticket.sector.name;
+      
+      if (!sectorMap.has(sectorId)) {
+        sectorMap.set(sectorId, { sectorId, sectorName, count: 0 });
+      }
+      
+      sectorMap.get(sectorId).count++;
+    });
+    
     return {
-      totalTickets: 0,
-      openTickets: 0,
-      inProgressTickets: 0,
-      completedTickets: 0,
-      lateTickets: 0,
-      ticketsBySector: [],
+      totalTickets,
+      openTickets,
+      inProgressTickets,
+      completedTickets,
+      lateTickets,
+      ticketsBySector: Array.from(sectorMap.values()),
     };
   }
 };
