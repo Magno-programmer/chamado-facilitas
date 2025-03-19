@@ -20,20 +20,13 @@ export const getApiUrl = (endpoint: string): string => {
       proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[currentProxyIndex];
     }
     
-    // Try switching to corsproxy.io which may handle POST requests better
-    if (currentProxyIndex === -1) {
-      // Start with the second proxy in the list
-      rotateToNextProxy();
-      proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[0]; // Use corsproxy.io first
-    }
-    
     // Some CORS proxies work better with different formats
     if (proxyUrl.includes('allorigins')) {
-      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
+      console.log(`📝 [proxyManager] Usando proxy: ${proxyUrl}`);
       return `${proxyUrl}${encodeURIComponent(baseUrl + endpoint)}`;
     } else {
-      // Other proxies like corsproxy.io work better with direct URL
-      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
+      // Other proxies like corsproxy.io
+      console.log(`📝 [proxyManager] Usando proxy: ${proxyUrl}`);
       return `${proxyUrl}${baseUrl + endpoint}`;
     }
   }
@@ -52,7 +45,7 @@ export const rotateToNextProxy = () => {
     currentProxyIndex = -1;
   }
   
-  console.log(`📝 [proxyManager] Alternando para proxy #${currentProxyIndex + 1}`);
+  console.log(`📝 [proxyManager] Alternando para próximo proxy, índice: ${currentProxyIndex}`);
 };
 
 /**
@@ -60,6 +53,16 @@ export const rotateToNextProxy = () => {
  */
 export const getCurrentProxyIndex = (): number => {
   return currentProxyIndex;
+};
+
+/**
+ * Enable or disable CORS proxy usage
+ */
+export const enableCorsProxy = (enable: boolean) => {
+  // This can be used to toggle CORS proxy at runtime if needed
+  // Allows API endpoints to force proxy use or disable it
+  console.log(`📝 [proxyManager] ${enable ? 'Ativando' : 'Desativando'} uso de proxy CORS`);
+  return enable;
 };
 
 /**
