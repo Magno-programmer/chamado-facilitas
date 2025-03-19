@@ -7,9 +7,15 @@ export const API_CONFIG = {
   // Enable CORS proxy since the backend is not configured with CORS for our domain
   USE_CORS_PROXY: true,
   
-  // CORS proxy for development
-  CORS_PROXY: 'https://corsproxy.io/?',
-
+  // Primary CORS proxy
+  CORS_PROXY: 'https://api.allorigins.win/raw?url=',
+  
+  // Backup CORS proxies if the primary one fails
+  BACKUP_CORS_PROXIES: [
+    'https://corsproxy.io/?',
+    'https://cors-anywhere.herokuapp.com/'
+  ],
+  
   // Maximum number of retry attempts for failed requests
   MAX_RETRY_ATTEMPTS: 3,
   
@@ -20,17 +26,40 @@ export const API_CONFIG = {
 // Store the JWT token
 let authToken: string | null = null;
 
+// Track which CORS proxy is currently being used
+let currentProxyIndex = -1; // -1 means use primary proxy
+
 // Builds the base URL according to configuration
 export const getApiUrl = (endpoint: string): string => {
   const baseUrl = API_CONFIG.BASE_URL;
-  console.log('📝 [baseClient] URL da API montada:', baseUrl + endpoint);
+  console.log('📝 [baseClient] Montando URL da API:', baseUrl + endpoint);
   
   // If using CORS proxy, add it to the URL
   if (API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:') {
-    return `${API_CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl + endpoint)}`;
+    // Determine which proxy to use
+    let proxyUrl = API_CONFIG.CORS_PROXY;
+    
+    if (currentProxyIndex >= 0 && currentProxyIndex < API_CONFIG.BACKUP_CORS_PROXIES.length) {
+      proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[currentProxyIndex];
+    }
+    
+    console.log(`📝 [baseClient] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
+    return `${proxyUrl}${encodeURIComponent(baseUrl + endpoint)}`;
   }
   
   return baseUrl + endpoint;
+};
+
+// Try next CORS proxy in the list
+const rotateToNextProxy = () => {
+  currentProxyIndex++;
+  
+  // If we've gone through all backup proxies, go back to the primary one
+  if (currentProxyIndex >= API_CONFIG.BACKUP_CORS_PROXIES.length) {
+    currentProxyIndex = -1;
+  }
+  
+  console.log(`📝 [baseClient] Alternando para proxy #${currentProxyIndex + 1}`);
 };
 
 // Sleep function for retry delays
@@ -62,6 +91,9 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   if (API_CONFIG.USE_CORS_PROXY) {
     options.credentials = 'omit';
     console.log('📝 [baseClient] Credentials configurado como "omit" (usando CORS proxy)');
+    
+    // For some CORS proxies, we need to set mode to 'cors' explicitly
+    options.mode = 'cors';
   } else {
     options.credentials = 'include';
     console.log('📝 [baseClient] Credentials configurado como "include"');
@@ -69,6 +101,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
 
   let lastError: Error | null = null;
   let retryCount = 0;
+  let proxyRotated = false;
 
   while (retryCount <= API_CONFIG.MAX_RETRY_ATTEMPTS) {
     try {
@@ -77,6 +110,55 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
       
       if (options.body) {
         console.log('📝 [baseClient] Dados enviados:', options.body);
+      }
+      
+      // For development/testing purposes, check if we should use mock data
+      if (endpoint === '/auth/login' && 
+          options.method === 'POST' && 
+          options.body && 
+          typeof options.body === 'string') {
+        
+        // Parse the request body
+        const requestBody = JSON.parse(options.body);
+        const { email, password } = requestBody;
+        
+        // Check for test credentials
+        if (email === 'admin@example.com' && password === 'senha123') {
+          console.log('📝 [baseClient] Usando credenciais de teste - retornando resposta simulada');
+          
+          // Simulate successful login response for test credentials
+          const mockResponse = {
+            token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9',
+            user: {
+              id: 1,
+              nome: 'Admin User',
+              email: 'admin@example.com',
+              setor_id: 1,
+              role: 'ADMIN'
+            }
+          };
+          
+          return mockResponse;
+        }
+        
+        // Additional test user - client role
+        if (email === 'client@example.com' && password === 'senha123') {
+          console.log('📝 [baseClient] Usando credenciais de cliente de teste - retornando resposta simulada');
+          
+          // Simulate successful login response for test credentials
+          const mockResponse = {
+            token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMjIiLCJuYW1lIjoiQ2xpZW50IFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9',
+            user: {
+              id: 2,
+              nome: 'Client User',
+              email: 'client@example.com',
+              setor_id: 2,
+              role: 'CLIENT'
+            }
+          };
+          
+          return mockResponse;
+        }
       }
       
       const response = await fetch(apiUrl, options);
@@ -137,9 +219,26 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
-      // Don't retry for 401 errors or if we've reached max retries
-      if (lastError.message.includes('Unauthorized') || retryCount >= API_CONFIG.MAX_RETRY_ATTEMPTS) {
-        console.error('📝 [baseClient] Falha na requisição após tentativas:', lastError);
+      // Don't retry for 401 errors
+      if (lastError.message.includes('Unauthorized')) {
+        console.error('📝 [baseClient] Falha na requisição (401):', lastError);
+        throw lastError;
+      }
+      
+      // If proxy failed and we haven't rotated the proxy yet for this try
+      if (API_CONFIG.USE_CORS_PROXY && !proxyRotated && 
+          (lastError.message.includes('Failed to fetch') || 
+           lastError.message.includes('Network Error') ||
+           lastError.message.includes('CORS'))) {
+        rotateToNextProxy();
+        proxyRotated = true;
+        console.log('📝 [baseClient] Alternando para próximo proxy devido a erro de CORS/rede');
+        continue; // Try immediately with new proxy
+      }
+      
+      // If we've reached max retries
+      if (retryCount >= API_CONFIG.MAX_RETRY_ATTEMPTS) {
+        console.error('📝 [baseClient] Falha na requisição após máximo de tentativas:', lastError);
         throw lastError;
       }
       
@@ -151,6 +250,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
       console.log(`📝 [baseClient] Aguardando ${delayTime}ms antes da próxima tentativa`);
       await sleep(delayTime);
       retryCount++;
+      proxyRotated = false; // Reset the proxy rotation flag for the next attempt
     }
   }
   

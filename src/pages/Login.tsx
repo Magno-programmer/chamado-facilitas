@@ -56,6 +56,17 @@ const Login = () => {
     }
   };
 
+  // Demo login handlers
+  const handleDemoAdminLogin = () => {
+    setEmail('admin@example.com');
+    setPassword('senha123');
+  };
+
+  const handleDemoClientLogin = () => {
+    setEmail('client@example.com');
+    setPassword('senha123');
+  };
+
   console.log('📝 [Login] Renderizando componente Login');
   
   return (
@@ -122,15 +133,30 @@ const Login = () => {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
 
-            <div className="text-center text-sm text-muted-foreground">
-              <p>Credenciais para teste:</p>
-              <div className="mt-2 space-y-1">
-                <p>
-                  <strong>Email:</strong> admin@example.com
-                </p>
-                <p>
-                  <strong>Senha:</strong> senha123
-                </p>
+            <div className="mt-4 border-t pt-4">
+              <p className="text-center text-sm font-medium mb-2">Contas de demonstração</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDemoAdminLogin}
+                  className="text-xs"
+                >
+                  Entrar como Admin
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDemoClientLogin}
+                  className="text-xs"
+                >
+                  Entrar como Cliente
+                </Button>
+              </div>
+              <div className="mt-2 text-center text-xs text-muted-foreground">
+                <p>Clique nos botões acima para preencher as credenciais automaticamente</p>
               </div>
             </div>
           </form>
