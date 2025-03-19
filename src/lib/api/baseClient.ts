@@ -4,8 +4,8 @@ export const API_CONFIG = {
   // Base URL for the API
   BASE_URL: 'https://sistemachamado-backend-production.up.railway.app',
   
-  // Disable CORS proxy since the backend is already configured with CORS
-  USE_CORS_PROXY: false,
+  // Enable CORS proxy since the backend is not configured with CORS for our domain
+  USE_CORS_PROXY: true,
   
   // CORS proxy for development
   CORS_PROXY: 'https://corsproxy.io/?',
