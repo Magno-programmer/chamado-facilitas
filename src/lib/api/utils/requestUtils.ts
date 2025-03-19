@@ -17,6 +17,43 @@ export const getRetryDelay = (retryCount: number): number => {
 };
 
 /**
+ * Format request options by creating a new object
+ * to avoid mutating the original
+ */
+export const formatRequestOptions = (options: RequestInit = {}): RequestInit => {
+  return {
+    ...options,
+    headers: {
+      ...options.headers,
+    }
+  };
+};
+
+/**
+ * Handle API response
+ */
+export const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    // Log the error details
+    console.error(`📝 [requestUtils] Erro na API: ${response.status} ${response.statusText}`);
+    
+    // Try to get error details from response
+    let errorDetails = '';
+    try {
+      const errorText = await response.text();
+      errorDetails = errorText;
+      console.error('📝 [requestUtils] Detalhes do erro:', errorDetails);
+    } catch (e) {
+      console.error('📝 [requestUtils] Não foi possível obter detalhes do erro');
+    }
+    
+    throw new Error(`API Error: ${response.status} ${response.statusText} ${errorDetails}`);
+  }
+  
+  return processApiResponse(response);
+};
+
+/**
  * Process response from API
  */
 export const processApiResponse = async (response: Response) => {
@@ -79,4 +116,3 @@ export const processMockLogin = (email: string, password: string) => {
   
   return null;
 };
-
