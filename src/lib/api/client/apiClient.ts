@@ -17,12 +17,16 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   // Create a new options object to avoid mutating the original
   const requestOptions = formatRequestOptions(options);
   
-  // Set default headers - ensure content-type is properly set
+  // IMPORTANT: Some CORS proxies strip or modify headers, so we need to be explicit
+  // Set default headers and ensure they're properly formatted for the proxy
   requestOptions.headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    ...requestOptions.headers,
+    ...(requestOptions.headers || {}),
   };
+  
+  // Make sure method is explicitly set - default to GET if not specified
+  requestOptions.method = requestOptions.method || 'GET';
   
   // Add authorization header if token exists
   if (token) {
@@ -40,7 +44,6 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   
   try {
     // When using certain CORS proxies, sometimes we need to modify how we handle the request
-    // to ensure headers are properly passed through
     const response = await fetch(url, requestOptions);
     return handleResponse(response);
   } catch (error) {
