@@ -1,72 +1,39 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings, Table as TableIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, XAxis, YAxis, Tooltip, BarChart as RechartBarChart, Bar } from 'recharts';
+import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
 import { TicketWithDetails } from '@/lib/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
-import StatusBadge from '@/components/StatusBadge';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useToast } from '@/hooks/use-toast';
-import { getTicketDashboardStats, getRecentTickets, getUserTickets } from '@/services/ticketService';
-
-const defaultStats = {
-  totalTickets: 0,
-  openTickets: 0,
-  inProgressTickets: 0,
-  completedTickets: 0,
-  lateTickets: 0,
-  ticketsBySector: []
-};
+import TicketCard from '@/components/TicketCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [stats, setStats] = useState(defaultStats);
+  const [stats, setStats] = useState(mockDashboardStats);
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
-  const [userTickets, setUserTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if logged in
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       navigate('/login');
       return;
     }
 
-    const fetchDashboardData = async () => {
-      try {
-        const dashboardStats = await getTicketDashboardStats();
-        setStats(dashboardStats || defaultStats);
-        
-        const recent = await getRecentTickets(5);
-        setRecentTickets(recent || []);
-        
-        const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
-        const userTicketsData = await getUserTickets(userId);
-        setUserTickets(userTicketsData || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        toast({
-          title: 'Erro ao carregar dashboard',
-          description: 'Não foi possível carregar os dados do dashboard. Tente novamente mais tarde.',
-          variant: 'destructive'
-        });
-        setStats(defaultStats);
-        setRecentTickets([]);
-        setUserTickets([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      const enrichedTickets = getEnrichedTickets();
+      // Sort by most recent and take first 5
+      const sorted = [...enrichedTickets].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ).slice(0, 5);
+      
+      setRecentTickets(sorted);
+      setIsLoading(false);
+    }, 800);
 
-    fetchDashboardData();
-  }, [navigate, toast]);
-
-  const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
-  };
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const COLORS = ['#3b82f6', '#f59e0b', '#22c55e', '#ef4444'];
   const RADIAN = Math.PI / 180;
@@ -82,14 +49,6 @@ const Dashboard = () => {
     name: item.sectorName,
     Chamados: item.count,
   }));
-
-  const chartConfig = {
-    Abertos: { color: '#3b82f6' },
-    'Em Andamento': { color: '#f59e0b' },
-    Concluídos: { color: '#22c55e' },
-    Atrasados: { color: '#ef4444' },
-    Chamados: { color: '#3b82f6' }
-  };
 
   const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -127,6 +86,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Visão geral do sistema de chamados</p>
       </div>
 
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { 
@@ -171,88 +131,8 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold flex items-center">
-            <TableIcon className="h-5 w-5 mr-2 text-primary" />
-            Meus Chamados
-          </h2>
-          <button 
-            onClick={() => navigate('/tickets')}
-            className="inline-flex items-center text-primary hover:underline text-sm font-medium"
-          >
-            <List className="h-4 w-4 mr-1" />
-            Ver Todos
-          </button>
-        </div>
-
-        {userTickets.length > 0 ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Setor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado Em</TableHead>
-                  <TableHead>Prazo</TableHead>
-                  <TableHead className="text-right">Progresso</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {userTickets.map((ticket) => (
-                  <TableRow 
-                    key={ticket.id} 
-                    className="cursor-pointer hover:bg-muted/60"
-                    onClick={() => navigate(`/tickets/${ticket.id}`)}
-                  >
-                    <TableCell className="font-medium">#{ticket.id}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{ticket.title}</TableCell>
-                    <TableCell>{ticket.sector?.name}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={ticket.status} />
-                    </TableCell>
-                    <TableCell>{formatDateTime(ticket.createdAt)}</TableCell>
-                    <TableCell>{formatDateTime(ticket.deadline)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-xs font-medium">{ticket.percentageRemaining}%</span>
-                        <Progress 
-                          value={ticket.percentageRemaining} 
-                          className="w-24"
-                          style={{
-                            "--progress-color": ticket.percentageRemaining > 50 
-                              ? "#22c55e" 
-                              : ticket.percentageRemaining > 20 
-                                ? "#f59e0b" 
-                                : ticket.percentageRemaining > 10 
-                                  ? "#ea580c" 
-                                  : "#dc2626"
-                          } as React.CSSProperties}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground text-sm">Você não possui chamados.</p>
-            <button
-              onClick={() => navigate('/tickets/new')}
-              className="mt-4 py-2 px-4 bg-primary/10 hover:bg-primary/20 text-primary font-medium rounded-lg transition-colors inline-flex items-center justify-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Chamado
-            </button>
-          </div>
-        )}
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Charts */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-xl border shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
@@ -262,7 +142,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="h-64">
-              <ChartContainer config={chartConfig}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -278,11 +158,9 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />}
-                  />
+                  <Tooltip />
                 </PieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </div>
           </div>
 
@@ -294,7 +172,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="h-64">
-              <ChartContainer config={chartConfig}>
+              <ResponsiveContainer width="100%" height="100%">
                 <RechartBarChart
                   data={barData}
                   margin={{
@@ -306,16 +184,15 @@ const Dashboard = () => {
                 >
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <ChartTooltip
-                    content={<ChartTooltipContent />}
-                  />
+                  <Tooltip />
                   <Bar dataKey="Chamados" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </RechartBarChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
 
+        {/* Recent Tickets */}
         <div className="bg-white rounded-xl border shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold">Chamados Recentes</h2>
