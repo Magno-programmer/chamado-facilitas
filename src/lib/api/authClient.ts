@@ -9,7 +9,7 @@ export const authApi = {
     console.log('📝 [authClient] Iniciando request de login:', { email });
     
     try {
-      // Make sure to properly set Content-Type for the API request
+      // Make API request to the backend authentication endpoint
       const response = await fetchWithAuth('/auth/login', {
         method: 'POST',
         headers: {

@@ -1,6 +1,7 @@
 
 import { User } from '@/lib/types';
-import { authApi, setAuthToken, clearAuthToken } from '@/lib/api';
+import { authApi } from '@/lib/api/authClient';
+import { setAuthToken, clearAuthToken } from '@/lib/api/auth/tokenManager';
 
 // Sign in with API
 export const signInWithApi = async (email: string, password: string) => {
