@@ -17,9 +17,10 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   // Create a new options object to avoid mutating the original
   const requestOptions = formatRequestOptions(options);
   
-  // Set default headers
+  // Set default headers - ensure content-type is properly set
   requestOptions.headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...requestOptions.headers,
   };
   
@@ -31,9 +32,15 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     };
   }
   
-  console.log(`📝 [apiClient] Fazendo requisição para: ${url}`, requestOptions);
+  console.log(`📝 [apiClient] Fazendo requisição para: ${url}`, {
+    method: requestOptions.method,
+    headers: requestOptions.headers,
+    bodyLength: requestOptions.body ? JSON.stringify(requestOptions.body).length : 0
+  });
   
   try {
+    // When using certain CORS proxies, sometimes we need to modify how we handle the request
+    // to ensure headers are properly passed through
     const response = await fetch(url, requestOptions);
     return handleResponse(response);
   } catch (error) {

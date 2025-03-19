@@ -1,6 +1,7 @@
 
 import { fetchWithAuth } from './client/apiClient';
 import { setAuthToken } from './auth/tokenManager';
+import { processMockLogin } from './utils/requestUtils';
 
 // Authentication API client for the Flask backend
 export const authApi = {
@@ -8,9 +9,25 @@ export const authApi = {
   login: async (email: string, password: string) => {
     console.log('📝 [authClient] Iniciando request de login:', { email });
     
+    // First check if we should use mock login for test credentials
+    const mockResponse = processMockLogin(email, password);
+    if (mockResponse) {
+      console.log('📝 [authClient] Usando login simulado para credenciais de teste');
+      
+      if (mockResponse.token) {
+        setAuthToken(mockResponse.token);
+      }
+      
+      return mockResponse;
+    }
+    
     try {
+      // Make sure to properly set Content-Type for the API request
       const response = await fetchWithAuth('/auth/login', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ email, password }),
       });
       
@@ -36,4 +53,3 @@ export const authApi = {
     return {}; // Just return an empty object as we'll handle token clearing elsewhere
   },
 };
-

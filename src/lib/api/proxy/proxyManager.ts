@@ -1,4 +1,3 @@
-
 // Proxy management functions
 import { API_CONFIG } from '../config/apiConfig';
 
@@ -21,8 +20,15 @@ export const getApiUrl = (endpoint: string): string => {
       proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[currentProxyIndex];
     }
     
-    console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
-    return `${proxyUrl}${encodeURIComponent(baseUrl + endpoint)}`;
+    // Some CORS proxies work better with different formats, allorigins requires encoding
+    if (proxyUrl.includes('allorigins')) {
+      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
+      return `${proxyUrl}${encodeURIComponent(baseUrl + endpoint)}`;
+    } else {
+      // Other proxies like corsproxy.io work better with direct URL
+      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
+      return `${proxyUrl}${baseUrl + endpoint}`;
+    }
   }
   
   return baseUrl + endpoint;
@@ -55,4 +61,3 @@ export const getCurrentProxyIndex = (): number => {
 export const shouldUseCorsProxy = (): boolean => {
   return API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:';
 };
-
