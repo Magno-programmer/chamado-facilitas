@@ -11,12 +11,12 @@ export const API_CONFIG = {
   // Enable CORS proxy since the backend is not configured with CORS for our domain
   USE_CORS_PROXY: true,
   
-  // Primary CORS proxy - allorigins has issues with POST requests
-  CORS_PROXY: 'https://api.allorigins.win/raw?url=',
+  // Primary CORS proxy - using corsproxy.io as it handles POST requests better
+  CORS_PROXY: 'https://corsproxy.io/?',
   
-  // Backup CORS proxies if the primary one fails - Reordered to prioritize ones that work better with POST
+  // Backup CORS proxies if the primary one fails
   BACKUP_CORS_PROXIES: [
-    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
     'https://cors-anywhere.herokuapp.com/'
   ],
   
@@ -25,4 +25,7 @@ export const API_CONFIG = {
   
   // Retry delay between retry attempts (in ms)
   RETRY_DELAY: 1000,
+  
+  // Flag to indicate if mock data should be used (setting to false)
+  USE_MOCK_DATA: false,
 };
