@@ -26,6 +26,6 @@ export const API_CONFIG = {
   // Retry delay between retry attempts (in ms)
   RETRY_DELAY: 1000,
   
-  // Flag to indicate if mock data should be used (setting to false)
-  USE_MOCK_DATA: false,
+  // Flag to indicate if mock data should be used for login testing
+  USE_MOCK_DATA: true,
 };

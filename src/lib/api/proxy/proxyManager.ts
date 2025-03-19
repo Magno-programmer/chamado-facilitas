@@ -1,71 +1,68 @@
-
-// Proxy management functions
 import { API_CONFIG } from '../config/apiConfig';
 
-// Track which CORS proxy is currently being used
-let currentProxyIndex = -1; // -1 means use primary proxy
+// Current proxy index
+let currentProxyIndex = 0;
 
 /**
- * Builds the base URL according to configuration
+ * Get the API URL for an endpoint
+ * May use a CORS proxy if configured
+ * 
+ * @param endpoint - API endpoint without base URL
+ * @returns Full URL with base and optional proxy
  */
 export const getApiUrl = (endpoint: string): string => {
-  const baseUrl = API_CONFIG.BASE_URL;
-  console.log('📝 [proxyManager] Montando URL da API:', baseUrl + endpoint);
+  // Start with the base URL
+  const baseApiUrl = `${API_CONFIG.BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
-  // If using CORS proxy, add it to the URL
-  if (API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:') {
-    // Determine which proxy to use
-    let proxyUrl = API_CONFIG.CORS_PROXY;
+  // If CORS proxy is disabled, return the direct URL
+  if (!API_CONFIG.USE_CORS_PROXY) {
+    console.log(`📝 [proxyManager] Usando URL direta da API: ${baseApiUrl}`);
+    return baseApiUrl;
+  }
+  
+  // Use corsproxy.io as primary proxy - it works better with all request types
+  const primaryProxyUrl = `${API_CONFIG.CORS_PROXY}${encodeURIComponent(baseApiUrl)}`;
+  
+  // If we've already tried the primary proxy, rotate through backup proxies
+  if (currentProxyIndex > 0) {
+    // Get the backup proxy URL
+    const backupProxies = API_CONFIG.BACKUP_CORS_PROXIES;
+    const proxyUrl = backupProxies[(currentProxyIndex - 1) % backupProxies.length];
     
-    if (currentProxyIndex >= 0 && currentProxyIndex < API_CONFIG.BACKUP_CORS_PROXIES.length) {
-      proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[currentProxyIndex];
-    }
+    console.log(`📝 [proxyManager] Alternando para proxy #${currentProxyIndex}`);
+    console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex}: ${proxyUrl}`);
     
-    // Try switching to corsproxy.io which may handle POST requests better
-    if (currentProxyIndex === -1) {
-      // Start with the second proxy in the list
-      rotateToNextProxy();
-      proxyUrl = API_CONFIG.BACKUP_CORS_PROXIES[0]; // Use corsproxy.io first
-    }
-    
-    // Some CORS proxies work better with different formats
-    if (proxyUrl.includes('allorigins')) {
-      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
-      return `${proxyUrl}${encodeURIComponent(baseUrl + endpoint)}`;
+    // Build URL with backup proxy
+    if (proxyUrl.includes('allorigins.win')) {
+      // allorigins.win needs the URL encoded as a url parameter
+      return `${proxyUrl}${encodeURIComponent(baseApiUrl)}`;
     } else {
-      // Other proxies like corsproxy.io work better with direct URL
-      console.log(`📝 [proxyManager] Usando proxy #${currentProxyIndex + 1}: ${proxyUrl}`);
-      return `${proxyUrl}${baseUrl + endpoint}`;
+      // Other proxies like cors-anywhere just prepend
+      return `${proxyUrl}${baseApiUrl}`;
     }
   }
   
-  return baseUrl + endpoint;
+  console.log(`📝 [proxyManager] Usando proxy primário: ${API_CONFIG.CORS_PROXY}`);
+  return primaryProxyUrl;
 };
 
 /**
- * Try next CORS proxy in the list
+ * Rotate to the next proxy in the list
+ * Call this if a request fails to try with a different proxy
  */
-export const rotateToNextProxy = () => {
-  currentProxyIndex++;
+export const rotateProxy = (): void => {
+  // Maximum number of proxies (primary + backups)
+  const maxProxies = 1 + API_CONFIG.BACKUP_CORS_PROXIES.length;
   
-  // If we've gone through all backup proxies, go back to the primary one
-  if (currentProxyIndex >= API_CONFIG.BACKUP_CORS_PROXIES.length) {
-    currentProxyIndex = -1;
-  }
-  
-  console.log(`📝 [proxyManager] Alternando para proxy #${currentProxyIndex + 1}`);
+  // Increment current proxy index
+  currentProxyIndex = (currentProxyIndex + 1) % maxProxies;
+  console.log(`📝 [proxyManager] Proxy rotacionado para índice: ${currentProxyIndex}`);
 };
 
 /**
- * Get current proxy index
+ * Reset proxy rotation to use the primary proxy again
  */
-export const getCurrentProxyIndex = (): number => {
-  return currentProxyIndex;
-};
-
-/**
- * Check if we should use CORS proxy
- */
-export const shouldUseCorsProxy = (): boolean => {
-  return API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:';
+export const resetProxyRotation = (): void => {
+  currentProxyIndex = 0;
+  console.log(`📝 [proxyManager] Rotação de proxy redefinida para primário`);
 };
