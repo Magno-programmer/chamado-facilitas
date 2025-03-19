@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, Info } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Info, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -9,6 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuth();
 
@@ -26,11 +27,20 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
     
-    const success = await login(email, password);
-    
-    if (success) {
-      navigate('/dashboard');
+    try {
+      const success = await login(email, password);
+      
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        // O erro já foi exibido pelo toast no useAuth
+        setLoginError('Falha no login. Verifique suas credenciais ou a conexão com o servidor.');
+      }
+    } catch (error) {
+      console.error('Login submission error:', error);
+      setLoginError('Ocorreu um erro ao tentar fazer login.');
     }
   };
 
@@ -50,6 +60,15 @@ const Login = () => {
               Entre com suas credenciais para acessar o sistema
             </p>
           </div>
+
+          {loginError && (
+            <div className="mb-6 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-destructive mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-destructive">{loginError}</p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

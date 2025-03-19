@@ -51,19 +51,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     
     try {
+      // Utilizando a API fetch com parâmetros que contornam CORS para desenvolvimento
       const response = await fetch('https://sistemachamado-backend-production.up.railway.app/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        // Configurações para contornar problemas de CORS durante o desenvolvimento
+        mode: 'cors',
+        credentials: 'omit',
       });
 
-      const data = await response.json();
+      // Log para debug
+      console.log('Login response status:', response.status);
       
       if (!response.ok) {
-        throw new Error(data.message || 'Falha na autenticação');
+        const errorData = await response.json().catch(() => ({ message: 'Erro de conexão com o servidor' }));
+        throw new Error(errorData.message || 'Falha na autenticação');
       }
+      
+      const data = await response.json();
       
       // Store user data and token
       const userData = data.user;
@@ -84,7 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       toast({
         title: "Erro ao fazer login",
-        description: error instanceof Error ? error.message : "Email ou senha inválidos.",
+        description: error instanceof Error ? error.message : "Email ou senha inválidos. Verifique também se o servidor está acessível.",
         variant: "destructive",
       });
       
