@@ -1,16 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings, Table as TableIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart as RechartBarChart, Bar } from 'recharts';
 import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
 import { TicketWithDetails } from '@/lib/types';
-import TicketCard from '@/components/TicketCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import StatusBadge from '@/components/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,27 +18,22 @@ const Dashboard = () => {
   const [userTickets, setUserTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if logged in
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
       navigate('/login');
       return;
     }
 
-    // Simulate loading data
     const timer = setTimeout(() => {
       const enrichedTickets = getEnrichedTickets();
-      // Sort by most recent and take first 5
       const sorted = [...enrichedTickets].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       
       setRecentTickets(sorted);
       
-      // Get user id from localStorage (in a real app this would come from auth context)
       const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
       
-      // Get all tickets for current user
       const userTickets = enrichedTickets.filter(ticket => 
         ticket.requesterId === userId || ticket.responsibleId === userId
       );
@@ -69,6 +63,14 @@ const Dashboard = () => {
     name: item.sectorName,
     Chamados: item.count,
   }));
+
+  const chartConfig = {
+    Abertos: { color: '#3b82f6' },
+    'Em Andamento': { color: '#f59e0b' },
+    Concluídos: { color: '#22c55e' },
+    Atrasados: { color: '#ef4444' },
+    Chamados: { color: '#3b82f6' }
+  };
 
   const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -106,7 +108,6 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Visão geral do sistema de chamados</p>
       </div>
 
-      {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { 
@@ -151,7 +152,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* User Tickets Table */}
       <div className="bg-white rounded-xl border shadow-sm p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold flex items-center">
@@ -202,7 +202,6 @@ const Dashboard = () => {
                         <Progress 
                           value={ticket.percentageRemaining} 
                           className="w-24"
-                          // Apply different colors based on percentage
                           style={{
                             "--progress-color": ticket.percentageRemaining > 50 
                               ? "#22c55e" 
@@ -235,7 +234,6 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* Charts */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-xl border shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
@@ -245,7 +243,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer config={chartConfig}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -261,9 +259,11 @@ const Dashboard = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <ChartTooltip 
+                    content={<ChartTooltipContent />}
+                  />
                 </PieChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
           </div>
 
@@ -275,7 +275,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer config={chartConfig}>
                 <RechartBarChart
                   data={barData}
                   margin={{
@@ -287,15 +287,16 @@ const Dashboard = () => {
                 >
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip />
+                  <ChartTooltip
+                    content={<ChartTooltipContent />}
+                  />
                   <Bar dataKey="Chamados" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </RechartBarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
           </div>
         </div>
 
-        {/* Recent Tickets */}
         <div className="bg-white rounded-xl border shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold">Chamados Recentes</h2>
