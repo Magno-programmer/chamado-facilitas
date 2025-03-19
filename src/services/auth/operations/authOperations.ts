@@ -1,15 +1,18 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/lib/types';
-import { createUserFromSupabaseData, storeUserData, getUserFromStorage } from '../utils/authUtils';
+import { createUserFromSupabaseData, storeUserData, getUserFromStorage, createMockAdminUser } from '../utils/authUtils';
+import { authApi } from '@/lib/api';
 
 /**
  * Sign in with Supabase
+ * This is used for authentication when Supabase is available
  */
 export const signInWithSupabase = async (email: string, password: string) => {
-  console.log('📝 [authOperations] Iniciando login com:', { email });
+  console.log('📝 [authOperations] Iniciando login com Supabase:', { email });
   
   try {
+    // First try with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -17,6 +20,54 @@ export const signInWithSupabase = async (email: string, password: string) => {
     
     if (error) {
       console.error('📝 [authOperations] Erro no login com Supabase:', error);
+      
+      // If Supabase fails with auth error, try backend API
+      if (error.message.includes('Invalid login credentials')) {
+        console.log('📝 [authOperations] Tentando login com backend API após falha no Supabase');
+        
+        try {
+          const apiResponse = await authApi.login(email, password);
+          
+          if (apiResponse && apiResponse.token) {
+            console.log('📝 [authOperations] Login com API bem-sucedido');
+            
+            // Create a user object from the API response
+            const apiUser = apiResponse.user || { 
+              id: 0, 
+              nome: email.split('@')[0], 
+              email: email 
+            };
+            
+            const user: User = {
+              id: apiUser.id || 0,
+              name: apiUser.nome || email.split('@')[0],
+              email: apiUser.email || email,
+              sectorId: apiUser.setor_id || 1,
+              role: (apiUser.role || 'CLIENT').toUpperCase() as 'ADMIN' | 'CLIENT'
+            };
+            
+            // Store the user data
+            storeUserData(user);
+            
+            // Return a response format compatible with Supabase
+            return { 
+              data: { 
+                session: { 
+                  access_token: apiResponse.token,
+                  user: { 
+                    id: String(user.id),
+                    email: user.email
+                  } 
+                } 
+              }, 
+              error: null 
+            };
+          }
+        } catch (apiError) {
+          console.error('📝 [authOperations] Falha no login com API:', apiError);
+        }
+      }
+      
       return { data: { session: null }, error: new Error(error.message) };
     }
     
@@ -50,17 +101,21 @@ export const signInWithSupabase = async (email: string, password: string) => {
 };
 
 /**
- * Sign out from Supabase
+ * Sign out from both Supabase and API
  */
 export const signOutWithSupabase = async () => {
   try {
-    const { error } = await supabase.auth.signOut();
+    // Sign out from Supabase if configured
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
     
     // Clear local storage
     localStorage.removeItem('user');
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('authToken');
     
-    return { error };
+    return { error: null };
   } catch (error) {
     console.error('Sign out error:', error);
     return { error };
@@ -68,26 +123,42 @@ export const signOutWithSupabase = async () => {
 };
 
 /**
- * Get current user from Supabase
+ * Get current user from Supabase or localStorage
  */
 export const getCurrentUserWithSupabase = async () => {
   try {
-    const { data, error } = await supabase.auth.getUser();
-    
-    if (error || !data.user) {
-      return { user: null, error: null };
+    // Try to get user from Supabase first
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.auth.getUser();
+      
+      if (!error && data.user) {
+        // Check if user is stored in local storage for additional data
+        const userData = getUserFromStorage();
+        
+        if (userData) {
+          return { user: userData, error: null };
+        }
+        
+        return { 
+          user: {
+            id: parseInt(data.user.id) || 0,
+            email: data.user.email,
+            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário',
+            sectorId: data.user.user_metadata?.sector_id || 1,
+            role: (data.user.user_metadata?.role || 'CLIENT').toUpperCase() as 'ADMIN' | 'CLIENT'
+          }, 
+          error: null 
+        };
+      }
     }
     
-    // Check if user is stored in local storage for additional data
+    // If no user in Supabase, check localStorage
     const userData = getUserFromStorage();
+    if (userData) {
+      return { user: userData, error: null };
+    }
     
-    return { 
-      user: {
-        id: userData?.id || parseInt(data.user.id) || 0,
-        email: userData?.email || data.user.email,
-      }, 
-      error: null 
-    };
+    return { user: null, error: null };
   } catch (error) {
     console.error('Get current user error:', error);
     return { user: null, error: null };
@@ -95,24 +166,52 @@ export const getCurrentUserWithSupabase = async () => {
 };
 
 /**
- * Verify credentials with Supabase
+ * Verify credentials with both Supabase and API
  */
 export const verifyCredentialsWithSupabase = async (email: string, password: string): Promise<User | null> => {
   console.log('📝 [authOperations] Verificando credenciais para:', email);
   
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error || !data.session) {
-      console.log('📝 [authOperations] Verificação falhou');
-      return null;
+    // First try with Supabase
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (!error && data.session) {
+        const supabaseUser = data.session.user;
+        return createUserFromSupabaseData(supabaseUser, email);
+      }
     }
     
-    const supabaseUser = data.session.user;
-    return createUserFromSupabaseData(supabaseUser, email);
+    // If Supabase fails or is not configured, try the backend API
+    try {
+      const response = await authApi.login(email, password);
+      
+      if (response && response.token) {
+        // Create a user object from the API response
+        const apiUser = response.user || { 
+          id: 0, 
+          nome: email.split('@')[0], 
+          email: email 
+        };
+        
+        return {
+          id: apiUser.id || 0,
+          name: apiUser.nome || email.split('@')[0],
+          email: apiUser.email || email,
+          sectorId: apiUser.setor_id || 1,
+          role: (apiUser.role || 'CLIENT').toUpperCase() as 'ADMIN' | 'CLIENT'
+        };
+      }
+    } catch (apiError) {
+      console.error('📝 [authOperations] Falha ao verificar credenciais com API:', apiError);
+    }
+    
+    // If both methods fail, return null
+    console.log('📝 [authOperations] Verificação falhou');
+    return null;
   } catch (error) {
     console.error('📝 [authOperations] Erro verificando credenciais:', error);
     return null;

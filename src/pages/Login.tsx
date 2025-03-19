@@ -15,6 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'supabase' | 'api'>('supabase');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +133,10 @@ const Login = () => {
                   <strong>Senha:</strong> senha123
                 </p>
               </div>
+            </div>
+            
+            <div className="text-center text-xs text-muted-foreground pt-2 border-t">
+              <p>A autenticação tentará primeiro o Supabase e depois a API</p>
             </div>
           </form>
         </div>

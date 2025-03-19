@@ -1,6 +1,6 @@
 
 import { User } from '@/lib/types';
-import { authApi, clearAuthToken } from '@/lib/api';
+import { authApi, setAuthToken, clearAuthToken } from '@/lib/api';
 
 // Sign in with API
 export const signInWithApi = async (email: string, password: string) => {
@@ -20,10 +20,10 @@ export const signInWithApi = async (email: string, password: string) => {
     // Construct user object from API response
     const user = {
       id: response.user?.id || 0,
-      name: response.user?.name || email.split('@')[0],
+      name: response.user?.nome || email.split('@')[0],
       email: response.user?.email || email,
-      sectorId: response.user?.sectorId || 1,
-      role: response.user?.role || 'CLIENT'
+      sectorId: response.user?.setor_id || 1,
+      role: (response.user?.role || 'CLIENT').toUpperCase() as 'ADMIN' | 'CLIENT'
     };
     
     console.log('📝 [apiAuth] Dados do usuário construídos:', user);
@@ -35,7 +35,8 @@ export const signInWithApi = async (email: string, password: string) => {
     return { 
       data: { 
         session: { 
-          user: user 
+          user: user,
+          access_token: response.token
         } 
       }, 
       error: null 
@@ -52,7 +53,7 @@ export const signInWithApi = async (email: string, password: string) => {
 // Sign out with API
 export const signOutWithApi = async () => {
   try {
-    await authApi.logout();
+    // API doesn't really have a logout endpoint, so we just clear local data
     
     // Clear authentication data
     clearAuthToken();
@@ -70,18 +71,16 @@ export const signOutWithApi = async () => {
 export const getCurrentUserFromStorage = () => {
   try {
     const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('authToken');
     
-    if (!storedUser) {
+    if (!storedUser || !storedToken) {
       return { user: null, error: null };
     }
     
     const userData = JSON.parse(storedUser) as User;
     
     return { 
-      user: {
-        id: userData.id,
-        email: userData.email,
-      }, 
+      user: userData, 
       error: null 
     };
   } catch (error) {
