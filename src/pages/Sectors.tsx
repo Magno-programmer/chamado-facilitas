@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sector } from '@/lib/types';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SectorForm from '@/components/SectorForm';
-import { mockSectors } from '@/lib/mockData';
+import { getSectors, createSector, updateSector, deleteSector } from '@/services/sectorService';
 
 const SectorsPage = () => {
   const navigate = useNavigate();
@@ -30,15 +29,27 @@ const SectorsPage = () => {
       return;
     }
 
-    // Mock loading data
-    const timer = setTimeout(() => {
-      setSectors(mockSectors);
-      setFilteredSectors(mockSectors);
-      setIsLoading(false);
-    }, 800);
+    const fetchSectors = async () => {
+      try {
+        const sectorData = await getSectors();
+        setSectors(sectorData);
+        setFilteredSectors(sectorData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching sectors:', error);
+        toast({
+          title: 'Erro ao carregar setores',
+          description: 'Não foi possível carregar os setores. Tente novamente mais tarde.',
+          variant: 'destructive'
+        });
+        setSectors([]);
+        setFilteredSectors([]);
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    fetchSectors();
+  }, [navigate, toast]);
 
   // Apply search filter when searchTerm changes
   useEffect(() => {
@@ -64,52 +75,76 @@ const SectorsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteSector = (sectorId: number) => {
-    // In a real application, this would be an API call
+  const handleDeleteSector = async (sectorId: number) => {
     if (window.confirm('Tem certeza que deseja excluir este setor?')) {
-      const updatedSectors = sectors.filter(sector => sector.id !== sectorId);
-      setSectors(updatedSectors);
-      setFilteredSectors(updatedSectors.filter(sector => 
-        sector.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ));
-      
-      toast({
-        title: 'Setor excluído',
-        description: 'O setor foi removido com sucesso.',
-      });
+      try {
+        await deleteSector(sectorId);
+        const updatedSectors = sectors.filter(sector => sector.id !== sectorId);
+        setSectors(updatedSectors);
+        setFilteredSectors(updatedSectors.filter(sector => 
+          sector.name.toLowerCase().includes(searchTerm.toLowerCase())
+        ));
+        
+        toast({
+          title: 'Setor excluído',
+          description: 'O setor foi removido com sucesso.',
+        });
+      } catch (error) {
+        console.error('Error deleting sector:', error);
+        toast({
+          title: 'Erro ao excluir setor',
+          description: 'Não foi possível excluir o setor. Tente novamente mais tarde.',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
-  const handleSaveSector = (sectorData: Sector) => {
-    let updatedSectors;
-    
-    if (currentSector) {
-      // Edit existing sector
-      updatedSectors = sectors.map(sector => 
-        sector.id === currentSector.id ? { ...sectorData, id: sector.id } : sector
-      );
+  const handleSaveSector = async (sectorData: Sector) => {
+    try {
+      let updatedSector;
+      
+      if (currentSector) {
+        // Edit existing sector
+        updatedSector = await updateSector(currentSector.id, sectorData.name);
+        if (updatedSector) {
+          const updatedSectors = sectors.map(sector => 
+            sector.id === currentSector.id ? updatedSector! : sector
+          );
+          setSectors(updatedSectors);
+          setFilteredSectors(updatedSectors.filter(sector => 
+            sector.name.toLowerCase().includes(searchTerm.toLowerCase())
+          ));
+          toast({
+            title: 'Setor atualizado',
+            description: 'As informações do setor foram atualizadas com sucesso.',
+          });
+        }
+      } else {
+        // Add new sector
+        updatedSector = await createSector(sectorData.name);
+        if (updatedSector) {
+          const updatedSectors = [...sectors, updatedSector];
+          setSectors(updatedSectors);
+          setFilteredSectors(updatedSectors.filter(sector => 
+            sector.name.toLowerCase().includes(searchTerm.toLowerCase())
+          ));
+          toast({
+            title: 'Setor adicionado',
+            description: 'O novo setor foi adicionado com sucesso.',
+          });
+        }
+      }
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving sector:', error);
       toast({
-        title: 'Setor atualizado',
-        description: 'As informações do setor foram atualizadas com sucesso.',
-      });
-    } else {
-      // Add new sector
-      const newSector = {
-        ...sectorData,
-        id: Math.max(0, ...sectors.map(s => s.id)) + 1,
-      };
-      updatedSectors = [...sectors, newSector];
-      toast({
-        title: 'Setor adicionado',
-        description: 'O novo setor foi adicionado com sucesso.',
+        title: 'Erro ao salvar setor',
+        description: 'Não foi possível salvar o setor. Tente novamente mais tarde.',
+        variant: 'destructive'
       });
     }
-    
-    setSectors(updatedSectors);
-    setFilteredSectors(updatedSectors.filter(sector => 
-      sector.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
-    setIsModalOpen(false);
   };
 
   if (isLoading) {

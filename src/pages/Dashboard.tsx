@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings, Table as TableIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart as RechartBarChart, Bar } from 'recharts';
-import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
+import { PieChart, Pie, Cell, XAxis, YAxis, Tooltip, BarChart as RechartBarChart, Bar } from 'recharts';
 import { TicketWithDetails } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -10,10 +9,22 @@ import StatusBadge from '@/components/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useToast } from '@/hooks/use-toast';
+import { getTicketDashboardStats, getRecentTickets, getUserTickets } from '@/services/ticketService';
+
+const defaultStats = {
+  totalTickets: 0,
+  openTickets: 0,
+  inProgressTickets: 0,
+  completedTickets: 0,
+  lateTickets: 0,
+  ticketsBySector: []
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(mockDashboardStats);
+  const { toast } = useToast();
+  const [stats, setStats] = useState(defaultStats);
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
   const [userTickets, setUserTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,26 +35,34 @@ const Dashboard = () => {
       return;
     }
 
-    const timer = setTimeout(() => {
-      const enrichedTickets = getEnrichedTickets();
-      const sorted = [...enrichedTickets].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ).slice(0, 5);
-      
-      setRecentTickets(sorted);
-      
-      const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
-      
-      const userTickets = enrichedTickets.filter(ticket => 
-        ticket.requesterId === userId || ticket.responsibleId === userId
-      );
-      
-      setUserTickets(userTickets);
-      setIsLoading(false);
-    }, 800);
+    const fetchDashboardData = async () => {
+      try {
+        const dashboardStats = await getTicketDashboardStats();
+        setStats(dashboardStats || defaultStats);
+        
+        const recent = await getRecentTickets(5);
+        setRecentTickets(recent || []);
+        
+        const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId') || '1') : 1;
+        const userTicketsData = await getUserTickets(userId);
+        setUserTickets(userTicketsData || []);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: 'Erro ao carregar dashboard',
+          description: 'Não foi possível carregar os dados do dashboard. Tente novamente mais tarde.',
+          variant: 'destructive'
+        });
+        setStats(defaultStats);
+        setRecentTickets([]);
+        setUserTickets([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    fetchDashboardData();
+  }, [navigate, toast]);
 
   const formatDateTime = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });

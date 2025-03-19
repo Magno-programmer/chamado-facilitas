@@ -1,18 +1,21 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Deadline } from '@/lib/types';
+import { Deadline, Sector } from '@/lib/types';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import DeadlineForm from '@/components/DeadlineForm';
 import DeadlinesTable from '@/components/DeadlinesTable';
+import { getSectors } from '@/services/sectorService';
+import { getDeadlines, createDeadline, updateDeadline, deleteDeadline } from '@/services/deadlineService';
 
 const DeadlinesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,24 +31,34 @@ const DeadlinesPage = () => {
       return;
     }
 
-    // Mock loading data
-    const timer = setTimeout(() => {
-      // Mock deadlines data
-      const mockDeadlines: Deadline[] = [
-        { id: 1, title: 'Prioridade Alta - TI', sectorId: 1, deadline: 'P1D' },  // 1 day
-        { id: 2, title: 'Prioridade Média - TI', sectorId: 1, deadline: 'P3D' }, // 3 days
-        { id: 3, title: 'Prioridade Baixa - TI', sectorId: 1, deadline: 'P7D' }, // 7 days
-        { id: 4, title: 'Prioridade Alta - RH', sectorId: 3, deadline: 'P2D' },  // 2 days
-        { id: 5, title: 'Prioridade Média - RH', sectorId: 3, deadline: 'P5D' }, // 5 days
-        { id: 6, title: 'Prioridade Alta - Vendas', sectorId: 4, deadline: 'P1D' }, // 1 day
-      ];
-      
-      setDeadlines(mockDeadlines);
-      setIsLoading(false);
-    }, 800);
+    const fetchData = async () => {
+      try {
+        // Fetch sectors and deadlines
+        const [sectorData, deadlinesData] = await Promise.all([
+          getSectors(),
+          getDeadlines()
+        ]);
+        
+        setSectors(sectorData);
+        setDeadlines(deadlinesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: 'Erro ao carregar dados',
+          description: 'Não foi possível carregar os dados. Tente novamente mais tarde.',
+          variant: 'destructive'
+        });
+        
+        // Fallback to empty arrays if there's an error
+        setSectors([]);
+        setDeadlines([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    fetchData();
+  }, [navigate, toast]);
 
   const handleAddDeadline = () => {
     setCurrentDeadline(null);
@@ -57,46 +70,65 @@ const DeadlinesPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteDeadline = (deadlineId: number) => {
-    // In a real application, this would be an API call
+  const handleDeleteDeadline = async (deadlineId: number) => {
     if (window.confirm('Tem certeza que deseja excluir este prazo?')) {
-      const updatedDeadlines = deadlines.filter(deadline => deadline.id !== deadlineId);
-      setDeadlines(updatedDeadlines);
-      
-      toast({
-        title: 'Prazo excluído',
-        description: 'O prazo foi removido com sucesso.',
-      });
+      try {
+        await deleteDeadline(deadlineId);
+        const updatedDeadlines = deadlines.filter(deadline => deadline.id !== deadlineId);
+        setDeadlines(updatedDeadlines);
+        
+        toast({
+          title: 'Prazo excluído',
+          description: 'O prazo foi removido com sucesso.',
+        });
+      } catch (error) {
+        console.error('Error deleting deadline:', error);
+        toast({
+          title: 'Erro ao excluir prazo',
+          description: 'Não foi possível excluir o prazo. Tente novamente mais tarde.',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
-  const handleSaveDeadline = (deadlineData: Deadline) => {
-    let updatedDeadlines;
-    
-    if (currentDeadline) {
-      // Edit existing deadline
-      updatedDeadlines = deadlines.map(deadline => 
-        deadline.id === currentDeadline.id ? { ...deadlineData, id: deadline.id } : deadline
-      );
+  const handleSaveDeadline = async (deadlineData: Deadline) => {
+    try {
+      let updatedDeadline;
+      
+      if (currentDeadline) {
+        // Edit existing deadline
+        updatedDeadline = await updateDeadline(currentDeadline.id, deadlineData);
+        if (updatedDeadline) {
+          setDeadlines(deadlines.map(deadline => 
+            deadline.id === currentDeadline.id ? updatedDeadline! : deadline
+          ));
+          toast({
+            title: 'Prazo atualizado',
+            description: 'As informações do prazo foram atualizadas com sucesso.',
+          });
+        }
+      } else {
+        // Add new deadline
+        updatedDeadline = await createDeadline(deadlineData);
+        if (updatedDeadline) {
+          setDeadlines([...deadlines, updatedDeadline]);
+          toast({
+            title: 'Prazo adicionado',
+            description: 'O novo prazo foi adicionado com sucesso.',
+          });
+        }
+      }
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving deadline:', error);
       toast({
-        title: 'Prazo atualizado',
-        description: 'As informações do prazo foram atualizadas com sucesso.',
-      });
-    } else {
-      // Add new deadline
-      const newDeadline = {
-        ...deadlineData,
-        id: Math.max(0, ...deadlines.map(d => d.id)) + 1,
-      };
-      updatedDeadlines = [...deadlines, newDeadline];
-      toast({
-        title: 'Prazo adicionado',
-        description: 'O novo prazo foi adicionado com sucesso.',
+        title: 'Erro ao salvar prazo',
+        description: 'Não foi possível salvar o prazo. Tente novamente mais tarde.',
+        variant: 'destructive'
       });
     }
-    
-    setDeadlines(updatedDeadlines);
-    setIsModalOpen(false);
   };
 
   if (isLoading) {
@@ -146,6 +178,7 @@ const DeadlinesPage = () => {
       <h3 className="text-xl font-semibold mb-4">📋 Prazos Cadastrados</h3>
       <DeadlinesTable 
         deadlines={deadlines} 
+        sectors={sectors}
         isAdmin={isAdmin} 
         onEdit={handleEditDeadline} 
         onDelete={handleDeleteDeadline} 

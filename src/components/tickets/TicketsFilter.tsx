@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Filter, Search } from 'lucide-react';
-import { TicketStatus } from '@/lib/types';
-import { mockSectors } from '@/lib/mockData';
+import { TicketStatus, Sector } from '@/lib/types';
+import { getSectors } from '@/services/sectorService';
 
 interface TicketsFilterProps {
   searchTerm: string;
@@ -21,6 +21,22 @@ const TicketsFilter: React.FC<TicketsFilterProps> = ({
   sectorFilter,
   setSectorFilter
 }) => {
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  
+  useEffect(() => {
+    const fetchSectors = async () => {
+      try {
+        const sectorData = await getSectors();
+        setSectors(sectorData);
+      } catch (error) {
+        console.error('Error fetching sectors:', error);
+        setSectors([]);
+      }
+    };
+    
+    fetchSectors();
+  }, []);
+
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -65,7 +81,7 @@ const TicketsFilter: React.FC<TicketsFilterProps> = ({
               className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos os Setores</option>
-              {mockSectors.map(sector => (
+              {sectors.map(sector => (
                 <option key={sector.id} value={sector.id}>{sector.name}</option>
               ))}
             </select>

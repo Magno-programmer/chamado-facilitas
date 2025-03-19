@@ -1,12 +1,12 @@
 
-import React, { useEffect } from 'react';
-import { Deadline } from '@/lib/types';
+import React, { useEffect, useState } from 'react';
+import { Deadline, Sector } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
-import { mockSectors } from '@/lib/mockData';
+import { getSectors } from '@/services/sectorService';
 
 interface DeadlineFormProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ interface DeadlineFormProps {
 }
 
 const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, deadline }) => {
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Deadline>({
     defaultValues: deadline || {
       id: 0,
@@ -33,6 +34,19 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
         sectorId: 1,
         deadline: 'PT3600S', // Default to 60 minutes (3600 seconds)
       });
+      
+      // Fetch sectors
+      const fetchSectors = async () => {
+        try {
+          const sectorData = await getSectors();
+          setSectors(sectorData);
+        } catch (error) {
+          console.error('Error fetching sectors:', error);
+          setSectors([]);
+        }
+      };
+      
+      fetchSectors();
     }
   }, [isOpen, deadline, reset]);
 
@@ -90,7 +104,7 @@ const DeadlineForm: React.FC<DeadlineFormProps> = ({ isOpen, onClose, onSave, de
               {...register('sectorId', { required: 'Setor é obrigatório' })}
               className="w-full px-3 py-2 border rounded-md"
             >
-              {mockSectors.map(sector => (
+              {sectors.map(sector => (
                 <option key={sector.id} value={sector.id}>{sector.name}</option>
               ))}
             </select>
