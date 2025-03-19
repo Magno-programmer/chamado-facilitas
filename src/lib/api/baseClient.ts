@@ -70,32 +70,35 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   console.log('📝 [baseClient] fetchWithAuth iniciado para:', endpoint, 'com opções:', options);
   console.log('📝 [baseClient] Token atual:', authToken ? `${authToken.substring(0, 15)}...` : 'nenhum');
   
+  // Create new headers object to avoid modifying the passed-in options
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  
   // Add authorization header if token exists
   if (authToken) {
-    options.headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${authToken}`,
-      'Content-Type': 'application/json',
-    };
-    console.log('📝 [baseClient] Headers com autenticação:', options.headers);
+    headers['Authorization'] = `Bearer ${authToken}`;
+    console.log('📝 [baseClient] Headers com autenticação:', headers);
   } else {
-    options.headers = {
-      ...options.headers,
-      'Content-Type': 'application/json',
-    };
-    console.log('📝 [baseClient] Headers sem autenticação:', options.headers);
+    console.log('📝 [baseClient] Headers sem autenticação:', headers);
   }
+
+  // Create a new options object with the headers
+  const requestOptions: RequestInit = {
+    ...options,
+    headers
+  };
 
   // Set credentials mode based on whether we're using a CORS proxy
   // When using CORS proxy, we must use 'omit' instead of 'include'
   if (API_CONFIG.USE_CORS_PROXY) {
-    options.credentials = 'omit';
+    requestOptions.credentials = 'omit';
     console.log('📝 [baseClient] Credentials configurado como "omit" (usando CORS proxy)');
     
     // For some CORS proxies, we need to set mode to 'cors' explicitly
-    options.mode = 'cors';
+    requestOptions.mode = 'cors';
   } else {
-    options.credentials = 'include';
+    requestOptions.credentials = 'include';
     console.log('📝 [baseClient] Credentials configurado como "include"');
   }
 
@@ -108,18 +111,18 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
       const apiUrl = getApiUrl(endpoint);
       console.log(`📝 [baseClient] Requisição (Tentativa ${retryCount + 1}/${API_CONFIG.MAX_RETRY_ATTEMPTS + 1}):`, apiUrl);
       
-      if (options.body) {
-        console.log('📝 [baseClient] Dados enviados:', options.body);
+      if (requestOptions.body) {
+        console.log('📝 [baseClient] Dados enviados:', requestOptions.body);
       }
       
       // For development/testing purposes, check if we should use mock data
       if (endpoint === '/auth/login' && 
-          options.method === 'POST' && 
-          options.body && 
-          typeof options.body === 'string') {
+          requestOptions.method === 'POST' && 
+          requestOptions.body && 
+          typeof requestOptions.body === 'string') {
         
         // Parse the request body
-        const requestBody = JSON.parse(options.body);
+        const requestBody = JSON.parse(requestOptions.body);
         const { email, password } = requestBody;
         
         // Check for test credentials
@@ -161,7 +164,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
         }
       }
       
-      const response = await fetch(apiUrl, options);
+      const response = await fetch(apiUrl, requestOptions);
       console.log('📝 [baseClient] Resposta recebida:', {
         status: response.status,
         statusText: response.statusText,
