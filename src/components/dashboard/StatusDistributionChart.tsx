@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Settings } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface StatusDistributionChartProps {
@@ -15,7 +15,6 @@ interface StatusDistributionChartProps {
 
 const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ stats }) => {
   const COLORS = ['#3b82f6', '#f59e0b', '#22c55e', '#ef4444'];
-  const RADIAN = Math.PI / 180;
 
   const pieData = [
     { name: 'Abertos', value: stats.openTickets },
@@ -31,25 +30,6 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ stats
     Atrasados: { color: '#ef4444' },
   };
 
-  const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        className="font-medium text-xs"
-      >
-        {pieData[index].name} ({(percent * 100).toFixed(0)}%)
-      </text>
-    );
-  };
-
   return (
     <div className="bg-white rounded-xl border shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
@@ -60,13 +40,31 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ stats
       </div>
       <div className="h-64">
         <ChartContainer config={chartConfig}>
-          <PieChart>
+          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <Pie
               data={pieData}
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={renderLabel}
+              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                const RADIAN = Math.PI / 180;
+                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    fill="white"
+                    textAnchor={x > cx ? 'start' : 'end'}
+                    dominantBaseline="central"
+                    className="font-medium text-xs"
+                  >
+                    {pieData[index].name} ({(percent * 100).toFixed(0)}%)
+                  </text>
+                );
+              }}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
@@ -75,9 +73,7 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ stats
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <ChartTooltip 
-              content={<ChartTooltipContent />}
-            />
+            <ChartTooltip content={<ChartTooltipContent />} />
           </PieChart>
         </ChartContainer>
       </div>

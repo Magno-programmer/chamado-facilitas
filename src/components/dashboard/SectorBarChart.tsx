@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BarChart as BarChartIcon } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface SectorBarChartProps {
@@ -41,12 +41,25 @@ const SectorBarChart: React.FC<SectorBarChartProps> = ({ sectorData }) => {
               bottom: 5,
             }}
           >
-            <XAxis dataKey="name" />
-            <YAxis />
-            <ChartTooltip
-              content={<ChartTooltipContent />}
+            <XAxis 
+              dataKey="name" 
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
             />
-            <Bar dataKey="Chamados" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <YAxis 
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `${value}`}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar 
+              dataKey="Chamados" 
+              fill="#3b82f6" 
+              radius={[4, 4, 0, 0]} 
+              maxBarSize={50}
+            />
           </BarChart>
         </ChartContainer>
       </div>
