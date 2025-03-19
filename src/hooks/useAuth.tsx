@@ -51,20 +51,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     
     try {
-      // Utilizando a API fetch com parâmetros que contornam CORS para desenvolvimento
+      // Using custom fetch to capture and log all response headers
       const response = await fetch('https://sistemachamado-backend-production.up.railway.app/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-        // Configurações para contornar problemas de CORS durante o desenvolvimento
         mode: 'cors',
-        credentials: 'omit',
       });
-
-      // Log para debug
+      
+      // Log the response status and headers for debugging
       console.log('Login response status:', response.status);
+      console.log('Login response headers:');
+      
+      // Convert headers to object and log them
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        console.log(`${key}: ${value}`);
+        headers[key] = value;
+      });
+      
+      // Display all headers in a toast for visibility
+      const headersText = Object.entries(headers)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+      
+      toast({
+        title: "Response Headers",
+        description: <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>{headersText}</pre>,
+        duration: 10000,
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Erro de conexão com o servidor' }));
@@ -90,11 +108,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Login error:', error);
       
-      toast({
-        title: "Erro ao fazer login",
-        description: error instanceof Error ? error.message : "Email ou senha inválidos. Verifique também se o servidor está acessível.",
-        variant: "destructive",
-      });
+      // If it's a network error, suggest CORS issue
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast({
+          title: "Erro de Conexão",
+          description: "Não foi possível conectar ao servidor. Isso pode ser um problema de CORS. Verifique se o servidor está configurado corretamente.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Erro ao fazer login",
+          description: error instanceof Error ? error.message : "Email ou senha inválidos. Verifique também se o servidor está acessível.",
+          variant: "destructive",
+        });
+      }
       
       return false;
     } finally {
