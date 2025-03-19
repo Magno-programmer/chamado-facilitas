@@ -57,9 +57,15 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     console.log('📝 [baseClient] Headers sem autenticação:', options.headers);
   }
 
-  // Add credentials so cookies are sent
-  options.credentials = 'include';
-  console.log('📝 [baseClient] Credentials configurado como "include"');
+  // Set credentials mode based on whether we're using a CORS proxy
+  // When using CORS proxy, we must use 'omit' instead of 'include'
+  if (API_CONFIG.USE_CORS_PROXY) {
+    options.credentials = 'omit';
+    console.log('📝 [baseClient] Credentials configurado como "omit" (usando CORS proxy)');
+  } else {
+    options.credentials = 'include';
+    console.log('📝 [baseClient] Credentials configurado como "include"');
+  }
 
   let lastError: Error | null = null;
   let retryCount = 0;
