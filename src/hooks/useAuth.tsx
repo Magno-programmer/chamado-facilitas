@@ -51,8 +51,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     
     try {
-      // Utilizando a API fetch com parâmetros que contornam CORS para desenvolvimento
-      const response = await fetch('https://sistemachamado-backend-production.up.railway.app/auth/login', {
+      // Utilizando o novo endpoint TCP do backend
+      const response = await fetch('http://tramway.proxy.rlwy.net:47075/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
