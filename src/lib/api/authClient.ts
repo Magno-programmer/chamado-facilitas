@@ -1,5 +1,6 @@
 
-import { fetchWithAuth, setAuthToken } from './baseClient';
+import { fetchWithAuth } from './client/apiClient';
+import { setAuthToken } from './auth/tokenManager';
 
 // Authentication API client for the Flask backend
 export const authApi = {
@@ -35,3 +36,4 @@ export const authApi = {
     return {}; // Just return an empty object as we'll handle token clearing elsewhere
   },
 };
+
