@@ -2,6 +2,7 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
+import supabase from '@/lib/supabase';
 
 // Define the shape of our authentication context
 interface AuthContextType {
@@ -26,17 +27,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check for existing user session on mount
   useEffect(() => {
-    const checkUserSession = () => {
-      const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
+    const checkUserSession = async () => {
+      // Verificar se existe uma sessão no Supabase
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (storedUser && token) {
+      if (session) {
         try {
-          setUser(JSON.parse(storedUser));
+          // Se temos uma sessão, obter os dados do usuário
+          const { user: supabaseUser } = session;
+          
+          // Mapear o usuário do Supabase para nosso formato de usuário
+          // Note: você precisa garantir que os dados do perfil do usuário contenham as informações necessárias
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+            
+          if (profile) {
+            const userData: User = {
+              id: profile.id,
+              name: profile.name,
+              email: supabaseUser.email || '',
+              sectorId: profile.sector_id,
+              role: profile.role
+            };
+            
+            setUser(userData);
+          }
         } catch (error) {
-          console.error('Failed to parse user data:', error);
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
+          console.error('Failed to get user data:', error);
+          // Se houver erro, fazer logout
+          await supabase.auth.signOut();
         }
       }
       
@@ -44,55 +66,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
     
     checkUserSession();
+    
+    // Configurar listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Quando o usuário faz login, atualizar o estado
+          const { user: supabaseUser } = session;
+          
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+            
+          if (profile) {
+            const userData: User = {
+              id: profile.id,
+              name: profile.name,
+              email: supabaseUser.email || '',
+              sectorId: profile.sector_id,
+              role: profile.role
+            };
+            
+            setUser(userData);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // Quando o usuário faz logout, limpar o estado
+          setUser(null);
+        }
+      }
+    );
+    
+    // Cleanup function
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Login function
+  // Login function using Supabase
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Utilizando a API fetch com parâmetros que contornam CORS para desenvolvimento
-      const response = await fetch('https://sistemachamado-backend-production.up.railway.app/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        // Configurações para contornar problemas de CORS durante o desenvolvimento
-        mode: 'cors',
-        credentials: 'omit',
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-
-      // Log para debug
-      console.log('Login response status:', response.status);
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro de conexão com o servidor' }));
-        throw new Error(errorData.message || 'Falha na autenticação');
+      if (error) {
+        throw new Error(error.message || 'Falha na autenticação');
       }
       
-      const data = await response.json();
+      if (data.user) {
+        toast({
+          title: "Login realizado com sucesso",
+          description: `Bem-vindo!`,
+        });
+        
+        return true;
+      }
       
-      // Store user data and token
-      const userData = data.user;
-      const token = data.token;
-      
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast({
-        title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${userData.name}!`,
-      });
-      
-      return true;
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       
       toast({
         title: "Erro ao fazer login",
-        description: error instanceof Error ? error.message : "Email ou senha inválidos. Verifique também se o servidor está acessível.",
+        description: error instanceof Error ? error.message : "Email ou senha inválidos.",
         variant: "destructive",
       });
       
@@ -103,10 +144,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('isLoggedIn');
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Erro ao fazer logout",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setUser(null);
     
     toast({
