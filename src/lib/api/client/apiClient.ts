@@ -1,5 +1,6 @@
 
-import { getApiUrl } from '../proxy/proxyManager';
+
+import { getApiUrl, rotateToNextProxy } from '../proxy/proxyManager';
 import { getAuthToken } from '../auth/tokenManager';
 import { handleResponse, formatRequestOptions } from '../utils/requestUtils';
 
@@ -17,7 +18,6 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   // Create a new options object to avoid mutating the original
   const requestOptions = formatRequestOptions(options);
   
-  // IMPORTANT: Some CORS proxies strip or modify headers, so we need to be explicit
   // Set default headers and ensure they're properly formatted for the proxy
   requestOptions.headers = {
     'Content-Type': 'application/json',
@@ -42,12 +42,27 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     bodyLength: requestOptions.body ? JSON.stringify(requestOptions.body).length : 0
   });
   
-  try {
-    // When using certain CORS proxies, sometimes we need to modify how we handle the request
-    const response = await fetch(url, requestOptions);
-    return handleResponse(response);
-  } catch (error) {
-    console.error(`📝 [apiClient] Erro na requisição para ${url}:`, error);
-    throw error;
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(url, requestOptions);
+      return handleResponse(response);
+    } catch (error) {
+      retryCount++;
+      console.error(`📝 [apiClient] Erro na requisição para ${url} (tentativa ${retryCount}/${maxRetries}):`, error);
+      
+      if (retryCount >= maxRetries) {
+        // Se atingimos o número máximo de tentativas, tenta com outro proxy
+        rotateToNextProxy();
+        throw error;
+      }
+      
+      // Espera um tempo antes de tentar novamente
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
+  
+  throw new Error(`Falha após ${maxRetries} tentativas`);
 };

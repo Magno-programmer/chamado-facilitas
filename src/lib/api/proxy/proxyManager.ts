@@ -11,8 +11,8 @@ export const getApiUrl = (endpoint: string): string => {
   const baseUrl = API_CONFIG.BASE_URL;
   console.log('📝 [proxyManager] Montando URL da API:', baseUrl + endpoint);
   
-  // If using CORS proxy, add it to the URL
-  if (API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:') {
+  // Se o uso de proxy estiver ativado, adiciona o proxy à URL
+  if (API_CONFIG.USE_CORS_PROXY) {
     // Determine which proxy to use
     let proxyUrl = API_CONFIG.CORS_PROXY;
     
@@ -60,7 +60,6 @@ export const getCurrentProxyIndex = (): number => {
  */
 export const enableCorsProxy = (enable: boolean) => {
   // This can be used to toggle CORS proxy at runtime if needed
-  // Allows API endpoints to force proxy use or disable it
   console.log(`📝 [proxyManager] ${enable ? 'Ativando' : 'Desativando'} uso de proxy CORS`);
   return enable;
 };
@@ -69,5 +68,5 @@ export const enableCorsProxy = (enable: boolean) => {
  * Check if we should use CORS proxy
  */
 export const shouldUseCorsProxy = (): boolean => {
-  return API_CONFIG.USE_CORS_PROXY && window.location.protocol === 'https:';
+  return API_CONFIG.USE_CORS_PROXY;
 };
