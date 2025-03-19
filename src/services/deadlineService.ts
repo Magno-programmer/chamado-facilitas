@@ -1,14 +1,6 @@
 import { Deadline } from '@/lib/types';
 import { deadlinesApi } from '@/lib/api';
 
-// Fallback mock data for when API calls fail
-const mockDeadlines: Deadline[] = [
-  { id: 1, title: 'Urgente', sectorId: 1, deadline: 'PT3600S' },  // 1 hora
-  { id: 2, title: 'Alta Prioridade', sectorId: 1, deadline: 'PT14400S' },  // 4 horas
-  { id: 3, title: 'Normal', sectorId: 2, deadline: 'PT86400S' },  // 24 horas
-  { id: 4, title: 'Baixa Prioridade', sectorId: 3, deadline: 'PT259200S' },  // 3 dias
-];
-
 export const getDeadlines = async (): Promise<Deadline[]> => {
   try {
     const response = await deadlinesApi.getAll();
@@ -22,8 +14,7 @@ export const getDeadlines = async (): Promise<Deadline[]> => {
     }));
   } catch (error) {
     console.error('Error fetching deadlines:', error);
-    console.log('Using mock deadline data instead');
-    return [...mockDeadlines];
+    throw error;
   }
 };
 
@@ -34,9 +25,7 @@ export const getDeadlinesBySector = async (sectorId: number): Promise<Deadline[]
     return deadlines.filter(d => d.sectorId === sectorId);
   } catch (error) {
     console.error(`Error fetching deadlines for sector ${sectorId}:`, error);
-    
-    // Return mock data filtered by sector
-    return mockDeadlines.filter(d => d.sectorId === sectorId);
+    throw error;
   }
 };
 

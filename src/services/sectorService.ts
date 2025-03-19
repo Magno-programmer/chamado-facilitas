@@ -1,14 +1,6 @@
+
 import { Sector } from '@/lib/types';
 import { sectorsApi } from '@/lib/api';
-
-// Fallback mock data for when API calls fail
-const mockSectors: Sector[] = [
-  { id: 1, name: 'TI' },
-  { id: 2, name: 'Recursos Humanos' },
-  { id: 3, name: 'Financeiro' },
-  { id: 4, name: 'Marketing' },
-  { id: 5, name: 'Operações' },
-];
 
 export const getSectors = async (): Promise<Sector[]> => {
   try {
@@ -21,8 +13,7 @@ export const getSectors = async (): Promise<Sector[]> => {
     }));
   } catch (error) {
     console.error('Error fetching sectors:', error);
-    console.log('Using mock sector data instead');
-    return [...mockSectors];
+    throw error;
   }
 };
 
@@ -33,10 +24,7 @@ export const getSectorById = async (id: number): Promise<Sector | null> => {
     return sectors.find(s => s.id === id) || null;
   } catch (error) {
     console.error(`Error fetching sector ${id}:`, error);
-    
-    // Return mock data when API call fails
-    const sector = mockSectors.find(s => s.id === id);
-    return sector || null;
+    throw error;
   }
 };
 

@@ -4,10 +4,11 @@ import { Deadline } from '@/lib/types';
 import { Edit, Trash, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockSectors } from '@/lib/mockData';
+import { getSectorById } from '@/services/sectorService';
 
 interface DeadlinesTableProps {
   deadlines: Deadline[];
+  sectors: { id: number; name: string }[];
   isAdmin: boolean;
   onEdit: (deadline: Deadline) => void;
   onDelete: (deadlineId: number) => void;
@@ -17,6 +18,7 @@ interface DeadlinesTableProps {
 
 const DeadlinesTable: React.FC<DeadlinesTableProps> = ({ 
   deadlines, 
+  sectors,
   isAdmin, 
   onEdit, 
   onDelete,
@@ -30,7 +32,7 @@ const DeadlinesTable: React.FC<DeadlinesTableProps> = ({
     : deadlines;
 
   const getSectorName = (sectorId: number) => {
-    const sector = mockSectors.find(s => s.id === sectorId);
+    const sector = sectors.find(s => s.id === sectorId);
     return sector ? sector.name : 'Setor não encontrado';
   };
 
