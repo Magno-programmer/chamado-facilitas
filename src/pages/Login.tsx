@@ -1,52 +1,37 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { mockLogin } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading } = useAuth();
+
+  // Log component rendering
+  useEffect(() => {
+    console.info('📝 [Login] Renderizando componente Login');
+  }, []);
 
   // Check if already logged in
-  React.useEffect(() => {
-    if (localStorage.getItem('isLoggedIn') === 'true') {
+  useEffect(() => {
+    if (isAuthenticated) {
       navigate('/dashboard');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    setTimeout(() => {
-      // Mock login for demonstration
-      const user = mockLogin(email, password);
-      
-      if (user) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo, ${user.name}!`,
-        });
-        
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: "Erro ao fazer login",
-          description: "Email ou senha inválidos.",
-          variant: "destructive",
-        });
-      }
-      
-      setIsLoading(false);
-    }, 1000);
+    
+    const success = await login(email, password);
+    
+    if (success) {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -85,9 +70,6 @@ const Login = () => {
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use o email: admin@example.com ou client@example.com
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -119,9 +101,6 @@ const Login = () => {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Qualquer senha funciona para esta demonstração
-              </p>
             </div>
 
             <div className="flex items-center justify-between">
