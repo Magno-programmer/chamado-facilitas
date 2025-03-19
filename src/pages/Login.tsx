@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -129,11 +129,20 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Não tem uma conta?{" "}
-            <a href="#" className="font-medium text-primary hover:text-primary/80">
-              Registre-se
-            </a>
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-muted-foreground border border-gray-100">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-gray-700 mb-1">Não tem uma conta?</p>
+                <p>
+                  O cadastro é feito apenas por administradores. Entre em contato pelo email{" "}
+                  <a href="mailto:admin@facilitas.com" className="text-primary hover:underline">
+                    admin@facilitas.com
+                  </a>{" "}
+                  para solicitar acesso.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

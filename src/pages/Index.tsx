@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Clock, Zap } from 'lucide-react';
@@ -62,18 +61,12 @@ const Index = () => {
                 intuitiva e eficiente. Gerencie solicitações com facilidade e 
                 monitore prazos em tempo real.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div>
                 <Link
                   to="/login"
-                  className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg shadow-sm transition-all duration-200 text-center font-medium"
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg shadow-sm transition-all duration-200 text-center font-medium inline-flex items-center"
                 >
-                  Acessar Plataforma
-                </Link>
-                <Link
-                  to="/login"
-                  className="bg-secondary hover:bg-secondary/70 text-foreground px-6 py-3 rounded-lg transition-all duration-200 text-center font-medium inline-flex items-center justify-center"
-                >
-                  Criar Conta <ArrowRight className="ml-2 h-4 w-4" />
+                  Acessar Plataforma <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </div>
             </div>
