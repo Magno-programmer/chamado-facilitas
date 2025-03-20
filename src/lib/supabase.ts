@@ -4,7 +4,7 @@ import type { Database } from './types'
 
 // Initialize the Supabase client
 const supabaseUrl = 'https://ryskqkqgjvzcloibkykl.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c2txa3FnanZ6Y2xvaWJreWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYxMjQ0MzEsImV4cCI6MjAzMTcwMDQzMX0.yQtVTQnFWPgvJsvUkRUYiVrJRExDO24kXW4OtM3uBJI'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c2txa3FnanZ6Y2xvaWJreWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjQwNjYsImV4cCI6MjA1Nzg0MDA2Nn0.Bny9fazEiIeCyVxLuhT3OLErOCqTOltYxbhfLDGuDtI'
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
