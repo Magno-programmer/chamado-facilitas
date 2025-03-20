@@ -1,3 +1,4 @@
+
 import React from 'react';
 import CreateEditUsuarioDialog from './CreateEditUsuarioDialog';
 import DeleteUsuarioDialog from './DeleteUsuarioDialog';
@@ -88,7 +89,7 @@ const UsuariosDialogs = ({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         usuario={deletingUsuario}
-        onDelete={onDelete}
+        onDelete={() => deletingUsuario && onDelete(deletingUsuario.id)}
         loading={loading}
       />
       
@@ -97,7 +98,7 @@ const UsuariosDialogs = ({
         onOpenChange={setResetPasswordDialog}
         usuario={resetPasswordUser}
         password={newPassword}
-        onComplete={onResetPassword}
+        onComplete={() => resetPasswordUser && onResetPassword(resetPasswordUser.id, newPassword)}
       />
       
       <ChangePasswordDialog
@@ -110,7 +111,7 @@ const UsuariosDialogs = ({
         setNewPassword={setNewChangePassword}
         confirmPassword={confirmPassword}
         setConfirmPassword={setConfirmPassword}
-        onComplete={onChangePassword}
+        onComplete={() => changePasswordUser && onChangePassword(changePasswordUser.id, currentPassword, newChangePassword)}
         loading={loading}
       />
     </>
