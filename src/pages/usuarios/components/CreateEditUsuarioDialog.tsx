@@ -54,7 +54,10 @@ const CreateEditUsuarioDialog = ({
     if (open && !usuario) {
       const newPassword = generateSecurePassword();
       setGeneratedPassword(newPassword);
-      form.setValue('senha', hashPassword(newPassword));
+      
+      // Set the hashed password
+      const hashedPassword = hashPassword(newPassword);
+      form.setValue('senha', hashedPassword);
     } else {
       setGeneratedPassword("");
     }
