@@ -52,9 +52,12 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     }
     
     console.log('Found user with email:', email);
+    console.log('Hash armazenado no banco:', data.senha_hash);
     
     // Verify the password against the hashed value in the database
     const passwordMatches = await verifyPassword(password, data.senha_hash);
+    console.log('Resultado da verificação de senha:', passwordMatches);
+    
     if (!passwordMatches) {
       console.error('Invalid password');
       return null;
