@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
@@ -286,5 +287,38 @@ const Dashboard = () => {
                   >
                     <XAxis dataKey="name" />
                     <YAxis />
-                   
+                    <Tooltip />
+                    <Bar dataKey="Chamados" fill="#3b82f6" />
+                  </RechartBarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
 
+          {/* Recent Tickets */}
+          <div className="bg-white rounded-xl border shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Chamados Recentes</h2>
+              <div className="bg-secondary rounded-md p-1">
+                <List className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              {recentTickets.length > 0 ? (
+                recentTickets.map((ticket) => (
+                  <TicketCard key={ticket.id} ticket={ticket} />
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum chamado recente encontrado.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
