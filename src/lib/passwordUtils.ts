@@ -73,7 +73,7 @@ function createSimpleHash(password: string, salt: string = ''): string {
  * @param salt Optional salt to use for the hash
  * @returns A more secure hash of the password
  */
-export function createSecureHash(password: string, salt: string = ''): string {
+function createSecureHash(password: string, salt: string = ''): string {
   let hash = 0;
   const str = password + salt;
   const iterations = 10000; // Increase computational cost
@@ -90,13 +90,15 @@ export function createSecureHash(password: string, salt: string = ''): string {
 }
 
 /**
- * Hashes a password consistently for both new accounts and verification
+ * Hashes a password using a more secure algorithm
+ * For compatibility, this still returns a synchronous hash
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
  * @returns The hashed password
  */
 export function hashPassword(password: string, salt: string = ''): string {
-  // Use the consistent secure hash for all passwords
+  // For a production system, this would use a proper password hashing algorithm
+  // like Argon2id or at minimum bcrypt with proper salting.
   return createSecureHash(password, salt);
 }
 
@@ -108,11 +110,11 @@ export function hashPassword(password: string, salt: string = ''): string {
  * @returns True if the password matches the hash
  */
 export function verifyPassword(password: string, hash: string, salt: string = ''): boolean {
-  // Normal password hashing flow
-  const secureHash = createSecureHash(password, salt);
-  if (secureHash === hash) return true;
+  // Try with secure hash first
+  const securePasswordHash = createSecureHash(password, salt);
+  if (securePasswordHash === hash) return true;
   
   // Fallback to simple hash for backward compatibility with older passwords
-  const simpleHash = createSimpleHash(password, salt);
-  return simpleHash === hash;
+  const simplePasswordHash = createSimpleHash(password, salt);
+  return simplePasswordHash === hash;
 }

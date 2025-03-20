@@ -1,7 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
-import { hashPassword, verifyPassword, createSecureHash } from './passwordUtils';
+import { hashPassword, verifyPassword } from './passwordUtils';
 
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
@@ -45,30 +46,6 @@ export const customSignIn = async (email: string, password: string): Promise<Use
   } catch (error) {
     console.error('Login error:', error);
     return null;
-  }
-}
-
-// Function to update the admin password in the database
-export const updateAdminPassword = async (userId: string, password: string = "admin123"): Promise<boolean> => {
-  try {
-    // Use the createSecureHash function directly to ensure consistent hashing
-    const hashedPassword = createSecureHash(password);
-    
-    const { error } = await supabase
-      .from('usuarios')
-      .update({ senha_hash: hashedPassword })
-      .eq('id', userId);
-    
-    if (error) {
-      console.error('Error updating admin password:', error);
-      return false;
-    }
-    
-    console.log('Admin password updated successfully');
-    return true;
-  } catch (error) {
-    console.error('Error updating admin password:', error);
-    return false;
   }
 }
 
