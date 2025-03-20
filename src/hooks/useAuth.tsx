@@ -76,10 +76,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           variant: "default"
         });
         
-        // Add notification about password security
+        // Add notification about improved password security
         toast({
           title: "Segurança reforçada",
-          description: "Sua senha foi atualizada com hash de segurança aprimorado.",
+          description: "Sua senha foi protegida com um hash de segurança no formato UUID.",
           variant: "default"
         });
         

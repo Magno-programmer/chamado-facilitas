@@ -5,17 +5,17 @@ import type { Database } from '@/integrations/supabase/types';
 import { hashPassword, verifyPassword, createSecureHash } from './passwordUtils';
 
 /**
- * Updates the user's password hash in the database using an improved hash algorithm
+ * Updates the user's password hash in the database using a UUID-like hash pattern
  * @param userId The ID of the user to update
  * @param password The password to rehash and store
  * @returns Promise<boolean> True if successful, false otherwise
  */
 async function updatePasswordHash(userId: string, password: string): Promise<boolean> {
   try {
-    // Generate a new hash using the Web Crypto API for better security
+    // Generate a new hash using the Web Crypto API with UUID-like format
     const newHash = await createSecureHash(password);
     
-    console.log('Generated new enhanced secure hash with length:', newHash.length);
+    console.log('Generated new UUID-like hash:', newHash);
     
     const { error } = await supabase
       .from('usuarios')
