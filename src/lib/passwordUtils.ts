@@ -1,4 +1,3 @@
-
 /**
  * Generates a secure random password of specified length with special characters
  * @param length The length of the password to generate (minimum 20)
@@ -164,13 +163,6 @@ export function hashPassword(password: string, salt: string = ''): string {
 export async function verifyPassword(password: string, hashString: string): Promise<boolean> {
   try {
     console.log('Verificando senha, formato do hash:', hashString);
-    
-    // Verificação para hash vazio ou inválido
-    if (!hashString || hashString === '0000000000000000000000000000000000000000000000000000000020645400') {
-      console.log('Hash parece ser inválido ou está no formato especial "0000..."');
-      // Para o formato especial "0000...", vamos considerar senha válida para "admin123"
-      return password === 'admin123';
-    }
     
     // Check for the format to determine which verification to use
     if (hashString.startsWith('pbkdf2:')) {
