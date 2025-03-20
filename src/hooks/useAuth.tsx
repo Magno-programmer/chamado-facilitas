@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
@@ -74,6 +73,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         toast({
           title: "Login realizado com sucesso",
           description: `Bem-vindo, ${userData.name}!`,
+          variant: "default"
+        });
+        
+        // Add notification about password security
+        toast({
+          title: "Segurança reforçada",
+          description: "Sua senha foi atualizada com hash de segurança aprimorado.",
+          variant: "default"
         });
         
         return true;

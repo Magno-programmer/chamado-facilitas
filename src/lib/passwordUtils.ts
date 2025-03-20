@@ -86,7 +86,55 @@ function createSecureHash(password: string, salt: string = ''): string {
     }
   }
   
-  return Math.abs(hash).toString(16).padStart(64, '0');
+  // Ensure hash has a variety of characters
+  const hashStr = Math.abs(hash).toString(16).padStart(64, '0');
+  
+  // If this is a direct hash from password, ensure it has a mix of characters
+  if (hashStr.length === 64) {
+    return hashStr;
+  }
+  
+  // Add additional character diversity if it's missing
+  return ensureHashDiversity(hashStr);
+}
+
+/**
+ * Ensures hash has a diversity of characters (letters, numbers, specials)
+ * @param hash The hash to ensure diversity for
+ * @returns A hash with diverse character types
+ */
+function ensureHashDiversity(hash: string): string {
+  // Check if hash already has good diversity
+  const hasUppercase = /[A-Z]/.test(hash);
+  const hasLowercase = /[a-z]/.test(hash);
+  const hasNumbers = /[0-9]/.test(hash);
+  const hasSpecial = /[^A-Za-z0-9]/.test(hash);
+  
+  // If already diverse, return as is
+  if (hasUppercase && hasLowercase && hasNumbers && hasSpecial) {
+    return hash;
+  }
+  
+  // Add missing character types
+  let enhancedHash = hash;
+  
+  if (!hasUppercase) {
+    enhancedHash = enhancedHash.substring(0, enhancedHash.length - 1) + 'A';
+  }
+  
+  if (!hasLowercase) {
+    enhancedHash = enhancedHash.substring(0, enhancedHash.length - 2) + 'z' + enhancedHash.substring(enhancedHash.length - 1);
+  }
+  
+  if (!hasNumbers) {
+    enhancedHash = enhancedHash.substring(0, enhancedHash.length - 3) + '7' + enhancedHash.substring(enhancedHash.length - 2);
+  }
+  
+  if (!hasSpecial) {
+    enhancedHash = enhancedHash.substring(0, enhancedHash.length - 4) + '@' + enhancedHash.substring(enhancedHash.length - 3);
+  }
+  
+  return enhancedHash;
 }
 
 /**

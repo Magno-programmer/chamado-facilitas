@@ -4,6 +4,35 @@ import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
 import { hashPassword, verifyPassword } from './passwordUtils';
 
+/**
+ * Updates the user's password hash in the database
+ * @param userId The ID of the user to update
+ * @param newHash The new password hash to store
+ * @returns True if successful, false otherwise
+ */
+async function updatePasswordHash(userId: string, password: string): Promise<boolean> {
+  try {
+    // Generate a new hash for the same password
+    const newHash = hashPassword(password);
+    
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ senha_hash: newHash })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating password hash:', error);
+      return false;
+    }
+    
+    console.log('Password hash updated successfully for user ID:', userId);
+    return true;
+  } catch (error) {
+    console.error('Error in updatePasswordHash:', error);
+    return false;
+  }
+}
+
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
   try {
@@ -32,6 +61,10 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     }
     
     console.log('Password verified successfully');
+    
+    // After successful verification, update the password hash
+    // This refreshes the hash without changing the password
+    await updatePasswordHash(data.id, password);
     
     // Map the database user to our User type
     const user: User = {
