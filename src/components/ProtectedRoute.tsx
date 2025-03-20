@@ -13,16 +13,21 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   
   useEffect(() => {
-    // Only show the restricted access message if coming from somewhere other than logout
-    // We check the referrer to determine if this was a manual navigation attempt
-    if (!isLoading && !isAuthenticated && !document.referrer.includes('login')) {
+    // Only show the restricted access message if:
+    // 1. Not coming from logout
+    // 2. Not trying to access the login page
+    // 3. Not authenticated and not loading
+    if (!isLoading && 
+        !isAuthenticated && 
+        !document.referrer.includes('login') && 
+        location.pathname !== '/login') {
       toast({
         title: "Acesso Restrito",
         description: "Você precisa estar autenticado para acessar esta página.",
         variant: "destructive",
       });
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, location.pathname]);
 
   if (isLoading) {
     // Show a loading state while checking authentication
