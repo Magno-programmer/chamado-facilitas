@@ -87,6 +87,8 @@ const CreateEditUsuarioDialog = ({
     onSave(values, !!usuario);
   };
 
+  const isEditing = !!usuario;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -180,23 +182,25 @@ const CreateEditUsuarioDialog = ({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="senha"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{usuario ? 'Nova Senha (opcional)' : 'Senha'}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder={usuario ? "Deixe em branco para manter a senha atual" : "Digite a senha"} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Digite a senha" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
