@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Tickets = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,31 +17,27 @@ const Tickets = () => {
   const [sectorFilter, setSectorFilter] = useState<number | 'all'>('all');
   const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
 
-  // Check if logged in
+  const isAdmin = user?.role === 'ADMIN';
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Helper function to convert string role to UserRole type
   const convertToUserRole = (role: string): UserRole => {
     return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
   };
 
-  // Load data
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Fetch sectors
         const sectorsData = await getSectors();
         setSectors(sectorsData);
         
-        // Fetch tickets
         const ticketsData = await getTickets();
         
-        // Map to our TicketWithDetails type
         const mappedTickets = ticketsData.map(ticket => ({
           id: ticket.id,
           title: ticket.titulo,
@@ -73,8 +69,12 @@ const Tickets = () => {
           percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
         }));
         
-        setTickets(mappedTickets);
-        setFilteredTickets(mappedTickets);
+        const userTickets = isAdmin 
+          ? mappedTickets 
+          : mappedTickets.filter(ticket => ticket.requesterId === user?.id);
+        
+        setTickets(userTickets);
+        setFilteredTickets(userTickets);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -82,12 +82,11 @@ const Tickets = () => {
       }
     };
     
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       loadData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user, isAdmin]);
 
-  // Calculate percentage of time remaining for a ticket
   const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
     const now = new Date();
     const start = new Date(createdAt);
@@ -102,13 +101,11 @@ const Tickets = () => {
     return Math.max(0, Math.min(100, percentage));
   };
 
-  // Apply filters when any filter changes
   useEffect(() => {
     if (tickets.length === 0) return;
 
     let result = [...tickets];
 
-    // Apply search filter
     if (searchTerm) {
       result = result.filter(ticket => 
         ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -116,12 +113,10 @@ const Tickets = () => {
       );
     }
 
-    // Apply status filter
     if (statusFilter !== 'all') {
       result = result.filter(ticket => ticket.status === statusFilter);
     }
 
-    // Apply sector filter
     if (sectorFilter !== 'all') {
       result = result.filter(ticket => ticket.sectorId === sectorFilter);
     }
@@ -144,7 +139,11 @@ const Tickets = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Chamados</h1>
-          <p className="text-muted-foreground">Gerencie e acompanhe todos os chamados</p>
+          <p className="text-muted-foreground">
+            {isAdmin 
+              ? "Gerencie e acompanhe todos os chamados" 
+              : "Gerencie e acompanhe seus chamados"}
+          </p>
         </div>
         <button
           onClick={() => navigate('/tickets/new')}
@@ -155,7 +154,6 @@ const Tickets = () => {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-xl border shadow-sm p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="col-span-2">
@@ -208,7 +206,6 @@ const Tickets = () => {
         </div>
       </div>
 
-      {/* Results */}
       {filteredTickets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTickets.map(ticket => (
