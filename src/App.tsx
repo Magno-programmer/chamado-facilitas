@@ -10,6 +10,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import Deadlines from "./pages/Deadlines";
+import Setores from "./pages/Setores";
+import Usuarios from "./pages/Usuarios";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -44,12 +46,12 @@ const App = () => (
             } />
             <Route path="/setores" element={
               <ProtectedRoute>
-                <NotFound />
+                <Setores />
               </ProtectedRoute>
             } />
             <Route path="/usuarios" element={
               <ProtectedRoute>
-                <NotFound />
+                <Usuarios />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
