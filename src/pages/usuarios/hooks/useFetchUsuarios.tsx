@@ -14,13 +14,18 @@ interface Usuario {
   };
 }
 
-export const useFetchUsuarios = () => {
+export const useFetchUsuarios = (setExternalLoading?: (loading: boolean) => void) => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsuarios = async () => {
       try {
+        // If external loading state setter is provided, use it
+        if (setExternalLoading) {
+          setExternalLoading(true);
+        }
+        
         const { data, error } = await supabase
           .from('usuarios')
           .select(`
@@ -42,11 +47,15 @@ export const useFetchUsuarios = () => {
         });
       } finally {
         setLoading(false);
+        // If external loading state setter is provided, use it
+        if (setExternalLoading) {
+          setExternalLoading(false);
+        }
       }
     };
 
     fetchUsuarios();
-  }, []);
+  }, [setExternalLoading]);
 
   return { usuarios, setUsuarios, loading, setLoading };
 };

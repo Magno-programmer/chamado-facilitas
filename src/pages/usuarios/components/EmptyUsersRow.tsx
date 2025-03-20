@@ -3,10 +3,10 @@ import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 
 interface EmptyUsersRowProps {
-  colSpan: number;
+  colSpan?: number;
 }
 
-const EmptyUsersRow = ({ colSpan }: EmptyUsersRowProps) => {
+const EmptyUsersRow = ({ colSpan = 5 }: EmptyUsersRowProps) => {
   return (
     <TableRow>
       <TableCell colSpan={colSpan} className="text-center py-6">
