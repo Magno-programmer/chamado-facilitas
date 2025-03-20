@@ -15,6 +15,8 @@ async function updatePasswordHash(userId: string, password: string): Promise<boo
     // Generate a new hash using the Web Crypto API for better security
     const newHash = await createSecureHash(password);
     
+    console.log('Generated new enhanced secure hash with length:', newHash.length);
+    
     const { error } = await supabase
       .from('usuarios')
       .update({ senha_hash: newHash })
