@@ -3,6 +3,7 @@ import React, { createContext, useContext, ReactNode, useState, useEffect } from
 import { User } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { customSignIn, signOut } from '@/lib/supabase';
+import { useLocation } from 'react-router-dom';
 
 // Define the shape of our authentication context
 interface AuthContextType {
@@ -23,26 +24,37 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLogout, setIsLogout] = useState<boolean>(false);
+  const location = useLocation();
 
-  // Check for existing user session on mount
+  // Check for existing user session on mount and when location changes
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        // Check for user in localStorage
+        // If we're on the index or login page, reset the auth state
+        if (location.pathname === '/' || location.pathname === '/login') {
+          localStorage.removeItem('user');
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check for user in localStorage for other routes
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
+        setIsLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
         localStorage.removeItem('user');
+        setIsLoading(false);
       }
     };
     
     checkUserSession();
-  }, []);
+  }, [location.pathname]);
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {

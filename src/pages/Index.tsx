@@ -1,11 +1,25 @@
+
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Clock, Zap } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   // Animation references
   const heroRef = React.useRef<HTMLDivElement>(null);
   const featuresRef = React.useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  // Reset authentication when landing on index page
+  useEffect(() => {
+    // Force logout when on index page
+    const clearAuth = async () => {
+      await logout();
+    };
+    
+    clearAuth();
+  }, [logout]);
 
   useEffect(() => {
     const observerOptions = {
@@ -38,6 +52,11 @@ const Index = () => {
     return () => observer.disconnect();
   }, []);
 
+  const handleAccessPlatform = () => {
+    // Navigate to login page
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -62,12 +81,12 @@ const Index = () => {
                 monitore prazos em tempo real.
               </p>
               <div>
-                <Link
-                  to="/login"
+                <button
+                  onClick={handleAccessPlatform}
                   className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg shadow-sm transition-all duration-200 text-center font-medium inline-flex items-center"
                 >
                   Acessar Plataforma <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                </button>
               </div>
             </div>
             <div className="hidden md:block md:w-1/2 mt-8 md:mt-0">

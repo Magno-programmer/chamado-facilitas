@@ -12,23 +12,31 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   
+  // Public routes that don't require authentication
+  const publicRoutes = ['/', '/login'];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+  
   useEffect(() => {
     // Only show the restricted access message if:
-    // 1. Not coming from logout
-    // 2. Not trying to access the login page or home page
+    // 1. Not a public route
+    // 2. Not coming from logout
     // 3. Not authenticated and not loading
     if (!isLoading && 
         !isAuthenticated && 
-        !document.referrer.includes('login') && 
-        location.pathname !== '/login' &&
-        location.pathname !== '/') {
+        !isPublicRoute &&
+        !document.referrer.includes('login')) {
       toast({
         title: "Acesso Restrito",
         description: "Você precisa estar autenticado para acessar esta página.",
         variant: "destructive",
       });
     }
-  }, [isAuthenticated, isLoading, location.pathname]);
+  }, [isAuthenticated, isLoading, isPublicRoute]);
+
+  // If this is a public route, just render the children
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     // Show a loading state while checking authentication
@@ -39,7 +47,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // If not authenticated, immediately redirect to login page
+  // If not authenticated and not a public route, redirect to login page
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
