@@ -38,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           // Map to our User type
           const mappedUser: User = {
-            id: userProfile.id,
+            id: parseInt(userProfile.id, 10), // Convert string ID to number
             name: userProfile.nome,
             email: userProfile.email,
             sectorId: userProfile.setor_id,
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             
             // Map to our User type
             const mappedUser: User = {
-              id: userProfile.id,
+              id: parseInt(userProfile.id, 10), // Convert string ID to number
               name: userProfile.nome,
               email: userProfile.email,
               sectorId: userProfile.setor_id,
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           // Map to our User type
           const mappedUser: User = {
-            id: userProfile.id,
+            id: parseInt(userProfile.id, 10), // Convert string ID to number
             name: userProfile.nome,
             email: userProfile.email,
             sectorId: userProfile.setor_id,
