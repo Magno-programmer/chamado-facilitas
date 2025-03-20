@@ -2,7 +2,7 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
-import { supabase, signIn, signOut, getUserProfile } from '@/lib/supabase';
+import { customSignIn, signOut } from '@/lib/supabase';
 
 // Define the shape of our authentication context
 interface AuthContextType {
@@ -23,70 +23,24 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Check for existing user session on mount
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // Fetch user profile from our usuarios table
-          const userProfile = await getUserProfile(session.user.id);
-          
-          // Map to our User type - using string IDs to match Supabase
-          const mappedUser: User = {
-            id: userProfile.id, // String ID from Supabase
-            name: userProfile.nome,
-            email: userProfile.email,
-            sectorId: userProfile.setor_id,
-            role: userProfile.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
-          };
-          
-          setUser(mappedUser);
+        // Check for user in localStorage
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         }
       } catch (error) {
         console.error('Error checking session:', error);
-      } finally {
-        setIsLoading(false);
+        localStorage.removeItem('user');
       }
     };
     
     checkUserSession();
-    
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          try {
-            // Fetch user profile from our usuarios table
-            const userProfile = await getUserProfile(session.user.id);
-            
-            // Map to our User type - using string IDs to match Supabase
-            const mappedUser: User = {
-              id: userProfile.id, // String ID from Supabase
-              name: userProfile.nome,
-              email: userProfile.email,
-              sectorId: userProfile.setor_id,
-              role: userProfile.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
-            };
-            
-            setUser(mappedUser);
-          } catch (error) {
-            console.error('Error fetching user profile:', error);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-      }
-    );
-    
-    // Clean up subscription
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   // Login function
@@ -94,36 +48,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     
     try {
-      // Sign in with Supabase
-      const authData = await signIn(email, password);
+      // Use our custom sign in function
+      const userData = await customSignIn(email, password);
       
-      if (authData.user) {
-        try {
-          // Fetch user profile from our usuarios table
-          const userProfile = await getUserProfile(authData.user.id);
-          
-          // Map to our User type - using string IDs to match Supabase
-          const mappedUser: User = {
-            id: userProfile.id, // String ID from Supabase
-            name: userProfile.nome,
-            email: userProfile.email,
-            sectorId: userProfile.setor_id,
-            role: userProfile.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
-          };
-          
-          setUser(mappedUser);
-          
-          toast({
-            title: "Login realizado com sucesso",
-            description: `Bem-vindo, ${userProfile.nome}!`,
-          });
-          
-          return true;
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-          throw new Error('Falha ao obter dados do usuário');
-        }
+      if (userData) {
+        setUser(userData);
+        
+        // Store user in localStorage for session persistence
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        toast({
+          title: "Login realizado com sucesso",
+          description: `Bem-vindo, ${userData.name}!`,
+        });
+        
+        return true;
       }
+      
+      toast({
+        title: "Erro ao fazer login",
+        description: "Email ou senha inválidos.",
+        variant: "destructive",
+      });
       
       return false;
     } catch (error) {
@@ -146,6 +92,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await signOut();
       setUser(null);
+      
+      // Remove user from localStorage
+      localStorage.removeItem('user');
       
       toast({
         title: "Logout realizado",

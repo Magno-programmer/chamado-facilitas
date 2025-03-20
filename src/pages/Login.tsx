@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, Info, AlertTriangle } from 'lucide-react';
@@ -36,7 +35,7 @@ const Login = () => {
         navigate('/dashboard');
       } else {
         // O erro já foi exibido pelo toast no useAuth
-        setLoginError('Falha no login. Verifique suas credenciais ou a conexão com o servidor.');
+        setLoginError('Falha no login. Verifique suas credenciais.');
       }
     } catch (error) {
       console.error('Login submission error:', error);

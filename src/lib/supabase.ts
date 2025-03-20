@@ -1,6 +1,6 @@
-
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { User } from './types'
 
 // Initialize the Supabase client
 const supabaseUrl = 'https://ryskqkqgjvzcloibkykl.supabase.co'
@@ -8,20 +8,52 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
-// Helper functions for auth
-export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  })
-  
-  if (error) throw error
-  return data
+// Custom login function that uses the usuarios table
+export const customSignIn = async (email: string, password: string): Promise<User | null> => {
+  try {
+    // We don't store plain passwords in the database, so we can only query by email
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (error || !data) {
+      console.error('Error fetching user:', error);
+      return null;
+    }
+    
+    // In a real app, you would verify the password hash here
+    // For this implementation, we'll do a simple check since we don't have actual hashing
+    // WARNING: This is not secure for production!
+    if (data.senha_hash !== password) {
+      console.error('Invalid password');
+      return null;
+    }
+    
+    // Map the database user to our User type
+    const user: User = {
+      id: data.id,
+      name: data.nome,
+      email: data.email,
+      sectorId: data.setor_id,
+      role: data.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+    };
+    
+    return user;
+  } catch (error) {
+    console.error('Login error:', error);
+    return null;
+  }
 }
 
+// We'll keep these functions for compatibility, but they'll use our custom implementation
+export const signIn = customSignIn;
+
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut()
-  if (error) throw error
+  // Since we're not using Supabase Auth, this is just a placeholder
+  // In a real app, you might want to clear session storage or cookies
+  return true;
 }
 
 // User profile functions
@@ -30,10 +62,10 @@ export const getUserProfile = async (userId: string) => {
     .from('usuarios')
     .select('*')
     .eq('id', userId)
-    .single()
+    .single();
   
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
 
 // Tickets (chamados) functions
