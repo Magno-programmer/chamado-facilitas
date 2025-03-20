@@ -1,46 +1,14 @@
-
 import { User } from './types/user.types';
 import { Sector } from './types/sector.types';
 import { Deadline } from './types/sector.types';
 import { Ticket, TicketStatus } from './types/ticket.types';
 import { DashboardStats } from './types/dashboard.types';
 
-export const mockUsers: User[] = [
-  {
-    id: "1",
-    name: 'Admin User',
-    email: 'admin@example.com',
-    sectorId: 1,
-    role: 'ADMIN',
-  },
-  {
-    id: "2",
-    name: 'Client User',
-    email: 'client@example.com',
-    sectorId: 2,
-    role: 'CLIENT',
-  },
-  {
-    id: "3",
-    name: 'Support Team Member',
-    email: 'support@example.com',
-    sectorId: 3,
-    role: 'ADMIN',
-  },
-];
-
-export const mockSectors: Sector[] = [
-  { id: 1, name: 'Administração' },
-  { id: 2, name: 'Recursos Humanos' },
-  { id: 3, name: 'TI' },
-  { id: 4, name: 'Financeiro' },
-];
-
 export const mockDeadlines: Deadline[] = [
-  { id: 1, title: 'Urgente', sectorId: 3, deadline: 'PT24H' }, // 24 hours
-  { id: 2, title: 'Alta Prioridade', sectorId: 3, deadline: 'P3D' }, // 3 days
-  { id: 3, title: 'Normal', sectorId: 2, deadline: 'P7D' }, // 7 days
-  { id: 4, title: 'Baixa Prioridade', sectorId: 2, deadline: 'P14D' }, // 14 days
+  { id: 1, titulo: 'Urgente', setor_id: 3, prazo: 'PT24H' }, // 24 hours
+  { id: 2, titulo: 'Alta Prioridade', setor_id: 3, prazo: 'P3D' }, // 3 days
+  { id: 3, titulo: 'Normal', setor_id: 2, prazo: 'P7D' }, // 7 days
+  { id: 4, titulo: 'Baixa Prioridade', setor_id: 2, prazo: 'P14D' }, // 14 days
 ];
 
 const getRandomStatus = (): TicketStatus => {
@@ -68,9 +36,9 @@ export const mockTickets: Ticket[] = Array.from({ length: 20 }, (_, i) => {
     id: i + 1,
     title: `Chamado #${i + 1} - ${['Problema', 'Solicitação', 'Dúvida', 'Melhoria'][Math.floor(Math.random() * 4)]}`,
     description: `Descrição detalhada do chamado ${i + 1}. Este é um texto de exemplo para simular o conteúdo de um chamado real.`,
-    sectorId: mockSectors[Math.floor(Math.random() * mockSectors.length)].id,
-    requesterId: mockUsers[Math.floor(Math.random() * mockUsers.length)].id,
-    responsibleId: Math.random() > 0.3 ? mockUsers[Math.floor(Math.random() * mockUsers.length)].id : null,
+    sectorId: 1,
+    requesterId: "1",
+    responsibleId: "1",
     status: getRandomStatus(),
     createdAt,
     deadline: generateDeadlineDate(createdAt, deadlineDays),
@@ -83,11 +51,7 @@ export const mockDashboardStats: DashboardStats = {
   inProgressTickets: mockTickets.filter(t => t.status === 'Em Andamento').length,
   completedTickets: mockTickets.filter(t => t.status === 'Concluído').length,
   lateTickets: mockTickets.filter(t => t.status === 'Atrasado').length,
-  ticketsBySector: mockSectors.map(sector => ({
-    sectorId: sector.id,
-    sectorName: sector.name,
-    count: mockTickets.filter(t => t.sectorId === sector.id).length,
-  })),
+  ticketsBySector: [],
 };
 
 export const calculatePercentageRemaining = (ticket: Ticket): number => {
@@ -114,11 +78,21 @@ export const getTicketWithDetails = (ticketId: number): any => {
   const ticket = mockTickets.find(t => t.id === ticketId);
   if (!ticket) return null;
   
-  const sector = mockSectors.find(s => s.id === ticket.sectorId);
-  const requester = mockUsers.find(u => u.id === ticket.requesterId);
-  const responsible = ticket.responsibleId 
-    ? mockUsers.find(u => u.id === ticket.responsibleId) 
-    : null;
+  const sector = { id: 1, name: 'Administração' };
+  const requester = {
+    id: "1",
+    name: 'Admin User',
+    email: 'admin@example.com',
+    sectorId: 1,
+    role: 'ADMIN',
+  };
+  const responsible = {
+    id: "1",
+    name: 'Admin User',
+    email: 'admin@example.com',
+    sectorId: 1,
+    role: 'ADMIN',
+  };
   
   return {
     ...ticket,
@@ -130,17 +104,26 @@ export const getTicketWithDetails = (ticketId: number): any => {
 };
 
 export const mockLogin = (email: string, password: string): User | null => {
-  const user = mockUsers.find(u => u.email === email);
-  return user || null;
+  return null;
 };
 
 export const getEnrichedTickets = () => {
   return mockTickets.map(ticket => {
-    const sector = mockSectors.find(s => s.id === ticket.sectorId);
-    const requester = mockUsers.find(u => u.id === ticket.requesterId);
-    const responsible = ticket.responsibleId 
-      ? mockUsers.find(u => u.id === ticket.responsibleId) 
-      : null;
+    const sector = { id: 1, name: 'Administração' };
+    const requester = {
+      id: "1",
+      name: 'Admin User',
+      email: 'admin@example.com',
+      sectorId: 1,
+      role: 'ADMIN',
+    };
+    const responsible = {
+      id: "1",
+      name: 'Admin User',
+      email: 'admin@example.com',
+      sectorId: 1,
+      role: 'ADMIN',
+    };
     
     return {
       ...ticket,
