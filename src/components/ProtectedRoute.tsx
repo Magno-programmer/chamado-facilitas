@@ -11,9 +11,11 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-
+  
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Only show the restricted access message if coming from somewhere other than logout
+    // We check the referrer to determine if this was a manual navigation attempt
+    if (!isLoading && !isAuthenticated && !document.referrer.includes('login')) {
       toast({
         title: "Acesso Restrito",
         description: "Você precisa estar autenticado para acessar esta página.",

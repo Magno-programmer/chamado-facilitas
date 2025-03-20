@@ -24,6 +24,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLogout, setIsLogout] = useState<boolean>(false);
 
   // Check for existing user session on mount
   useEffect(() => {
@@ -53,6 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (userData) {
         setUser(userData);
+        setIsLogout(false);
         
         // Store user in localStorage for session persistence
         localStorage.setItem('user', JSON.stringify(userData));
@@ -92,13 +94,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await signOut();
       setUser(null);
+      setIsLogout(true);
       
       // Remove user from localStorage
       localStorage.removeItem('user');
       
+      // Show friendly goodbye message
+      const goodbyeMessages = [
+        "Até breve! Esperamos vê-lo novamente em breve.",
+        "Adeus e volte sempre! Foi um prazer atendê-lo.",
+        "Logout realizado com sucesso. Tenha um ótimo dia!",
+        "Você saiu da sua conta. Sentiremos sua falta!",
+        "Até a próxima visita! Obrigado por usar o Facilitas."
+      ];
+      
+      const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
+      
       toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso.",
+        title: "Sessão encerrada",
+        description: randomMessage,
       });
     } catch (error) {
       console.error('Logout error:', error);
