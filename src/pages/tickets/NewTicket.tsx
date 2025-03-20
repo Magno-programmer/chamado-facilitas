@@ -67,6 +67,7 @@ const NewTicket = () => {
         descricao: description,
         setor_id: sectorId,
         solicitante_id: user.id,
+        responsavel_id: user.id, // Added this line to fix the type error
         status: 'Aberto',
         data_criacao: new Date().toISOString(),
         prazo: new Date(deadline).toISOString(),
