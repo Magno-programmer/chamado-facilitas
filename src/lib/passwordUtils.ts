@@ -1,4 +1,3 @@
-
 /**
  * Generates a secure random password of specified length with special characters
  * @param length The length of the password to generate (minimum 20)
@@ -51,21 +50,6 @@ export async function sha256(text: string): Promise<string> {
 }
 
 /**
- * Creates a simple hash for direct comparison with the stored hash in database
- * This is specifically for matching the known hash of "admin123"
- * @param password The password to hash
- * @returns A hash matching the original implementation
- */
-function createDirectHash(password: string): string {
-  if (password === "admin123") {
-    return "6ad2fa6c2c27ac0f0d7f2815f2e0f33b7e68c6f1fbef23bb5db20115f9b9e1f9";
-  }
-  
-  // For other passwords, use the secure hash (for new passwords)
-  return createSecureHash(password);
-}
-
-/**
  * Creates a simple hash for backward compatibility with old passwords
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
@@ -105,19 +89,13 @@ function createSecureHash(password: string, salt: string = ''): string {
 }
 
 /**
- * Hashes a password using a more secure algorithm
- * For compatibility, this still returns a synchronous hash
+ * Hashes a password consistently for both new accounts and verification
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
  * @returns The hashed password
  */
 export function hashPassword(password: string, salt: string = ''): string {
-  // Hard-code the hash for the admin123 password for direct comparison
-  if (password === "admin123") {
-    return "6ad2fa6c2c27ac0f0d7f2815f2e0f33b7e68c6f1fbef23bb5db20115f9b9e1f9";
-  }
-  
-  // For other passwords, use the secure hash
+  // Use the consistent secure hash for all passwords
   return createSecureHash(password, salt);
 }
 
@@ -129,16 +107,11 @@ export function hashPassword(password: string, salt: string = ''): string {
  * @returns True if the password matches the hash
  */
 export function verifyPassword(password: string, hash: string, salt: string = ''): boolean {
-  // Special case for admin password
-  if (password === "admin123" && hash === "6ad2fa6c2c27ac0f0d7f2815f2e0f33b7e68c6f1fbef23bb5db20115f9b9e1f9") {
-    return true;
-  }
-  
-  // Use the normal password hashing flow for regular passwords
-  const passwordHash = hashPassword(password, salt);
-  if (passwordHash === hash) return true;
+  // Normal password hashing flow
+  const secureHash = createSecureHash(password, salt);
+  if (secureHash === hash) return true;
   
   // Fallback to simple hash for backward compatibility with older passwords
-  const simplePasswordHash = createSimpleHash(password, salt);
-  return simplePasswordHash === hash;
+  const simpleHash = createSimpleHash(password, salt);
+  return simpleHash === hash;
 }

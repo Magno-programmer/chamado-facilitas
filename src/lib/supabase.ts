@@ -49,6 +49,29 @@ export const customSignIn = async (email: string, password: string): Promise<Use
   }
 }
 
+// Function to update the admin password in the database
+export const updateAdminPassword = async (userId: string, password: string = "admin123"): Promise<boolean> => {
+  try {
+    const hashedPassword = hashPassword(password);
+    
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ senha_hash: hashedPassword })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating admin password:', error);
+      return false;
+    }
+    
+    console.log('Admin password updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating admin password:', error);
+    return false;
+  }
+}
+
 // We'll keep these functions for compatibility, but they'll use our custom implementation
 export const signIn = customSignIn;
 
