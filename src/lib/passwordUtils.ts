@@ -51,19 +51,29 @@ export async function sha256(text: string): Promise<string> {
 }
 
 /**
- * Hashes a password using a more secure algorithm
- * For compatibility, this still returns a synchronous hash
+ * Creates a simple hash for backward compatibility with old passwords
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
- * @returns The hashed password
+ * @returns A simple hash of the password
  */
-export function hashPassword(password: string, salt: string = ''): string {
-  // For a production system, this would use a proper password hashing algorithm
-  // like Argon2id or at minimum bcrypt with proper salting.
-  // The implementation below is still not secure enough for production use
-  // but is an improvement over the simple hash function.
-  
-  // Create a more complex hash by iterating multiple times
+function createSimpleHash(password: string, salt: string = ''): string {
+  let hash = 0;
+  const str = password + salt;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16).padStart(64, '0');
+}
+
+/**
+ * Creates a more secure hash with multiple iterations
+ * @param password The password to hash
+ * @param salt Optional salt to use for the hash
+ * @returns A more secure hash of the password
+ */
+function createSecureHash(password: string, salt: string = ''): string {
   let hash = 0;
   const str = password + salt;
   const iterations = 10000; // Increase computational cost
@@ -76,8 +86,20 @@ export function hashPassword(password: string, salt: string = ''): string {
     }
   }
   
-  // Convert to hex and pad to ensure consistent length
   return Math.abs(hash).toString(16).padStart(64, '0');
+}
+
+/**
+ * Hashes a password using a more secure algorithm
+ * For compatibility, this still returns a synchronous hash
+ * @param password The password to hash
+ * @param salt Optional salt to use for the hash
+ * @returns The hashed password
+ */
+export function hashPassword(password: string, salt: string = ''): string {
+  // For a production system, this would use a proper password hashing algorithm
+  // like Argon2id or at minimum bcrypt with proper salting.
+  return createSecureHash(password, salt);
 }
 
 /**
@@ -88,6 +110,11 @@ export function hashPassword(password: string, salt: string = ''): string {
  * @returns True if the password matches the hash
  */
 export function verifyPassword(password: string, hash: string, salt: string = ''): boolean {
-  const passwordHash = hashPassword(password, salt);
-  return passwordHash === hash;
+  // Try with secure hash first
+  const securePasswordHash = createSecureHash(password, salt);
+  if (securePasswordHash === hash) return true;
+  
+  // Fallback to simple hash for backward compatibility with older passwords
+  const simplePasswordHash = createSimpleHash(password, salt);
+  return simplePasswordHash === hash;
 }

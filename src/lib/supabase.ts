@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
@@ -6,6 +7,8 @@ import { hashPassword, verifyPassword } from './passwordUtils';
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
   try {
+    console.log('Attempting login with email:', email);
+    
     // We don't store plain passwords in the database, so we can only query by email
     const { data, error } = await supabase
       .from('usuarios')
@@ -18,11 +21,17 @@ export const customSignIn = async (email: string, password: string): Promise<Use
       return null;
     }
     
+    console.log('Found user with email:', email);
+    
     // Verify the password against the hashed value in the database
     if (!verifyPassword(password, data.senha_hash)) {
       console.error('Invalid password');
+      console.log('Provided password hash:', hashPassword(password));
+      console.log('Stored password hash:', data.senha_hash);
       return null;
     }
+    
+    console.log('Password verified successfully');
     
     // Map the database user to our User type
     const user: User = {
