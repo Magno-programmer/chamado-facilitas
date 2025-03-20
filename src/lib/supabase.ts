@@ -1,5 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
+import type { Database } from '@/integrations/supabase/types';
 
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
