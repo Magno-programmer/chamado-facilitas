@@ -5,7 +5,8 @@ import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { TicketWithDetails, UserRole } from '@/lib/types';
 import { DashboardStats } from '@/lib/types/dashboard.types';
-import { getTickets, getTicketStats } from '@/lib/supabase';
+import { getTickets, getTicketById, getTicketsByUserId } from '@/lib/services/ticketService';
+import { getTicketStats } from '@/lib/services/statsService';
 import TicketCard from '@/components/TicketCard';
 import TicketsTable from '@/components/TicketsTable';
 import { useAuth } from '@/hooks/useAuth';
@@ -96,11 +97,11 @@ const Dashboard = () => {
           };
           
           // Calculate tickets by sector
-          const sectorMap = new Map<number, { sectorName: string, count: number }>();
+          const sectorMap = new Map<number, { sectorId: number, sectorName: string, count: number }>();
           mappedTickets.forEach(ticket => {
             const { sectorId, sector } = ticket;
             if (!sectorMap.has(sectorId)) {
-              sectorMap.set(sectorId, { sectorName: sector.name, count: 0 });
+              sectorMap.set(sectorId, { sectorId, sectorName: sector.name, count: 0 });
             }
             const sectorData = sectorMap.get(sectorId);
             if (sectorData) {
@@ -108,7 +109,7 @@ const Dashboard = () => {
             }
           });
           
-          clientStats.ticketsBySector = Array.from(sectorMap.values());
+          clientStats.ticketsBySector = Array.from(sectorMap.entries()).map(([_, value]) => value);
           setStats(clientStats);
         } else {
           // Admin sees all stats
