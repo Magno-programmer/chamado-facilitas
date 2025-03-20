@@ -11,10 +11,12 @@ import { createSecureHash, verifyPassword } from '../passwordUtils';
  */
 export async function updatePasswordHash(userId: string, password: string): Promise<boolean> {
   try {
+    console.log('DEBUG - updatePasswordHash - Starting password hash update for user ID:', userId);
+    
     // Generate a new hash using the Web Crypto API with PBKDF2 algorithm
     const newHash = await createSecureHash(password);
     
-    console.log('Generated new secure hash for password update');
+    console.log('DEBUG - updatePasswordHash - Generated new secure hash');
     
     const { error } = await supabase
       .from('usuarios')
@@ -22,14 +24,14 @@ export async function updatePasswordHash(userId: string, password: string): Prom
       .eq('id', userId);
     
     if (error) {
-      console.error('Error updating password hash:', error);
+      console.error('DEBUG - updatePasswordHash - Error updating password hash:', error);
       return false;
     }
     
-    console.log('Password hash updated successfully for user ID:', userId);
+    console.log('DEBUG - updatePasswordHash - Password hash updated successfully for user ID:', userId);
     return true;
   } catch (error) {
-    console.error('Error in updatePasswordHash:', error);
+    console.error('DEBUG - updatePasswordHash - Error in updatePasswordHash:', error);
     return false;
   }
 }
@@ -37,7 +39,7 @@ export async function updatePasswordHash(userId: string, password: string): Prom
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
   try {
-    console.log('Attempting login with email:', email);
+    console.log('DEBUG - customSignIn - Attempting login with email:', email);
     
     // We don't store plain passwords in the database, so we can only query by email
     const { data, error } = await supabase
@@ -47,23 +49,24 @@ export const customSignIn = async (email: string, password: string): Promise<Use
       .single();
     
     if (error || !data) {
-      console.error('Error fetching user:', error);
+      console.error('DEBUG - customSignIn - Error fetching user:', error);
       return null;
     }
     
-    console.log('Found user with email:', email);
-    console.log('Hash armazenado no banco:', data.senha_hash);
+    console.log('DEBUG - customSignIn - Found user with email:', email);
+    console.log('DEBUG - customSignIn - User data:', { id: data.id, nome: data.nome, email: data.email, role: data.role });
+    console.log('DEBUG - customSignIn - Hash stored in database:', data.senha_hash);
     
     // Verify the password against the hashed value in the database
     const passwordMatches = await verifyPassword(password, data.senha_hash);
-    console.log('Resultado da verificação de senha:', passwordMatches);
+    console.log('DEBUG - customSignIn - Password verification result:', passwordMatches);
     
     if (!passwordMatches) {
-      console.error('Invalid password');
+      console.error('DEBUG - customSignIn - Invalid password');
       return null;
     }
     
-    console.log('Password verified successfully');
+    console.log('DEBUG - customSignIn - Password verified successfully');
     
     // After successful verification, update the password hash using the improved algorithm
     // This refreshes the hash without changing the password
@@ -80,7 +83,7 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     
     return user;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('DEBUG - customSignIn - Login error:', error);
     return null;
   }
 }

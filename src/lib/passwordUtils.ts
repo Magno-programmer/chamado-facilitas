@@ -1,3 +1,4 @@
+
 /**
  * Generates a secure random password of specified length with special characters
  * @param length The length of the password to generate (minimum 20)
@@ -102,25 +103,29 @@ function generateRandomString(length: number): string {
  */
 export async function verifySecureHash(password: string, hashString: string): Promise<boolean> {
   try {
+    console.log('DEBUG - verifySecureHash - Password input:', password);
+    console.log('DEBUG - verifySecureHash - Hash to verify against:', hashString);
+    
     // Parse the hash string
     const [algorithm, iterations, keylen, salt, storedHash] = hashString
       .replace(/\$/g, ':')
       .split(':');
     
-    console.log('Verificando hash seguro:', { algorithm, iterations, salt });
-    console.log('Hash armazenado:', storedHash);
+    console.log('DEBUG - verifySecureHash - Parsed hash components:', { algorithm, iterations, salt, keylen });
+    console.log('DEBUG - verifySecureHash - Stored hash component:', storedHash);
     
     // Verify using the same algorithm and salt
     const computedHash = await createSecureHash(password, salt);
-    console.log('Hash computado completo:', computedHash);
+    console.log('DEBUG - verifySecureHash - Full computed hash:', computedHash);
     
     const computedHashParts = computedHash.replace(/\$/g, ':').split(':');
     const newHash = computedHashParts[computedHashParts.length - 1];
-    console.log('Parte do hash computado para comparação:', newHash);
+    console.log('DEBUG - verifySecureHash - Computed hash for comparison:', newHash);
+    console.log('DEBUG - verifySecureHash - Match result:', newHash === storedHash);
     
     return newHash === storedHash;
   } catch (error) {
-    console.error('Error verifying hash:', error);
+    console.error('Error verifying secure hash:', error);
     return false;
   }
 }
@@ -133,8 +138,12 @@ export async function verifySecureHash(password: string, hashString: string): Pr
  */
 export function hashPassword(password: string, salt: string = ''): string {
   try {
+    console.log('DEBUG - hashPassword - Password input:', password);
+    console.log('DEBUG - hashPassword - Salt input:', salt);
+    
     // Generate a random salt if not provided
     const actualSalt = salt || generateRandomString(16);
+    console.log('DEBUG - hashPassword - Actual salt used:', actualSalt);
     
     // Create a simple hash for backward compatibility
     let hash = 0;
@@ -147,7 +156,11 @@ export function hashPassword(password: string, salt: string = ''): string {
     
     // Convert to hex and format like the secure hash
     const hashHex = Math.abs(hash).toString(16).padStart(16, '0');
-    return `legacy:1:16$${actualSalt}$${hashHex}`;
+    console.log('DEBUG - hashPassword - Computed hash hex:', hashHex);
+    
+    const result = `legacy:1:16$${actualSalt}$${hashHex}`;
+    console.log('DEBUG - hashPassword - Final hash string:', result);
+    return result;
   } catch (error) {
     console.error('Error hashing password:', error);
     return '';
@@ -162,18 +175,22 @@ export function hashPassword(password: string, salt: string = ''): string {
  */
 export async function verifyPassword(password: string, hashString: string): Promise<boolean> {
   try {
-    console.log('Verificando senha, formato do hash:', hashString);
+    console.log('DEBUG - verifyPassword - Password input:', password);
+    console.log('DEBUG - verifyPassword - Hash to verify against:', hashString);
     
     // Check for the format to determine which verification to use
     if (hashString.startsWith('pbkdf2:')) {
-      console.log('Usando verificação de hash PBKDF2');
+      console.log('DEBUG - verifyPassword - Using PBKDF2 verification');
       return await verifySecureHash(password, hashString);
     } else if (hashString.startsWith('legacy:')) {
-      console.log('Usando verificação de hash legado');
+      console.log('DEBUG - verifyPassword - Using legacy verification');
       // Parse the legacy hash
       const [_, __, ___, salt, storedHash] = hashString
         .replace(/\$/g, ':')
         .split(':');
+      
+      console.log('DEBUG - verifyPassword - Legacy parsed salt:', salt);
+      console.log('DEBUG - verifyPassword - Legacy stored hash:', storedHash);
       
       // Generate hash with the same salt
       const newHashString = hashPassword(password, salt);
@@ -181,18 +198,27 @@ export async function verifyPassword(password: string, hashString: string): Prom
         .replace(/\$/g, ':')
         .split(':');
       
-      console.log('Hash legado computado:', newHash);
-      console.log('Hash legado armazenado:', storedHash);
+      console.log('DEBUG - verifyPassword - Legacy computed hash:', newHash);
+      console.log('DEBUG - verifyPassword - Legacy match result:', newHash === storedHash);
       
       return newHash === storedHash;
     } else {
-      // Old format without algorithm prefix (backward compatibility)
-      console.log('Usando verificação de hash sem prefixo (antigo)');
+      // Special case for hashes that don't have a prefix format
+      console.log('DEBUG - verifyPassword - Using special verification for non-prefixed hash');
+      console.log('DEBUG - verifyPassword - Hash format appears to be non-standard');
+      
+      // Debug the database stored hash format
+      if (hashString.startsWith('00000000')) {
+        console.log('DEBUG - verifyPassword - Hash appears to be a default/placeholder value');
+      }
+      
+      // Try simple comparison as a last resort
       const legacyHash = hashPassword(password);
+      console.log('DEBUG - verifyPassword - Simple comparison result:', hashString === legacyHash);
       return hashString === legacyHash;
     }
   } catch (error) {
-    console.error('Error verifying password:', error);
+    console.error('Error in verifyPassword:', error);
     return false;
   }
 }
