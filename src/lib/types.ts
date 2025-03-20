@@ -1,9 +1,8 @@
-
 // Original types
 export type UserRole = 'ADMIN' | 'CLIENT';
 
 export interface User {
-  id: string; // Alterado para string para compatibilidade com Supabase
+  id: string; // Changed to string for compatibility with Supabase
   name: string;
   email: string;
   sectorId: number;
@@ -29,8 +28,8 @@ export interface Ticket {
   title: string;
   description: string;
   sectorId: number;
-  requesterId: string; // Alterado para string para compatibilidade com Supabase
-  responsibleId: string | null; // Alterado para string para compatibilidade com Supabase
+  requesterId: string; // Already string for compatibility with Supabase
+  responsibleId: string | null; // Already string for compatibility with Supabase
   status: TicketStatus;
   createdAt: string; // ISO date string
   deadline: string; // ISO date string

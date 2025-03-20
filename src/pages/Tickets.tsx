@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
-import { TicketStatus, TicketWithDetails } from '@/lib/types';
+import { TicketStatus, TicketWithDetails, UserRole } from '@/lib/types';
 import { getSectors, getTickets } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
-import StatusBadge from '@/components/StatusBadge';
 import { useAuth } from '@/hooks/useAuth';
 
 const Tickets = () => {
@@ -25,6 +23,11 @@ const Tickets = () => {
       navigate('/login');
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  // Helper function to convert string role to UserRole type
+  const convertToUserRole = (role: string): UserRole => {
+    return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+  };
 
   // Load data
   useEffect(() => {
@@ -58,14 +61,14 @@ const Tickets = () => {
             name: ticket.solicitante.nome,
             email: ticket.solicitante.email,
             sectorId: ticket.solicitante.setor_id,
-            role: ticket.solicitante.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+            role: convertToUserRole(ticket.solicitante.role)
           },
           responsible: ticket.responsavel ? {
             id: ticket.responsavel.id,
             name: ticket.responsavel.nome,
             email: ticket.responsavel.email,
             sectorId: ticket.responsavel.setor_id,
-            role: ticket.responsavel.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+            role: convertToUserRole(ticket.responsavel.role)
           } : null,
           percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
         }));

@@ -1,23 +1,22 @@
-
 import { User, Sector, Deadline, Ticket, TicketStatus, DashboardStats } from './types';
 
 export const mockUsers: User[] = [
   {
-    id: 1,
+    id: "1",
     name: 'Admin User',
     email: 'admin@example.com',
     sectorId: 1,
     role: 'ADMIN',
   },
   {
-    id: 2,
+    id: "2",
     name: 'Client User',
     email: 'client@example.com',
     sectorId: 2,
     role: 'CLIENT',
   },
   {
-    id: 3,
+    id: "3",
     name: 'Support Team Member',
     email: 'support@example.com',
     sectorId: 3,
@@ -56,7 +55,6 @@ const generateDeadlineDate = (createdDate: string, days: number) => {
   return date.toISOString();
 };
 
-// Generate 20 mock tickets
 export const mockTickets: Ticket[] = Array.from({ length: 20 }, (_, i) => {
   const createdAt = generateRandomDate(Math.floor(Math.random() * 30));
   const deadlineDays = [1, 3, 7, 14][Math.floor(Math.random() * 4)];
@@ -87,18 +85,15 @@ export const mockDashboardStats: DashboardStats = {
   })),
 };
 
-// Helper function to calculate percentage remaining for a ticket
 export const calculatePercentageRemaining = (ticket: Ticket): number => {
   const now = new Date();
   const created = new Date(ticket.createdAt);
   const deadline = new Date(ticket.deadline);
   
-  // If the deadline has passed
   if (now > deadline) {
     return 0;
   }
   
-  // If it's completed
   if (ticket.status === 'Concluído') {
     return 100;
   }
@@ -110,7 +105,6 @@ export const calculatePercentageRemaining = (ticket: Ticket): number => {
   return Math.max(0, Math.min(100, remainingPercentage));
 };
 
-// Get ticket with additional details
 export const getTicketWithDetails = (ticketId: number): any => {
   const ticket = mockTickets.find(t => t.id === ticketId);
   if (!ticket) return null;
@@ -130,14 +124,11 @@ export const getTicketWithDetails = (ticketId: number): any => {
   };
 };
 
-// Login function for mock authentication
 export const mockLogin = (email: string, password: string): User | null => {
-  // For demonstration, any password works with valid email
   const user = mockUsers.find(u => u.email === email);
   return user || null;
 };
 
-// Get enriched tickets with related data
 export const getEnrichedTickets = () => {
   return mockTickets.map(ticket => {
     const sector = mockSectors.find(s => s.id === ticket.sectorId);

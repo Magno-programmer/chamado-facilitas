@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { TicketWithDetails, DashboardStats } from '@/lib/types';
+import { TicketWithDetails, DashboardStats, UserRole } from '@/lib/types';
 import { getTickets, getTicketStats } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,14 +61,14 @@ const Dashboard = () => {
               name: ticket.solicitante.nome,
               email: ticket.solicitante.email,
               sectorId: ticket.solicitante.setor_id,
-              role: ticket.solicitante.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+              role: convertToUserRole(ticket.solicitante.role)
             },
             responsible: ticket.responsavel ? {
               id: ticket.responsavel.id,
               name: ticket.responsavel.nome,
               email: ticket.responsavel.email,
               sectorId: ticket.responsavel.setor_id,
-              role: ticket.responsavel.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+              role: convertToUserRole(ticket.responsavel.role)
             } : null,
             percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
           }))
@@ -87,6 +87,11 @@ const Dashboard = () => {
       loadData();
     }
   }, [isAuthenticated]);
+
+  // Helper function to convert string role to UserRole type
+  const convertToUserRole = (role: string): UserRole => {
+    return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+  };
 
   // Calculate percentage of time remaining for a ticket
   const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
