@@ -3,36 +3,101 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
 import { TicketStatus, TicketWithDetails } from '@/lib/types';
-import { getEnrichedTickets, mockSectors } from '@/lib/mockData';
+import { getSectors, getTickets } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
 import StatusBadge from '@/components/StatusBadge';
+import { useAuth } from '@/hooks/useAuth';
 
 const Tickets = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   const [sectorFilter, setSectorFilter] = useState<number | 'all'>('all');
+  const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
 
   // Check if logged in
   useEffect(() => {
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
-      return;
     }
+  }, [isAuthenticated, authLoading, navigate]);
 
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      const enrichedTickets = getEnrichedTickets();
-      setTickets(enrichedTickets);
-      setFilteredTickets(enrichedTickets);
-      setIsLoading(false);
-    }, 800);
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch sectors
+        const sectorsData = await getSectors();
+        setSectors(sectorsData);
+        
+        // Fetch tickets
+        const ticketsData = await getTickets();
+        
+        // Map to our TicketWithDetails type
+        const mappedTickets = ticketsData.map(ticket => ({
+          id: ticket.id,
+          title: ticket.titulo,
+          description: ticket.descricao || '',
+          sectorId: ticket.setor_id,
+          requesterId: ticket.solicitante_id,
+          responsibleId: ticket.responsavel_id,
+          status: ticket.status as TicketStatus,
+          createdAt: ticket.data_criacao,
+          deadline: ticket.prazo,
+          sector: {
+            id: ticket.setor.id,
+            name: ticket.setor.nome
+          },
+          requester: {
+            id: ticket.solicitante.id,
+            name: ticket.solicitante.nome,
+            email: ticket.solicitante.email,
+            sectorId: ticket.solicitante.setor_id,
+            role: ticket.solicitante.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+          },
+          responsible: ticket.responsavel ? {
+            id: ticket.responsavel.id,
+            name: ticket.responsavel.nome,
+            email: ticket.responsavel.email,
+            sectorId: ticket.responsavel.setor_id,
+            role: ticket.responsavel.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+          } : null,
+          percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
+        }));
+        
+        setTickets(mappedTickets);
+        setFilteredTickets(mappedTickets);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  // Calculate percentage of time remaining for a ticket
+  const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
+    const now = new Date();
+    const start = new Date(createdAt);
+    const end = new Date(deadline);
+    
+    const totalTime = end.getTime() - start.getTime();
+    const elapsedTime = now.getTime() - start.getTime();
+    
+    if (totalTime <= 0) return 0;
+    
+    const percentage = 100 - (elapsedTime / totalTime) * 100;
+    return Math.max(0, Math.min(100, percentage));
+  };
 
   // Apply filters when any filter changes
   useEffect(() => {
@@ -61,7 +126,7 @@ const Tickets = () => {
     setFilteredTickets(result);
   }, [searchTerm, statusFilter, sectorFilter, tickets]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20">
         <div className="flex items-center justify-center h-full">
@@ -131,8 +196,8 @@ const Tickets = () => {
                 className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="all">Todos os Setores</option>
-                {mockSectors.map(sector => (
-                  <option key={sector.id} value={sector.id}>{sector.name}</option>
+                {sectors.map(sector => (
+                  <option key={sector.id} value={sector.id}>{sector.nome}</option>
                 ))}
               </select>
             </div>

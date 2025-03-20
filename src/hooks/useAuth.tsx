@@ -36,9 +36,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Fetch user profile from our usuarios table
           const userProfile = await getUserProfile(session.user.id);
           
-          // Map to our User type
+          // Map to our User type - using string IDs to match Supabase
           const mappedUser: User = {
-            id: parseInt(userProfile.id, 10), // Convert string ID to number
+            id: userProfile.id, // String ID from Supabase
             name: userProfile.nome,
             email: userProfile.email,
             sectorId: userProfile.setor_id,
@@ -64,9 +64,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Fetch user profile from our usuarios table
             const userProfile = await getUserProfile(session.user.id);
             
-            // Map to our User type
+            // Map to our User type - using string IDs to match Supabase
             const mappedUser: User = {
-              id: parseInt(userProfile.id, 10), // Convert string ID to number
+              id: userProfile.id, // String ID from Supabase
               name: userProfile.nome,
               email: userProfile.email,
               sectorId: userProfile.setor_id,
@@ -102,9 +102,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Fetch user profile from our usuarios table
           const userProfile = await getUserProfile(authData.user.id);
           
-          // Map to our User type
+          // Map to our User type - using string IDs to match Supabase
           const mappedUser: User = {
-            id: parseInt(userProfile.id, 10), // Convert string ID to number
+            id: userProfile.id, // String ID from Supabase
             name: userProfile.nome,
             email: userProfile.email,
             sectorId: userProfile.setor_id,

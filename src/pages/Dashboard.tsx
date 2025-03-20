@@ -1,39 +1,107 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { mockDashboardStats, getEnrichedTickets } from '@/lib/mockData';
-import { TicketWithDetails } from '@/lib/types';
+import { TicketWithDetails, DashboardStats } from '@/lib/types';
+import { getTickets, getTicketStats } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
+import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(mockDashboardStats);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalTickets: 0,
+    openTickets: 0,
+    inProgressTickets: 0,
+    completedTickets: 0,
+    lateTickets: 0,
+    ticketsBySector: []
+  });
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if logged in
   useEffect(() => {
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
-      return;
     }
+  }, [isAuthenticated, authLoading, navigate]);
 
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      const enrichedTickets = getEnrichedTickets();
-      // Sort by most recent and take first 5
-      const sorted = [...enrichedTickets].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ).slice(0, 5);
-      
-      setRecentTickets(sorted);
-      setIsLoading(false);
-    }, 800);
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch statistics
+        const statsData = await getTicketStats();
+        setStats(statsData);
+        
+        // Fetch tickets
+        const ticketsData = await getTickets();
+        
+        // Map to our TicketWithDetails type and sort by most recent
+        const mappedTickets = ticketsData
+          .map(ticket => ({
+            id: ticket.id,
+            title: ticket.titulo,
+            description: ticket.descricao || '',
+            sectorId: ticket.setor_id,
+            requesterId: ticket.solicitante_id,
+            responsibleId: ticket.responsavel_id,
+            status: ticket.status as any,
+            createdAt: ticket.data_criacao,
+            deadline: ticket.prazo,
+            sector: {
+              id: ticket.setor.id,
+              name: ticket.setor.nome
+            },
+            requester: {
+              id: ticket.solicitante.id,
+              name: ticket.solicitante.nome,
+              email: ticket.solicitante.email,
+              sectorId: ticket.solicitante.setor_id,
+              role: ticket.solicitante.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+            },
+            responsible: ticket.responsavel ? {
+              id: ticket.responsavel.id,
+              name: ticket.responsavel.nome,
+              email: ticket.responsavel.email,
+              sectorId: ticket.responsavel.setor_id,
+              role: ticket.responsavel.role === 'ADMIN' ? 'ADMIN' : 'CLIENT'
+            } : null,
+            percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
+          }))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5);
+        
+        setRecentTickets(mappedTickets);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  // Calculate percentage of time remaining for a ticket
+  const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
+    const now = new Date();
+    const start = new Date(createdAt);
+    const end = new Date(deadline);
+    
+    const totalTime = end.getTime() - start.getTime();
+    const elapsedTime = now.getTime() - start.getTime();
+    
+    if (totalTime <= 0) return 0;
+    
+    const percentage = 100 - (elapsedTime / totalTime) * 100;
+    return Math.max(0, Math.min(100, percentage));
+  };
 
   const COLORS = ['#3b82f6', '#f59e0b', '#22c55e', '#ef4444'];
   const RADIAN = Math.PI / 180;
@@ -69,7 +137,7 @@ const Dashboard = () => {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20">
         <div className="flex items-center justify-center h-full">

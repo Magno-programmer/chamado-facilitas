@@ -3,7 +3,7 @@
 export type UserRole = 'ADMIN' | 'CLIENT';
 
 export interface User {
-  id: number;
+  id: string; // Alterado para string para compatibilidade com Supabase
   name: string;
   email: string;
   sectorId: number;
@@ -29,8 +29,8 @@ export interface Ticket {
   title: string;
   description: string;
   sectorId: number;
-  requesterId: number;
-  responsibleId: number | null;
+  requesterId: string; // Alterado para string para compatibilidade com Supabase
+  responsibleId: string | null; // Alterado para string para compatibilidade com Supabase
   status: TicketStatus;
   createdAt: string; // ISO date string
   deadline: string; // ISO date string
