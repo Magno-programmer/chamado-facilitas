@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -47,6 +47,7 @@ const Navbar = () => {
             <>
               <NavItem to="/dashboard" label="Dashboard" currentPath={location.pathname} />
               <NavItem to="/tickets" label="Chamados" currentPath={location.pathname} />
+              <NavItem to="/deadlines" label="Prazos" currentPath={location.pathname} />
               <NavItem to="/sectors" label="Setores" currentPath={location.pathname} />
               <NavItem to="/users" label="Usuários" currentPath={location.pathname} />
               
@@ -99,6 +100,13 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Chamados
+                </Link>
+                <Link 
+                  to="/deadlines" 
+                  className="px-4 py-2 rounded-md hover:bg-secondary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Prazos
                 </Link>
                 <Link 
                   to="/sectors" 
