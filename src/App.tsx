@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
-import Deadlines from "./pages/Deadlines";
+import Deadlines from "./pages/deadlines";
 import Setores from "./pages/Setores";
 import Usuarios from "./pages/usuarios";
 import NotFound from "./pages/NotFound";
