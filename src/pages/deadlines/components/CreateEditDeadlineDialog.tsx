@@ -169,7 +169,7 @@ const CreateEditDeadlineDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Todos os setores</SelectItem>
+                      <SelectItem value="null">Todos os setores</SelectItem>
                       {sectors.map((sector) => (
                         <SelectItem key={sector.id} value={String(sector.id)}>
                           {sector.nome}
