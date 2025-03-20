@@ -1,12 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './types'
-import { User } from './types'
-
-// Initialize the Supabase client
-const supabaseUrl = 'https://ryskqkqgjvzcloibkykl.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c2txa3FnanZ6Y2xvaWJreWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNjQwNjYsImV4cCI6MjA1Nzg0MDA2Nn0.Bny9fazEiIeCyVxLuhT3OLErOCqTOltYxbhfLDGuDtI'
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from './types';
 
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
