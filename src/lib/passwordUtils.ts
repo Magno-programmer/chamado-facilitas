@@ -1,3 +1,4 @@
+
 /**
  * Generates a secure random password of specified length with special characters
  * @param length The length of the password to generate (minimum 20)
@@ -72,7 +73,7 @@ function createSimpleHash(password: string, salt: string = ''): string {
  * @param salt Optional salt to use for the hash
  * @returns A more secure hash of the password
  */
-function createSecureHash(password: string, salt: string = ''): string {
+export function createSecureHash(password: string, salt: string = ''): string {
   let hash = 0;
   const str = password + salt;
   const iterations = 10000; // Increase computational cost
