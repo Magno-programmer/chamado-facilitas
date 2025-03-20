@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { generateSecurePassword, hashPassword } from '@/lib/passwordUtils';
+import { ClipboardCopy } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface Usuario {
   id: string;
@@ -48,6 +51,8 @@ const CreateEditUsuarioDialog = ({
   onSave,
   loading
 }: CreateEditUsuarioDialogProps) => {
+  const [generatedPassword, setGeneratedPassword] = useState<string>("");
+  
   // Setup form for creating/editing users
   const form = useForm<UsuarioFormValues>({
     resolver: zodResolver(usuarioSchema),
@@ -59,6 +64,17 @@ const CreateEditUsuarioDialog = ({
       senha: ""
     }
   });
+
+  // Generate secure password when creating a new user and dialog opens
+  useEffect(() => {
+    if (open && !usuario) {
+      const newPassword = generateSecurePassword();
+      setGeneratedPassword(newPassword);
+      form.setValue('senha', hashPassword(newPassword));
+    } else {
+      setGeneratedPassword("");
+    }
+  }, [open, usuario, form]);
 
   // Reset form and set editing user when dialog opens/closes
   useEffect(() => {
@@ -77,14 +93,24 @@ const CreateEditUsuarioDialog = ({
           email: "",
           setorId: "",
           role: "CLIENT",
-          senha: ""
+          senha: hashPassword(generatedPassword)
         });
       }
     }
-  }, [open, usuario, form]);
+  }, [open, usuario, form, generatedPassword]);
 
   const onSubmit = (values: UsuarioFormValues) => {
     onSave(values, !!usuario);
+  };
+
+  const copyToClipboard = () => {
+    if (generatedPassword) {
+      navigator.clipboard.writeText(generatedPassword);
+      toast({
+        title: "Senha copiada",
+        description: "A senha foi copiada para a área de transferência.",
+      });
+    }
   };
 
   const isEditing = !!usuario;
@@ -183,23 +209,30 @@ const CreateEditUsuarioDialog = ({
               )}
             />
             {!isEditing && (
-              <FormField
-                control={form.control}
-                name="senha"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Digite a senha" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-2">
+                <FormLabel>Senha Gerada Automaticamente</FormLabel>
+                <div className="relative">
+                  <Input 
+                    type="text" 
+                    value={generatedPassword}
+                    readOnly
+                    className="pr-10"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon"
+                    className="absolute right-0 top-0 h-full"
+                    onClick={copyToClipboard}
+                  >
+                    <ClipboardCopy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Esta senha é gerada automaticamente e será necessária para o primeiro acesso. 
+                  Copie-a e compartilhe com o usuário de forma segura.
+                </p>
+              </div>
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
@@ -10,6 +9,7 @@ import UsuariosTable from './components/UsuariosTable';
 import CreateEditUsuarioDialog from './components/CreateEditUsuarioDialog';
 import DeleteUsuarioDialog from './components/DeleteUsuarioDialog';
 import ResetPasswordDialog from './components/ResetPasswordDialog';
+import { generateSecurePassword, hashPassword } from '@/lib/passwordUtils';
 
 interface Usuario {
   id: string;
@@ -35,10 +35,8 @@ const UsuariosPage = () => {
   const [setores, setSetores] = useState<{id: number, nome: string}[]>([]);
   const { user } = useAuth();
   
-  // Check if user is admin
   const isAdmin = user?.role === 'ADMIN';
 
-  // Load setores for dropdown
   useEffect(() => {
     const fetchSetores = async () => {
       try {
@@ -128,7 +126,7 @@ const UsuariosPage = () => {
       console.error('Erro ao excluir usuário:', error);
       toast({
         title: "Erro ao excluir usuário",
-        description: "Não foi possível excluir o usuário.",
+        description: "Não foi possível excluir o usu��rio.",
         variant: "destructive",
       });
     } finally {
@@ -137,8 +135,7 @@ const UsuariosPage = () => {
   };
 
   const openResetPassword = (usuario: Usuario) => {
-    // Generate random password
-    const randomPassword = Math.random().toString(36).slice(-8);
+    const randomPassword = generateSecurePassword();
     setNewPassword(randomPassword);
     setResetPasswordUser(usuario);
     setResetPasswordDialog(true);
@@ -151,7 +148,7 @@ const UsuariosPage = () => {
       setLoading(true);
       const { error } = await supabase
         .from('usuarios')
-        .update({ senha_hash: newPassword })
+        .update({ senha_hash: hashPassword(newPassword) })
         .eq('id', resetPasswordUser.id);
       
       if (error) throw error;
@@ -160,6 +157,7 @@ const UsuariosPage = () => {
         title: "Senha redefinida",
         description: `A senha do usuário "${resetPasswordUser.nome}" foi redefinida com sucesso.`,
       });
+      setResetPasswordDialog(false);
     } catch (error) {
       console.error('Erro ao redefinir senha:', error);
       toast({
@@ -184,10 +182,8 @@ const UsuariosPage = () => {
       };
       
       if (isEditing && editingUsuario) {
-        // Update existing user
         const updateData = { ...userData };
         if (values.senha) {
-          // @ts-ignore - Add senha_hash if provided
           updateData.senha_hash = values.senha;
         }
         
@@ -198,7 +194,6 @@ const UsuariosPage = () => {
         
         if (error) throw error;
         
-        // Update local state
         setUsuarios(usuarios.map(u => {
           if (u.id === editingUsuario.id) {
             return {
@@ -220,16 +215,10 @@ const UsuariosPage = () => {
           description: `O usuário "${values.nome}" foi atualizado com sucesso.`,
         });
       } else {
-        // Create new user
-        if (!values.senha) {
-          throw new Error("A senha é obrigatória para criar um novo usuário");
-        }
-        
-        // Add senha_hash for new user
         const newUserData = {
           ...userData,
           senha_hash: values.senha,
-          id: crypto.randomUUID() // Generate a UUID for the user ID
+          id: crypto.randomUUID()
         };
         
         const { data, error } = await supabase

@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
+import { hashPassword, verifyPassword } from './passwordUtils';
 
 // Custom login function that uses the usuarios table
 export const customSignIn = async (email: string, password: string): Promise<User | null> => {
@@ -18,10 +18,8 @@ export const customSignIn = async (email: string, password: string): Promise<Use
       return null;
     }
     
-    // In a real app, you would verify the password hash here
-    // For this implementation, we'll do a simple check since we don't have actual hashing
-    // WARNING: This is not secure for production!
-    if (data.senha_hash !== password) {
+    // Verify the password against the hashed value in the database
+    if (!verifyPassword(password, data.senha_hash)) {
       console.error('Invalid password');
       return null;
     }
