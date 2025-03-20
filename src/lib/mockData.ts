@@ -1,4 +1,9 @@
-import { User, Sector, Deadline, Ticket, TicketStatus, DashboardStats } from './types';
+
+import { User } from './types/user.types';
+import { Sector } from './types/sector.types';
+import { Deadline } from './types/sector.types';
+import { Ticket, TicketStatus } from './types/ticket.types';
+import { DashboardStats } from './types/dashboard.types';
 
 export const mockUsers: User[] = [
   {

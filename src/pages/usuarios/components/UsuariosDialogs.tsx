@@ -3,6 +3,7 @@ import React from 'react';
 import CreateEditUsuarioDialog from './CreateEditUsuarioDialog';
 import DeleteUsuarioDialog from './DeleteUsuarioDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
+import { Sector } from '@/lib/types/sector.types';
 
 interface Usuario {
   id: string;

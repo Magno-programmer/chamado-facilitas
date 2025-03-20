@@ -3,6 +3,7 @@ import { useFetchUsuarios } from './useFetchUsuarios';
 import { useEditCreateUsuario } from './useEditCreateUsuario';
 import { useDeleteUsuario } from './useDeleteUsuario';
 import { useResetPassword } from './useResetPassword';
+import { User } from '@/lib/types/user.types';
 
 interface Usuario {
   id: string;

@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Ticket } from '@/lib/types/ticket.types';
+import type { Database } from '@/lib/types/database.types';
 
 // Tickets (chamados) functions
 export const getTickets = async () => {

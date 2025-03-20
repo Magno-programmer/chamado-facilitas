@@ -12,12 +12,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Deadline } from '@/lib/types/sector.types';
 
 interface DeadlinesTableProps {
-  deadlines: any[];
+  deadlines: Deadline[];
   isAdmin: boolean;
-  onEdit: (deadline: any) => void;
-  onDelete: (deadline: any) => void;
+  onEdit: (deadline: Deadline) => void;
+  onDelete: (deadline: Deadline) => void;
 }
 
 const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTableProps) => {
@@ -42,15 +43,15 @@ const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTable
       <TableBody>
         {deadlines.map((deadline) => (
           <TableRow key={deadline.id}>
-            <TableCell className="font-medium">{deadline.titulo}</TableCell>
+            <TableCell className="font-medium">{deadline.title}</TableCell>
             <TableCell>
-              {deadline.setor ? (
-                <Badge variant="secondary">{deadline.setor.nome}</Badge>
+              {deadline.sectorId ? (
+                <Badge variant="secondary">{deadline.title}</Badge>
               ) : (
                 <Badge variant="outline">Todos os setores</Badge>
               )}
             </TableCell>
-            <TableCell>{formatDeadlineTime(deadline.prazo)}</TableCell>
+            <TableCell>{formatDeadlineTime(deadline.deadline)}</TableCell>
             {isAdmin && (
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

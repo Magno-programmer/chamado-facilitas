@@ -1,5 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { DashboardStats } from '@/lib/types/dashboard.types';
+import { TicketStatus } from '@/lib/types/ticket.types';
 
 // Statistics for dashboard
 export const getTicketStats = async () => {
@@ -30,7 +32,7 @@ export const getTicketStats = async () => {
   }
   
   // Calculate statistics
-  const stats = {
+  const stats: DashboardStats = {
     totalTickets: tickets.length,
     openTickets: tickets.filter(t => t.status === 'Aberto').length,
     inProgressTickets: tickets.filter(t => t.status === 'Em Andamento').length,

@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '../types';
+import type { User } from '@/lib/types/user.types';
 import { createSecureHash, verifyPassword } from '../passwordUtils';
 
 /**

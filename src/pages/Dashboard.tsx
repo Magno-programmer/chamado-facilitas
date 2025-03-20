@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { TicketWithDetails, DashboardStats, UserRole } from '@/lib/types';
+import { TicketWithDetails, UserRole } from '@/lib/types';
+import { DashboardStats } from '@/lib/types/dashboard.types';
 import { getTickets, getTicketStats } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
 import { useAuth } from '@/hooks/useAuth';

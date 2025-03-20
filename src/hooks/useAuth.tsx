@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { User } from '@/lib/types';
+import { User } from '@/lib/types/user.types';
 import { toast } from '@/hooks/use-toast';
 import { customSignIn, signOut } from '@/lib/services/authService';
 import { useLocation } from 'react-router-dom';

@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
-import { TicketStatus, TicketWithDetails, UserRole } from '@/lib/types';
+import { TicketStatus, TicketWithDetails } from '@/lib/types/ticket.types';
+import { UserRole } from '@/lib/types/user.types';
 import { getSectors, getTickets } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
 import { useAuth } from '@/hooks/useAuth';
