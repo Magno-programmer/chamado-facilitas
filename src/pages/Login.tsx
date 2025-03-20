@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, Info, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +11,11 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated, isLoading } = useAuth();
+
+  // Get the redirect path from location state or default to dashboard
+  const from = location.state?.from || '/dashboard';
 
   // Log component rendering
   useEffect(() => {
@@ -20,9 +25,9 @@ const Login = () => {
   // Check if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(from);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +37,7 @@ const Login = () => {
       const success = await login(email, password);
       
       if (success) {
-        navigate('/dashboard');
+        navigate(from);
       } else {
         // O erro já foi exibido pelo toast no useAuth
         setLoginError('Falha no login. Verifique suas credenciais.');
