@@ -1,8 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Deadline } from '@/lib/types/sector.types';
 
 // Deadlines (prazos) functions
-export const getDeadlines = async () => {
+export const getDeadlines = async (): Promise<Deadline[]> => {
   const { data, error } = await supabase
     .from('prazos')
     .select(`
@@ -11,5 +12,5 @@ export const getDeadlines = async () => {
     `);
   
   if (error) throw error;
-  return data;
+  return data as Deadline[];
 }

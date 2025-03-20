@@ -43,15 +43,15 @@ const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTable
       <TableBody>
         {deadlines.map((deadline) => (
           <TableRow key={deadline.id}>
-            <TableCell className="font-medium">{deadline.title}</TableCell>
+            <TableCell className="font-medium">{deadline.titulo}</TableCell>
             <TableCell>
-              {deadline.sectorId ? (
-                <Badge variant="secondary">{deadline.title}</Badge>
+              {deadline.setor_id ? (
+                <Badge variant="secondary">{deadline.setor?.nome || 'Setor não encontrado'}</Badge>
               ) : (
                 <Badge variant="outline">Todos os setores</Badge>
               )}
             </TableCell>
-            <TableCell>{formatDeadlineTime(deadline.deadline)}</TableCell>
+            <TableCell>{formatDeadlineTime(deadline.prazo)}</TableCell>
             {isAdmin && (
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

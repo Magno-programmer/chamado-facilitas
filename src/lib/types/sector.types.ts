@@ -7,7 +7,11 @@ export interface Sector {
 
 export interface Deadline {
   id: number;
-  title: string;
-  sectorId: number;
-  deadline: string; // ISO duration string
+  titulo: string;  // Changed from 'title' to match DB
+  setor_id?: number | null;  // Changed from 'sectorId' to match DB
+  prazo: string;  // Changed from 'deadline' to match DB
+  setor?: {
+    id: number;
+    nome: string;
+  };
 }
