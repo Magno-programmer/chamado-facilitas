@@ -23,3 +23,16 @@ export interface TicketWithDetails extends Ticket {
   responsible: User | null;
   percentageRemaining: number;
 }
+
+// New interface for the dashboard ticket table
+export interface TicketTableRow {
+  id: number;
+  title: string;
+  sector: string;
+  requester: string;
+  responsible: string | null;
+  status: TicketStatus;
+  createdAt: string;
+  deadline: string;
+  percentageRemaining: number;
+}

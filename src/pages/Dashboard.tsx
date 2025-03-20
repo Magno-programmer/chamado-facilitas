@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bell, Clock, FileText, List, Plus, RefreshCw, Settings } from 'lucide-react';
@@ -7,6 +6,7 @@ import { TicketWithDetails, UserRole } from '@/lib/types';
 import { DashboardStats } from '@/lib/types/dashboard.types';
 import { getTickets, getTicketStats } from '@/lib/supabase';
 import TicketCard from '@/components/TicketCard';
+import TicketsTable from '@/components/TicketsTable';
 import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
@@ -20,8 +20,10 @@ const Dashboard = () => {
     lateTickets: 0,
     ticketsBySector: []
   });
+  const [allTickets, setAllTickets] = useState<TicketWithDetails[]>([]);
   const [recentTickets, setRecentTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showTable, setShowTable] = useState(false);
 
   // Check if logged in
   useEffect(() => {
@@ -74,10 +76,10 @@ const Dashboard = () => {
             } : null,
             percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
           }))
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5);
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        setRecentTickets(mappedTickets);
+        setAllTickets(mappedTickets);
+        setRecentTickets(mappedTickets.slice(0, 5));
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -156,9 +158,26 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do sistema de chamados</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <p className="text-muted-foreground">Visão geral do sistema de chamados</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowTable(!showTable)}
+            className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+          >
+            {showTable ? 'Ver Cards' : 'Ver Tabela'}
+          </button>
+          <button
+            onClick={() => navigate('/tickets/new')}
+            className="px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors inline-flex items-center"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Chamado
+          </button>
+        </div>
       </div>
 
       {/* Overview Cards */}
@@ -206,119 +225,66 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* Charts */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-xl border shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Distribuição de Status</h2>
-              <div className="bg-secondary rounded-md p-1">
-                <Settings className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderLabel}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+      {showTable ? (
+        <div className="bg-white rounded-xl border shadow-sm p-6 mb-8">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Todos os Chamados</h2>
           </div>
-
-          <div className="bg-white rounded-xl border shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Chamados por Setor</h2>
-              <div className="bg-secondary rounded-md p-1">
-                <BarChart className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartBarChart
-                  data={barData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="Chamados" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </RechartBarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <TicketsTable tickets={allTickets} />
         </div>
-
-        {/* Recent Tickets */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Chamados Recentes</h2>
-            <button 
-              onClick={() => navigate('/tickets')}
-              className="inline-flex items-center text-primary hover:underline text-sm font-medium"
-            >
-              <List className="h-4 w-4 mr-1" />
-              Ver Todos
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {recentTickets.length > 0 ? (
-              recentTickets.map((ticket) => (
-                <div 
-                  key={ticket.id}
-                  className="p-3 rounded-lg border bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors"
-                  onClick={() => navigate(`/tickets/${ticket.id}`)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium text-sm line-clamp-1">{ticket.title}</h3>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">{ticket.sector?.name}</span>
-                    <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                      #{ticket.id}
-                    </span>
-                  </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Charts */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-xl border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Distribuição de Status</h2>
+                <div className="bg-secondary rounded-md p-1">
+                  <Settings className="h-5 w-5 text-muted-foreground" />
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">Nenhum chamado recente.</p>
               </div>
-            )}
-          </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderLabel}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-          <div className="mt-6">
-            <button
-              onClick={() => navigate('/tickets/new')}
-              className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary font-medium rounded-lg transition-colors inline-flex items-center justify-center"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Chamado
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+            <div className="bg-white rounded-xl border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Chamados por Setor</h2>
+                <div className="bg-secondary rounded-md p-1">
+                  <BarChart className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartBarChart
+                    data={barData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                   
 
-export default Dashboard;
