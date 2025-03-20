@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { generateSecurePassword, hashPassword } from '@/lib/passwordUtils';
+import { generateSecurePassword } from '@/lib/passwordUtils';
 import UserForm from './dialogs/UserForm';
 import { usuarioSchema, UsuarioFormValues } from './dialogs/UserFormSchema';
 
@@ -55,9 +55,8 @@ const CreateEditUsuarioDialog = ({
       const newPassword = generateSecurePassword();
       setGeneratedPassword(newPassword);
       
-      // Set the hashed password
-      const hashedPassword = hashPassword(newPassword);
-      form.setValue('senha', hashedPassword);
+      // Store the plain text password to be hashed later when saving
+      form.setValue('senha', newPassword);
     } else {
       setGeneratedPassword("");
     }
@@ -80,7 +79,7 @@ const CreateEditUsuarioDialog = ({
           email: "",
           setorId: "",
           role: "CLIENT",
-          senha: hashPassword(generatedPassword)
+          senha: generatedPassword // Plain text password will be hashed during save
         });
       }
     }

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { createSecureHash } from '@/lib/passwordUtils';
 
 interface Usuario {
   id: string;
@@ -47,7 +48,8 @@ export const useEditCreateUsuario = (
       if (isEditing && editingUsuario) {
         const updateData: any = { ...userData };
         if (values.senha) {
-          updateData.senha_hash = values.senha;
+          // Use the secure hash function for password updates
+          updateData.senha_hash = await createSecureHash(values.senha);
         }
         
         const { error } = await supabase
@@ -78,9 +80,12 @@ export const useEditCreateUsuario = (
           description: `O usuário "${values.nome}" foi atualizado com sucesso.`,
         });
       } else {
+        // Generate a secure hash for the new user's password
+        const secureHash = await createSecureHash(values.senha);
+        
         const newUserData = {
           ...userData,
-          senha_hash: values.senha,
+          senha_hash: secureHash,
           id: crypto.randomUUID()
         };
         

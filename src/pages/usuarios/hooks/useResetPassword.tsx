@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { generateSecurePassword, hashPassword } from '@/lib/passwordUtils';
+import { generateSecurePassword, createSecureHash } from '@/lib/passwordUtils';
 
 interface Usuario {
   id: string;
@@ -32,9 +32,13 @@ export const useResetPassword = (setLoading: (loading: boolean) => void) => {
     
     try {
       setLoading(true);
+      
+      // Create a secure hash using the PBKDF2 algorithm
+      const secureHash = await createSecureHash(newPassword);
+      
       const { error } = await supabase
         .from('usuarios')
-        .update({ senha_hash: hashPassword(newPassword) })
+        .update({ senha_hash: secureHash })
         .eq('id', resetPasswordUser.id);
       
       if (error) throw error;

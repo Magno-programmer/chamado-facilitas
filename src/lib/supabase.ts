@@ -1,21 +1,20 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
-import { hashPassword, verifyPassword, createSecureHash } from './passwordUtils';
+import { hashPassword, createSecureHash, verifyPassword } from './passwordUtils';
 
 /**
- * Updates the user's password hash in the database using a UUID-like hash pattern
+ * Updates the user's password hash in the database using a more secure hash format
  * @param userId The ID of the user to update
  * @param password The password to rehash and store
  * @returns Promise<boolean> True if successful, false otherwise
  */
 async function updatePasswordHash(userId: string, password: string): Promise<boolean> {
   try {
-    // Generate a new hash using the Web Crypto API with UUID-like format
+    // Generate a new hash using the Web Crypto API with PBKDF2 algorithm
     const newHash = await createSecureHash(password);
     
-    console.log('Generated new UUID-like hash:', newHash);
+    console.log('Generated new secure hash for password update');
     
     const { error } = await supabase
       .from('usuarios')
@@ -55,10 +54,9 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     console.log('Found user with email:', email);
     
     // Verify the password against the hashed value in the database
-    if (!verifyPassword(password, data.senha_hash)) {
+    const passwordMatches = await verifyPassword(password, data.senha_hash);
+    if (!passwordMatches) {
       console.error('Invalid password');
-      console.log('Provided password hash:', hashPassword(password));
-      console.log('Stored password hash:', data.senha_hash);
       return null;
     }
     
