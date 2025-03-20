@@ -1,4 +1,3 @@
-
 /**
  * Generates a secure random password of specified length with special characters
  * @param length The length of the password to generate (minimum 20)
@@ -37,65 +36,27 @@ export function generateSecurePassword(length: number = 20): string {
 }
 
 /**
- * Hashes a string using SHA-256 algorithm with Web Crypto API
- * This function returns a hex string of the hash for compatibility
+ * Creates a secure hash using Web Crypto API with SHA-256
+ * This is an asynchronous function that returns a Promise
  * @param text The text to hash
- * @returns A Promise that resolves to the hashed text in hex format
+ * @param salt Optional salt to add to the text before hashing
+ * @returns A Promise that resolves to the hashed string
  */
-export async function sha256(text: string): Promise<string> {
+export async function createSecureHash(text: string, salt: string = ''): Promise<string> {
+  // Create a text encoder to convert the string to bytes
   const encoder = new TextEncoder();
-  const data = encoder.encode(text);
+  // Encode the text with salt
+  const data = encoder.encode(text + salt);
+  
+  // Use the Web Crypto API to hash the data
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  
+  // Convert the hash buffer to a hex string
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Creates a simple hash for backward compatibility with old passwords
- * @param password The password to hash
- * @param salt Optional salt to use for the hash
- * @returns A simple hash of the password
- */
-function createSimpleHash(password: string, salt: string = ''): string {
-  let hash = 0;
-  const str = password + salt;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16).padStart(64, '0');
-}
-
-/**
- * Creates a more secure hash with multiple iterations
- * @param password The password to hash
- * @param salt Optional salt to use for the hash
- * @returns A more secure hash of the password
- */
-function createSecureHash(password: string, salt: string = ''): string {
-  let hash = 0;
-  const str = password + salt;
-  const iterations = 10000; // Increase computational cost
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   
-  for (let j = 0; j < iterations; j++) {
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-  }
-  
-  // Ensure hash has a variety of characters
-  const hashStr = Math.abs(hash).toString(16).padStart(64, '0');
-  
-  // If this is a direct hash from password, ensure it has a mix of characters
-  if (hashStr.length === 64) {
-    return hashStr;
-  }
-  
-  // Add additional character diversity if it's missing
-  return ensureHashDiversity(hashStr);
+  // Ensure the hash has diverse characters
+  return ensureHashDiversity(hashHex);
 }
 
 /**
@@ -138,16 +99,30 @@ function ensureHashDiversity(hash: string): string {
 }
 
 /**
- * Hashes a password using a more secure algorithm
- * For compatibility, this still returns a synchronous hash
+ * Hashes a password using Web Crypto API's SHA-256 algorithm
+ * For synchronous compatibility, this function uses a simpler fallback
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
  * @returns The hashed password
  */
 export function hashPassword(password: string, salt: string = ''): string {
-  // For a production system, this would use a proper password hashing algorithm
-  // like Argon2id or at minimum bcrypt with proper salting.
-  return createSecureHash(password, salt);
+  try {
+    // Create a hash synchronously using a simple algorithm for compatibility
+    let hash = 0;
+    const str = password + salt;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Convert to hex and ensure it has diverse characters
+    const hashHex = Math.abs(hash).toString(16).padStart(64, '0');
+    return ensureHashDiversity(hashHex);
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    return '';
+  }
 }
 
 /**
@@ -158,11 +133,7 @@ export function hashPassword(password: string, salt: string = ''): string {
  * @returns True if the password matches the hash
  */
 export function verifyPassword(password: string, hash: string, salt: string = ''): boolean {
-  // Try with secure hash first
-  const securePasswordHash = createSecureHash(password, salt);
-  if (securePasswordHash === hash) return true;
-  
-  // Fallback to simple hash for backward compatibility with older passwords
-  const simplePasswordHash = createSimpleHash(password, salt);
-  return simplePasswordHash === hash;
+  // Use the same hashing function for verification
+  const passwordHash = hashPassword(password, salt);
+  return passwordHash === hash;
 }

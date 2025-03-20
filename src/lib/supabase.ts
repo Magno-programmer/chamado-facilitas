@@ -2,18 +2,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from './types';
 import type { Database } from '@/integrations/supabase/types';
-import { hashPassword, verifyPassword } from './passwordUtils';
+import { hashPassword, verifyPassword, createSecureHash } from './passwordUtils';
 
 /**
- * Updates the user's password hash in the database
+ * Updates the user's password hash in the database using an improved hash algorithm
  * @param userId The ID of the user to update
- * @param newHash The new password hash to store
- * @returns True if successful, false otherwise
+ * @param password The password to rehash and store
+ * @returns Promise<boolean> True if successful, false otherwise
  */
 async function updatePasswordHash(userId: string, password: string): Promise<boolean> {
   try {
-    // Generate a new hash for the same password
-    const newHash = hashPassword(password);
+    // Generate a new hash using the Web Crypto API for better security
+    const newHash = await createSecureHash(password);
     
     const { error } = await supabase
       .from('usuarios')
@@ -62,7 +62,7 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     
     console.log('Password verified successfully');
     
-    // After successful verification, update the password hash
+    // After successful verification, update the password hash using the improved algorithm
     // This refreshes the hash without changing the password
     await updatePasswordHash(data.id, password);
     
