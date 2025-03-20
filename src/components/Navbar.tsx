@@ -28,6 +28,10 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Check if we should hide the navigation tabs (on index or login page)
+  const shouldHideNavTabs = location.pathname === '/' || location.pathname === '/login';
+
+  // Don't render navbar on login page
   if (!isAuthenticated && location.pathname !== '/') {
     return null;
   }
@@ -43,7 +47,7 @@ const Navbar = () => {
 
         {/* Desktop navigation */}
         <nav className="hidden md:flex items-center space-x-4">
-          {isAuthenticated ? (
+          {isAuthenticated && !shouldHideNavTabs ? (
             <>
               <NavItem to="/dashboard" label="Dashboard" currentPath={location.pathname} />
               <NavItem to="/tickets" label="Chamados" currentPath={location.pathname} />
@@ -71,76 +75,76 @@ const Navbar = () => {
           )}
         </nav>
 
-        {/* Mobile menu toggle */}
-        <button 
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
-          onClick={toggleMenu}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-        >
-          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Mobile menu toggle - only show on authenticated pages that aren't the index or login */}
+        {isAuthenticated && !shouldHideNavTabs && (
+          <button 
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={toggleMenu}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        )}
+        
+        {/* Show login button on mobile for index page */}
+        {!isAuthenticated && location.pathname === '/' && (
+          <Link 
+            to="/login" 
+            className="md:hidden bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-sm"
+          >
+            Login
+          </Link>
+        )}
       </div>
 
       {/* Mobile navigation */}
-      {isMenuOpen && (
+      {isMenuOpen && isAuthenticated && !shouldHideNavTabs && (
         <div className="md:hidden absolute top-16 left-0 right-0 bg-background border-b animate-fade-in">
           <nav className="container py-4 flex flex-col space-y-3">
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  to="/dashboard" 
-                  className="px-4 py-2 rounded-md hover:bg-secondary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link 
-                  to="/tickets" 
-                  className="px-4 py-2 rounded-md hover:bg-secondary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Chamados
-                </Link>
-                <Link 
-                  to="/deadlines" 
-                  className="px-4 py-2 rounded-md hover:bg-secondary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Prazos
-                </Link>
-                <Link 
-                  to="/setores" 
-                  className="px-4 py-2 rounded-md hover:bg-secondary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Setores
-                </Link>
-                <Link 
-                  to="/usuarios" 
-                  className="px-4 py-2 rounded-md hover:bg-secondary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Usuários
-                </Link>
-                <button 
-                  onClick={logout}
-                  className="flex items-center px-4 py-2 text-destructive hover:bg-destructive/10 rounded-md"
-                >
-                  <LogOut className="h-5 w-5 mr-2" />
-                  Sair
-                </button>
-              </>
-            ) : (
-              location.pathname === '/' && (
-                <Link 
-                  to="/login" 
-                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-sm text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
-              )
-            )}
+            <>
+              <Link 
+                to="/dashboard" 
+                className="px-4 py-2 rounded-md hover:bg-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/tickets" 
+                className="px-4 py-2 rounded-md hover:bg-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Chamados
+              </Link>
+              <Link 
+                to="/deadlines" 
+                className="px-4 py-2 rounded-md hover:bg-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Prazos
+              </Link>
+              <Link 
+                to="/setores" 
+                className="px-4 py-2 rounded-md hover:bg-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Setores
+              </Link>
+              <Link 
+                to="/usuarios" 
+                className="px-4 py-2 rounded-md hover:bg-secondary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Usuários
+              </Link>
+              <button 
+                onClick={logout}
+                className="flex items-center px-4 py-2 text-destructive hover:bg-destructive/10 rounded-md"
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Sair
+              </button>
+            </>
           </nav>
         </div>
       )}
