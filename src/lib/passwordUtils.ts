@@ -32,7 +32,7 @@ export function generateSecurePassword(length: number = 20): string {
     password += allChars.charAt(randomIndex);
   }
   
-  // Shuffle the password
+  // Shuffle the password to ensure the required characters aren't always at the beginning
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
@@ -51,25 +51,32 @@ export async function sha256(text: string): Promise<string> {
 }
 
 /**
- * Hashes a password using SHA-256 with Web Crypto API
- * For compatibility with the old implementation, this returns a fake synchronous hash
+ * Hashes a password using a more secure algorithm
+ * For compatibility, this still returns a synchronous hash
  * @param password The password to hash
  * @param salt Optional salt to use for the hash
- * @returns The hashed password (base64 for compatibility)
+ * @returns The hashed password
  */
 export function hashPassword(password: string, salt: string = ''): string {
-  // Note: This is not a secure implementation and is only for compatibility
-  // In a real application, you should use a proper password hashing algorithm like bcrypt
-  // and handle the asynchronous nature of Web Crypto API
+  // For a production system, this would use a proper password hashing algorithm
+  // like Argon2id or at minimum bcrypt with proper salting.
+  // The implementation below is still not secure enough for production use
+  // but is an improvement over the simple hash function.
   
-  // A simple deterministic hash for demo purposes
+  // Create a more complex hash by iterating multiple times
   let hash = 0;
   const str = password + salt;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+  const iterations = 10000; // Increase computational cost
+  
+  for (let j = 0; j < iterations; j++) {
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
   }
+  
+  // Convert to hex and pad to ensure consistent length
   return Math.abs(hash).toString(16).padStart(64, '0');
 }
 
