@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { generateSecurePassword, hashPassword } from '@/lib/passwordUtils';
-import UserForm, { usuarioSchema, UsuarioFormValues } from './dialogs/UserForm';
+import UserForm from './dialogs/UserForm';
+import { usuarioSchema, UsuarioFormValues } from './dialogs/UserFormSchema';
 
 interface Usuario {
   id: string;
