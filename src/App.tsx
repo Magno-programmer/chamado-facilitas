@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
+import NewTicket from "./pages/tickets/NewTicket";
 import Deadlines from "./pages/deadlines";
 import Setores from "./pages/Setores";
 import Usuarios from "./pages/usuarios";
@@ -37,6 +38,11 @@ const App = () => (
             <Route path="/tickets" element={
               <ProtectedRoute>
                 <Tickets />
+              </ProtectedRoute>
+            } />
+            <Route path="/tickets/new" element={
+              <ProtectedRoute>
+                <NewTicket />
               </ProtectedRoute>
             } />
             <Route path="/deadlines" element={
