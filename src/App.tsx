@@ -11,7 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import Deadlines from "./pages/Deadlines";
 import Setores from "./pages/Setores";
-import Usuarios from "./pages/Usuarios";
+import Usuarios from "./pages/usuarios";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
