@@ -182,7 +182,7 @@ const UsuariosPage = () => {
       };
       
       if (isEditing && editingUsuario) {
-        const updateData = { ...userData };
+        const updateData: any = { ...userData };
         if (values.senha) {
           updateData.senha_hash = values.senha;
         }
