@@ -3,7 +3,7 @@ import React from 'react';
 import CreateEditUsuarioDialog from './CreateEditUsuarioDialog';
 import DeleteUsuarioDialog from './DeleteUsuarioDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
-import { Sector } from '@/lib/types/sector.types';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 interface Usuario {
   id: string;
@@ -27,14 +27,24 @@ interface UsuariosDialogsProps {
   setResetPasswordDialog: (open: boolean) => void;
   resetPasswordUser: Usuario | null;
   newPassword: string;
-  setores: {id: number, nome: string}[];
-  onSave: (values: any, isEditing: boolean) => Promise<void>;
-  onDelete: () => Promise<void>;
-  onResetPassword: () => Promise<void>;
+  changePasswordDialog?: boolean;
+  setChangePasswordDialog?: (open: boolean) => void;
+  changePasswordUser?: Usuario | null;
+  currentPassword?: string;
+  setCurrentPassword?: (value: string) => void;
+  newChangePassword?: string;
+  setNewChangePassword?: (value: string) => void;
+  confirmPassword?: string;
+  setConfirmPassword?: (value: string) => void;
+  setores: { id: number; nome: string }[];
+  onSave: (values: any, isEditing: boolean) => void;
+  onDelete: () => void;
+  onResetPassword: () => void;
+  onChangePassword?: () => void;
   loading: boolean;
 }
 
-const UsuariosDialogs = ({
+const UsuariosDialogs = ({ 
   isDialogOpen,
   setIsDialogOpen,
   editingUsuario,
@@ -45,15 +55,25 @@ const UsuariosDialogs = ({
   setResetPasswordDialog,
   resetPasswordUser,
   newPassword,
+  changePasswordDialog = false,
+  setChangePasswordDialog = () => {},
+  changePasswordUser = null,
+  currentPassword = "",
+  setCurrentPassword = () => {},
+  newChangePassword = "",
+  setNewChangePassword = () => {},
+  confirmPassword = "",
+  setConfirmPassword = () => {},
   setores,
   onSave,
   onDelete,
   onResetPassword,
+  onChangePassword = () => {},
   loading
 }: UsuariosDialogsProps) => {
   return (
     <>
-      <CreateEditUsuarioDialog 
+      <CreateEditUsuarioDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         usuario={editingUsuario}
@@ -61,21 +81,35 @@ const UsuariosDialogs = ({
         onSave={onSave}
         loading={loading}
       />
-
-      <DeleteUsuarioDialog 
+      
+      <DeleteUsuarioDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         usuario={deletingUsuario}
         onDelete={onDelete}
         loading={loading}
       />
-
-      <ResetPasswordDialog 
+      
+      <ResetPasswordDialog
         open={resetPasswordDialog}
         onOpenChange={setResetPasswordDialog}
         usuario={resetPasswordUser}
         password={newPassword}
         onComplete={onResetPassword}
+      />
+      
+      <ChangePasswordDialog
+        open={changePasswordDialog}
+        onOpenChange={setChangePasswordDialog}
+        usuario={changePasswordUser}
+        currentPassword={currentPassword}
+        setCurrentPassword={setCurrentPassword}
+        newPassword={newChangePassword}
+        setNewPassword={setNewChangePassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
+        onComplete={onChangePassword}
+        loading={loading}
       />
     </>
   );

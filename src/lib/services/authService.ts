@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@/lib/types/user.types';
 import { createSecureHash, verifyPassword } from '../passwordUtils';
@@ -33,6 +32,57 @@ export async function updatePasswordHash(userId: string, password: string): Prom
   } catch (error) {
     console.error('DEBUG - updatePasswordHash - Error in updatePasswordHash:', error);
     return false;
+  }
+}
+
+/**
+ * Changes a user's password after verifying their current password
+ * @param userId The ID of the user changing their password
+ * @param currentPassword The user's current password for verification
+ * @param newPassword The new password to set
+ * @returns Promise<{success: boolean, message: string}> Result with success status and message
+ */
+export async function changeUserPassword(
+  userId: string, 
+  currentPassword: string, 
+  newPassword: string
+): Promise<{success: boolean, message: string}> {
+  try {
+    console.log('DEBUG - changeUserPassword - Starting password change for user ID:', userId);
+    
+    // First, get the user's current password hash from the database
+    const { data: userData, error: fetchError } = await supabase
+      .from('usuarios')
+      .select('senha_hash')
+      .eq('id', userId)
+      .single();
+    
+    if (fetchError || !userData) {
+      console.error('DEBUG - changeUserPassword - Error fetching user data:', fetchError);
+      return { success: false, message: 'Não foi possível verificar o usuário.' };
+    }
+    
+    console.log('DEBUG - changeUserPassword - Retrieved current password hash');
+    
+    // Verify the current password matches the stored hash
+    const passwordMatches = await verifyPassword(currentPassword, userData.senha_hash);
+    console.log('DEBUG - changeUserPassword - Current password verification result:', passwordMatches);
+    
+    if (!passwordMatches) {
+      return { success: false, message: 'Senha atual incorreta.' };
+    }
+    
+    // Current password is correct, update to the new password
+    const updateSuccess = await updatePasswordHash(userId, newPassword);
+    
+    if (!updateSuccess) {
+      return { success: false, message: 'Erro ao atualizar a senha.' };
+    }
+    
+    return { success: true, message: 'Senha alterada com sucesso.' };
+  } catch (error) {
+    console.error('DEBUG - changeUserPassword - Error in password change process:', error);
+    return { success: false, message: 'Ocorreu um erro ao processar a alteração de senha.' };
   }
 }
 

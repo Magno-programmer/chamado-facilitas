@@ -22,6 +22,8 @@ const UsuariosPage = () => {
     handleDelete,
     openResetPassword,
     handleResetPassword,
+    openChangePassword,
+    handleChangePassword,
     isDialogOpen,
     setIsDialogOpen,
     editingUsuario,
@@ -31,7 +33,16 @@ const UsuariosPage = () => {
     resetPasswordDialog,
     setResetPasswordDialog,
     resetPasswordUser,
-    newPassword
+    newPassword,
+    changePasswordDialog,
+    setChangePasswordDialog,
+    changePasswordUser,
+    currentPassword,
+    setCurrentPassword,
+    newChangePassword,
+    setNewChangePassword,
+    confirmPassword,
+    setConfirmPassword
   } = useUsuarios(setores);
 
   return (
@@ -48,6 +59,7 @@ const UsuariosPage = () => {
         onEdit={handleOpenEdit}
         onDelete={handleDeleteClick}
         onResetPassword={openResetPassword}
+        onChangePassword={openChangePassword}
       />
 
       <UsuariosDialogs 
@@ -61,10 +73,20 @@ const UsuariosPage = () => {
         setResetPasswordDialog={setResetPasswordDialog}
         resetPasswordUser={resetPasswordUser}
         newPassword={newPassword}
+        changePasswordDialog={changePasswordDialog}
+        setChangePasswordDialog={setChangePasswordDialog}
+        changePasswordUser={changePasswordUser}
+        currentPassword={currentPassword}
+        setCurrentPassword={setCurrentPassword}
+        newChangePassword={newChangePassword}
+        setNewChangePassword={setNewChangePassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
         setores={setores}
         onSave={handleSaveUsuario}
         onDelete={handleDelete}
         onResetPassword={handleResetPassword}
+        onChangePassword={handleChangePassword}
         loading={loading}
       />
     </div>

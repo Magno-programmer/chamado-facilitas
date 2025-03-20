@@ -1,7 +1,9 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import UsuariosTable from './UsuariosTable';
+import LoadingSpinner from './LoadingSpinner';
+import EmptyUsersRow from './EmptyUsersRow';
 
 interface Usuario {
   id: string;
@@ -21,33 +23,34 @@ interface UsuariosContentProps {
   onEdit: (usuario: Usuario) => void;
   onDelete: (usuario: Usuario) => void;
   onResetPassword: (usuario: Usuario) => void;
+  onChangePassword?: (usuario: Usuario) => void;
 }
 
 const UsuariosContent = ({ 
   usuarios, 
   loading, 
-  isAdmin, 
-  onEdit, 
-  onDelete, 
-  onResetPassword
+  isAdmin,
+  onEdit,
+  onDelete,
+  onResetPassword,
+  onChangePassword
 }: UsuariosContentProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lista de Usuários</CardTitle>
-        <CardDescription>
-          Visualize todos os usuários do sistema
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <UsuariosTable 
-          usuarios={usuarios}
-          loading={loading}
-          isAdmin={isAdmin}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onResetPassword={onResetPassword}
-        />
+    <Card className="mt-6">
+      <CardContent className="p-0">
+        {loading ? (
+          <LoadingSpinner />
+        ) : (
+          <UsuariosTable
+            usuarios={usuarios}
+            isAdmin={isAdmin}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onResetPassword={onResetPassword}
+            onChangePassword={onChangePassword}
+            emptyComponent={<EmptyUsersRow />}
+          />
+        )}
       </CardContent>
     </Card>
   );
