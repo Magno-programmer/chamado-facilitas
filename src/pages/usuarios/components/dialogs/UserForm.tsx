@@ -14,6 +14,7 @@ interface UserFormProps {
   loading: boolean;
   generatedPassword: string;
   onCancel: () => void;
+  isEditingSelf?: boolean;
 }
 
 const UserForm = ({ 
@@ -23,7 +24,8 @@ const UserForm = ({
   isEditing, 
   loading, 
   generatedPassword,
-  onCancel
+  onCancel,
+  isEditingSelf
 }: UserFormProps) => {
   return (
     <Form {...form}>
@@ -33,6 +35,7 @@ const UserForm = ({
           setores={setores} 
           isEditing={isEditing} 
           generatedPassword={generatedPassword} 
+          isEditingSelf={isEditingSelf}
         />
         <UserFormActions 
           isEditing={isEditing} 

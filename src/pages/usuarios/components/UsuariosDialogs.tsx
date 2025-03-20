@@ -1,4 +1,3 @@
-
 import React from 'react';
 import CreateEditUsuarioDialog from './CreateEditUsuarioDialog';
 import DeleteUsuarioDialog from './DeleteUsuarioDialog';
@@ -19,32 +18,33 @@ interface Usuario {
 interface UsuariosDialogsProps {
   isDialogOpen: boolean;
   setIsDialogOpen: (open: boolean) => void;
-  editingUsuario: Usuario | null;
+  editingUsuario: any;
   deleteDialogOpen: boolean;
   setDeleteDialogOpen: (open: boolean) => void;
-  deletingUsuario: Usuario | null;
+  deletingUsuario: any;
   resetPasswordDialog: boolean;
   setResetPasswordDialog: (open: boolean) => void;
-  resetPasswordUser: Usuario | null;
+  resetPasswordUser: any;
   newPassword: string;
-  changePasswordDialog?: boolean;
-  setChangePasswordDialog?: (open: boolean) => void;
-  changePasswordUser?: Usuario | null;
-  currentPassword?: string;
-  setCurrentPassword?: (value: string) => void;
-  newChangePassword?: string;
-  setNewChangePassword?: (value: string) => void;
-  confirmPassword?: string;
-  setConfirmPassword?: (value: string) => void;
-  setores: { id: number; nome: string }[];
+  changePasswordDialog: boolean;
+  setChangePasswordDialog: (open: boolean) => void;
+  changePasswordUser: any;
+  currentPassword: string;
+  setCurrentPassword: (password: string) => void;
+  newChangePassword: string;
+  setNewChangePassword: (password: string) => void;
+  confirmPassword: string;
+  setConfirmPassword: (password: string) => void;
+  setores: any[];
   onSave: (values: any, isEditing: boolean) => void;
-  onDelete: () => void;
-  onResetPassword: () => void;
-  onChangePassword?: () => void;
+  onDelete: (id: string) => void;
+  onResetPassword: (id: string, newPassword: string) => void;
+  onChangePassword: (id: string, currentPassword: string, newPassword: string) => void;
   loading: boolean;
+  currentUser?: any;
 }
 
-const UsuariosDialogs = ({ 
+const UsuariosDialogs = ({
   isDialogOpen,
   setIsDialogOpen,
   editingUsuario,
@@ -55,21 +55,22 @@ const UsuariosDialogs = ({
   setResetPasswordDialog,
   resetPasswordUser,
   newPassword,
-  changePasswordDialog = false,
-  setChangePasswordDialog = () => {},
-  changePasswordUser = null,
-  currentPassword = "",
-  setCurrentPassword = () => {},
-  newChangePassword = "",
-  setNewChangePassword = () => {},
-  confirmPassword = "",
-  setConfirmPassword = () => {},
+  changePasswordDialog,
+  setChangePasswordDialog,
+  changePasswordUser,
+  currentPassword,
+  setCurrentPassword,
+  newChangePassword,
+  setNewChangePassword,
+  confirmPassword,
+  setConfirmPassword,
   setores,
   onSave,
   onDelete,
   onResetPassword,
-  onChangePassword = () => {},
-  loading
+  onChangePassword,
+  loading,
+  currentUser
 }: UsuariosDialogsProps) => {
   return (
     <>
@@ -80,6 +81,7 @@ const UsuariosDialogs = ({
         setores={setores}
         onSave={onSave}
         loading={loading}
+        currentUser={currentUser}
       />
       
       <DeleteUsuarioDialog

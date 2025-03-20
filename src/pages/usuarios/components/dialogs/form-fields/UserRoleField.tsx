@@ -4,12 +4,14 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { UsuarioFormValues } from '../UserFormSchema';
+import { User } from '@/lib/types/user.types';
 
 interface UserRoleFieldProps {
   form: UseFormReturn<UsuarioFormValues>;
+  isEditingSelf?: boolean;
 }
 
-const UserRoleField = ({ form }: UserRoleFieldProps) => {
+const UserRoleField = ({ form, isEditingSelf }: UserRoleFieldProps) => {
   return (
     <FormField
       control={form.control}
@@ -21,6 +23,7 @@ const UserRoleField = ({ form }: UserRoleFieldProps) => {
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
+            disabled={isEditingSelf}
           >
             <FormControl>
               <SelectTrigger>
@@ -33,6 +36,11 @@ const UserRoleField = ({ form }: UserRoleFieldProps) => {
               <SelectItem value="CLIENT">Usuário Comum</SelectItem>
             </SelectContent>
           </Select>
+          {isEditingSelf && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Você não pode alterar sua própria função no sistema.
+            </p>
+          )}
           <FormMessage />
         </FormItem>
       )}

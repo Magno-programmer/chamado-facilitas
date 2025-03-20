@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useAuth } from "@/hooks/useAuth";
 import { useEditCreateUsuario } from './useEditCreateUsuario';
 import { useDeleteUsuario } from './useDeleteUsuario';
 import { useResetPassword } from './useResetPassword';
@@ -7,6 +8,7 @@ import { useChangePassword } from './useChangePassword';
 import { useFetchUsuarios } from './useFetchUsuarios';
 
 export const useUsuarios = (setores: {id: number, nome: string}[]) => {
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const { usuarios, setUsuarios } = useFetchUsuarios(setLoading);
   
@@ -88,6 +90,7 @@ export const useUsuarios = (setores: {id: number, nome: string}[]) => {
     newChangePassword,
     setNewChangePassword,
     confirmPassword,
-    setConfirmPassword
+    setConfirmPassword,
+    currentUser
   };
 };

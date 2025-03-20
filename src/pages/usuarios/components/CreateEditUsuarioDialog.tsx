@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { generateSecurePassword } from '@/lib/passwordUtils';
 import UserForm from './dialogs/UserForm';
 import { usuarioSchema, UsuarioFormValues } from './dialogs/UserFormSchema';
+import { User } from '@/lib/types/user.types';
 
 interface Usuario {
   id: string;
@@ -25,6 +26,7 @@ interface CreateEditUsuarioDialogProps {
   setores: { id: number; nome: string }[];
   onSave: (values: any, isEditing: boolean) => void;
   loading: boolean;
+  currentUser: User | null;
 }
 
 const CreateEditUsuarioDialog = ({ 
@@ -33,9 +35,13 @@ const CreateEditUsuarioDialog = ({
   usuario, 
   setores, 
   onSave,
-  loading
+  loading,
+  currentUser
 }: CreateEditUsuarioDialogProps) => {
   const [generatedPassword, setGeneratedPassword] = useState<string>("");
+  
+  // Check if editing your own profile
+  const isEditingSelf = !!usuario && !!currentUser && usuario.id === currentUser.id;
   
   // Setup form for creating/editing users
   const form = useForm<UsuarioFormValues>({
@@ -110,6 +116,7 @@ const CreateEditUsuarioDialog = ({
           loading={loading}
           generatedPassword={generatedPassword}
           onCancel={() => onOpenChange(false)}
+          isEditingSelf={isEditingSelf}
         />
       </DialogContent>
     </Dialog>

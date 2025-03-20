@@ -42,7 +42,8 @@ const UsuariosPage = () => {
     newChangePassword,
     setNewChangePassword,
     confirmPassword,
-    setConfirmPassword
+    setConfirmPassword,
+    currentUser
   } = useUsuarios(setores);
 
   return (
@@ -88,6 +89,7 @@ const UsuariosPage = () => {
         onResetPassword={handleResetPassword}
         onChangePassword={handleChangePassword}
         loading={loading}
+        currentUser={currentUser}
       />
     </div>
   );

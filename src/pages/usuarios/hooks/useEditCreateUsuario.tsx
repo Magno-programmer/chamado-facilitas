@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createSecureHash } from '@/lib/passwordUtils';
+import { useAuth } from "@/hooks/useAuth";
 
 interface Usuario {
   id: string;
@@ -23,6 +24,7 @@ export const useEditCreateUsuario = (
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
+  const { user: currentUser } = useAuth();
 
   const handleOpenEdit = (usuario: Usuario) => {
     setEditingUsuario(usuario);
@@ -37,6 +39,19 @@ export const useEditCreateUsuario = (
   const handleSaveUsuario = async (values: any, isEditing: boolean) => {
     try {
       setLoading(true);
+      
+      // Check if user is trying to edit their own role
+      if (isEditing && editingUsuario && currentUser && editingUsuario.id === currentUser.id) {
+        // If attempting to change their own role, prevent it
+        if (values.role !== editingUsuario.role) {
+          toast({
+            title: "Operação não permitida",
+            description: "Você não pode alterar sua própria função no sistema.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
       
       const userData = {
         nome: values.nome,
@@ -129,6 +144,7 @@ export const useEditCreateUsuario = (
     setEditingUsuario,
     handleOpenEdit,
     handleOpenCreate,
-    handleSaveUsuario
+    handleSaveUsuario,
+    currentUser
   };
 };
