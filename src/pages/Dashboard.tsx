@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalTickets: 0,
     openTickets: 0,
@@ -38,15 +38,11 @@ const Dashboard = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Fetch statistics
-        const statsData = await getTicketStats();
-        setStats(statsData);
-        
         // Fetch tickets
         const ticketsData = await getTickets();
         
         // Map to our TicketWithDetails type and sort by most recent
-        const mappedTickets = ticketsData
+        let mappedTickets = ticketsData
           .map(ticket => ({
             id: ticket.id,
             title: ticket.titulo,
@@ -79,8 +75,46 @@ const Dashboard = () => {
           }))
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
+        // If user is CLIENT, filter tickets to only show their own
+        if (user && user.role === 'CLIENT') {
+          mappedTickets = mappedTickets.filter(ticket => ticket.requesterId === user.id);
+        }
+        
         setAllTickets(mappedTickets);
         setRecentTickets(mappedTickets.slice(0, 5));
+        
+        // Fetch statistics based on filtered tickets if user is CLIENT
+        if (user && user.role === 'CLIENT') {
+          // Calculate stats from filtered tickets
+          const clientStats: DashboardStats = {
+            totalTickets: mappedTickets.length,
+            openTickets: mappedTickets.filter(t => t.status === 'Aberto').length,
+            inProgressTickets: mappedTickets.filter(t => t.status === 'Em Andamento').length,
+            completedTickets: mappedTickets.filter(t => t.status === 'Concluído').length,
+            lateTickets: mappedTickets.filter(t => t.status === 'Atrasado').length,
+            ticketsBySector: []
+          };
+          
+          // Calculate tickets by sector
+          const sectorMap = new Map<number, { sectorName: string, count: number }>();
+          mappedTickets.forEach(ticket => {
+            const { sectorId, sector } = ticket;
+            if (!sectorMap.has(sectorId)) {
+              sectorMap.set(sectorId, { sectorName: sector.name, count: 0 });
+            }
+            const sectorData = sectorMap.get(sectorId);
+            if (sectorData) {
+              sectorData.count += 1;
+            }
+          });
+          
+          clientStats.ticketsBySector = Array.from(sectorMap.values());
+          setStats(clientStats);
+        } else {
+          // Admin sees all stats
+          const statsData = await getTicketStats();
+          setStats(statsData);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -88,10 +122,10 @@ const Dashboard = () => {
       }
     };
     
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       loadData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   // Helper function to convert string role to UserRole type
   const convertToUserRole = (role: string): UserRole => {
@@ -157,12 +191,21 @@ const Dashboard = () => {
     );
   }
 
+  // Title based on user role
+  const dashboardTitle = user?.role === 'CLIENT' 
+    ? "Meus Chamados" 
+    : "Dashboard";
+
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do sistema de chamados</p>
+          <h1 className="text-3xl font-bold mb-2">{dashboardTitle}</h1>
+          <p className="text-muted-foreground">
+            {user?.role === 'CLIENT' 
+              ? "Visualização dos seus chamados" 
+              : "Visão geral do sistema de chamados"}
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -229,7 +272,9 @@ const Dashboard = () => {
       {showTable ? (
         <div className="bg-white rounded-xl border shadow-sm p-6 mb-8">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold">Todos os Chamados</h2>
+            <h2 className="text-lg font-semibold">
+              {user?.role === 'CLIENT' ? 'Meus Chamados' : 'Todos os Chamados'}
+            </h2>
           </div>
           <TicketsTable tickets={allTickets} />
         </div>
@@ -269,7 +314,9 @@ const Dashboard = () => {
 
             <div className="bg-white rounded-xl border shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Chamados por Setor</h2>
+                <h2 className="text-lg font-semibold">
+                  {user?.role === 'CLIENT' ? 'Meus Chamados por Setor' : 'Chamados por Setor'}
+                </h2>
                 <div className="bg-secondary rounded-md p-1">
                   <BarChart className="h-5 w-5 text-muted-foreground" />
                 </div>
@@ -298,7 +345,9 @@ const Dashboard = () => {
           {/* Recent Tickets */}
           <div className="bg-white rounded-xl border shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Chamados Recentes</h2>
+              <h2 className="text-lg font-semibold">
+                {user?.role === 'CLIENT' ? 'Meus Chamados Recentes' : 'Chamados Recentes'}
+              </h2>
               <div className="bg-secondary rounded-md p-1">
                 <List className="h-5 w-5 text-muted-foreground" />
               </div>

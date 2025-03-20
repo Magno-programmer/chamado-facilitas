@@ -19,6 +19,22 @@ export const getTickets = async () => {
   return data;
 }
 
+export const getTicketsByUserId = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('chamados')
+    .select(`
+      *,
+      setor:setores(*),
+      solicitante:usuarios!chamados_solicitante_id_fkey(*),
+      responsavel:usuarios!chamados_responsavel_id_fkey(*)
+    `)
+    .eq('solicitante_id', userId)
+    .order('data_criacao', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
 export const getTicketById = async (id: number) => {
   const { data, error } = await supabase
     .from('chamados')
