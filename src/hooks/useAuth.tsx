@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
-import { customSignIn, signOut } from '@/lib/supabase';
+import { customSignIn, signOut } from '@/lib/services/authService';
 import { useLocation } from 'react-router-dom';
 
 // Define the shape of our authentication context
