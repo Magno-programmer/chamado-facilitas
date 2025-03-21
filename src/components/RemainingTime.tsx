@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
 
 interface RemainingTimeProps {
   deadline: string;
@@ -12,30 +13,30 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
   useEffect(() => {
     const calculateRemainingTime = () => {
       const now = new Date();
+      const deadlineDate = new Date(deadline);
       
-      // Convert deadline to UTC
-      const deadlineDate = new Date(deadline + 'Z'); // Adding "Z" to indicate UTC
-      
-      // If past the deadline, show expired
       if (now > deadlineDate) {
         return 'Expirado';
       }
       
-      // Calculate remaining time directly
-      const remainingTimeMs = deadlineDate.getTime() - now.getTime();
-      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTimeMs / 1000));
+      // Calculate total seconds of difference
+      const totalDiffInSeconds = Math.floor((deadlineDate.getTime() - now.getTime()) / 1000);
       
-      // Calculate components directly from seconds
-      const days = Math.floor(totalRemainingSeconds / 86400); // 86400 seconds in a day
-      const hours = Math.floor((totalRemainingSeconds % 86400) / 3600); // 3600 seconds in an hour
-      const minutes = Math.floor((totalRemainingSeconds % 3600) / 60); // 60 seconds in a minute
-      const seconds = totalRemainingSeconds % 60;
+      // Calculate components
+      const days = Math.floor(totalDiffInSeconds / (24 * 60 * 60));
+      const hours = Math.floor((totalDiffInSeconds % (24 * 60 * 60)) / (60 * 60));
+      const minutes = Math.floor((totalDiffInSeconds % (60 * 60)) / 60);
+      const seconds = totalDiffInSeconds % 60;
       
       // Format with leading zeros and handle day count
       if (days > 0) {
         return `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      } else {
+      } else if (hours > 0) {
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else if (minutes > 0) {
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        return `${seconds}s`;
       }
     };
     
@@ -46,7 +47,7 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [deadline, createdAt]);
+  }, [deadline]);
   
   return <span>{remainingTime}</span>;
 };

@@ -20,17 +20,18 @@ export const useTicketCreation = () => {
     
     // Parse the deadline duration string "HH:MM:SS"
     const prazoTime = selectedDeadline.prazo;
-    const [hoursStr, minutesStr] = prazoTime.split(':');
+    const [hoursStr, minutesStr, secondsStr] = prazoTime.split(':');
     
     // Convert to numbers (using 0 as default if any part is missing)
     const hours = parseInt(hoursStr, 10) || 0;
     const minutes = parseInt(minutesStr, 10) || 0;
+    const seconds = parseInt(secondsStr, 10) || 0;
     
-    // Calculate total minutes for this deadline
-    const totalDeadlineMinutes = (hours * 60) + minutes;
+    // Calculate total seconds for this deadline
+    const totalDeadlineSeconds = (hours * 3600) + (minutes * 60) + seconds;
     
-    // Create the deadline date by adding the total minutes to current time
-    return new Date(currentDate.getTime() + totalDeadlineMinutes * 60 * 1000);
+    // Create the deadline date by adding the total seconds to current time
+    return new Date(currentDate.getTime() + totalDeadlineSeconds * 1000);
   };
 
   const handleSubmit = async (
@@ -70,10 +71,6 @@ export const useTicketCreation = () => {
       const sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
       const currentDate = new Date();
       const deadlineDate = calculateDeadlineDate(selectedDeadline);
-
-      console.log('Current date:', currentDate);
-      console.log('Deadline prazo:', selectedDeadline.prazo);
-      console.log('Calculated deadline date:', deadlineDate);
 
       const newTicket = {
         titulo: title,
