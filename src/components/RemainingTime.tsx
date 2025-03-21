@@ -14,6 +14,9 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       const now = new Date();
       const deadlineDate = new Date(deadline);
       
+      console.log('now:', now);
+      console.log('deadlineDate:', deadlineDate);
+      
       // If past the deadline, show expired
       if (now > deadlineDate) {
         return 'Expirado';
@@ -21,6 +24,8 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       
       // Calculate remaining time directly
       const remainingTimeMs = deadlineDate.getTime() - now.getTime();
+      console.log('remainingTimeMs:', remainingTimeMs);
+      
       const remainingTimeMinutes = Math.max(0, Math.floor(remainingTimeMs / 60000)); // Convert ms to minutes
       
       console.log('remainingTimeMinutes:', remainingTimeMinutes);
