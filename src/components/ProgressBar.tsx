@@ -28,7 +28,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     
     const now = new Date();
     const start = new Date(createdAt);
-    const end = new Date(deadline);
+    const end = new Date(deadline + 'Z'); // Adding 'Z' to ensure UTC interpretation
     
     // If past the deadline, return 0
     if (now > end) return 0;
@@ -54,7 +54,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     if (!autoUpdate || (!deadline && !createdAt)) return;
     
     const timer = setInterval(() => {
-      setCurrentPercentage(calculateCurrentPercentage());
+      const newPercentage = calculateCurrentPercentage();
+      setCurrentPercentage(newPercentage);
     }, 1000);
     
     return () => clearInterval(timer);
