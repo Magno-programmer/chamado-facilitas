@@ -71,3 +71,13 @@ export const updateTicket = async (id: number, updates: Database['public']['Tabl
   if (error) throw error;
   return data[0];
 }
+
+export const deleteTicket = async (id: number) => {
+  const { error } = await supabase
+    .from('chamados')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+  return true;
+}

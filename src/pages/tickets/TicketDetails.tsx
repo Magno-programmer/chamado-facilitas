@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowLeft, Clock, RefreshCw, User, Trash2, Check, MessageSquareText, AlertTriangle } from 'lucide-react';
-import { getTicketById, updateTicket } from '@/lib/services/ticketService';
+import { getTicketById, updateTicket, deleteTicket } from '@/lib/services/ticketService';
 import { TicketWithDetails, TicketStatus } from '@/lib/types/ticket.types';
 import { UserRole } from '@/lib/types/user.types';
 import StatusBadge from '@/components/StatusBadge';
@@ -46,7 +46,8 @@ const TicketDetails = () => {
     },
   });
 
-  const isAdmin = user?.role === 'ADMIN';
+  // Check if user is an admin or manager
+  const canManageTickets = user?.role === 'ADMIN' || user?.role === 'Gerente';
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -61,14 +62,14 @@ const TicketDetails = () => {
         const ticketData = await getTicketById(parseInt(id));
         
         const convertToUserRole = (role: string): UserRole => {
-          return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+          return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
         };
         
         const mappedTicket: TicketWithDetails = {
           id: ticketData.id,
           title: ticketData.titulo,
           description: ticketData.descricao || '',
-          completionDescription: ticketData.descricao_conclusao || '',
+          completionDescription: ticketData.descricao_conclusao,
           sectorId: ticketData.setor_id,
           requesterId: ticketData.solicitante_id,
           responsibleId: ticketData.responsavel_id,
@@ -144,9 +145,9 @@ const TicketDetails = () => {
     
     setIsUpdating(true);
     try {
-      await updateTicket(ticket.id, { 
-        status: 'Excluído' // We're using a soft delete approach by changing the status
-      });
+      // Use the new deleteTicket function to actually delete the ticket
+      await deleteTicket(ticket.id);
+      
       toast({
         title: "Chamado excluído",
         description: "O chamado foi excluído com sucesso.",
@@ -304,9 +305,9 @@ const TicketDetails = () => {
               </div>
             </div>
             
-            {isAdmin && (
+            {canManageTickets && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">Ações de Administrador</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">Ações de Gerenciamento</h3>
                 <div className="flex flex-wrap gap-4">
                   {ticket.status !== 'Em Andamento' && ticket.status !== 'Concluído' && (
                     <Button 
@@ -328,13 +329,15 @@ const TicketDetails = () => {
                     </Button>
                   )}
                   
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir Chamado
-                  </Button>
+                  {user?.role === 'ADMIN' && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir Chamado
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

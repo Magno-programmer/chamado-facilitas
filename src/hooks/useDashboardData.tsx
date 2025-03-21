@@ -25,7 +25,7 @@ export const useDashboardData = ({ isAuthenticated, user }: DashboardDataProps) 
 
   // Helper function to convert string role to UserRole type
   const convertToUserRole = (role: string): UserRole => {
-    return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+    return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
   };
 
   // Calculate percentage of time remaining for a ticket
@@ -56,6 +56,7 @@ export const useDashboardData = ({ isAuthenticated, user }: DashboardDataProps) 
             id: ticket.id,
             title: ticket.titulo,
             description: ticket.descricao || '',
+            completionDescription: ticket.descricao_conclusao,
             sectorId: ticket.setor_id,
             requesterId: ticket.solicitante_id,
             responsibleId: ticket.responsavel_id,

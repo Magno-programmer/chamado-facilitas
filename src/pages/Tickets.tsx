@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
@@ -28,7 +27,7 @@ const Tickets = () => {
   }, [isAuthenticated, authLoading, navigate]);
 
   const convertToUserRole = (role: string): UserRole => {
-    return role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+    return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
   };
 
   useEffect(() => {
@@ -44,6 +43,7 @@ const Tickets = () => {
           id: ticket.id,
           title: ticket.titulo,
           description: ticket.descricao || '',
+          completionDescription: ticket.descricao_conclusao,
           sectorId: ticket.setor_id,
           requesterId: ticket.solicitante_id,
           responsibleId: ticket.responsavel_id,
