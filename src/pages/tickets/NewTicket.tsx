@@ -92,13 +92,23 @@ const NewTicket = () => {
 
       const sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
 
-      const prazoTime = selectedDeadline.prazo; // Format: "HH:MM:SS"
-      const [hours, minutes, seconds] = prazoTime.split(':').map(Number);
+      // Create a new Date object for the current time
+      const currentDate = new Date();
       
-      const deadlineDate = new Date();
-      deadlineDate.setHours(deadlineDate.getHours() + hours);
-      deadlineDate.setMinutes(deadlineDate.getMinutes() + minutes);
-      deadlineDate.setSeconds(deadlineDate.getSeconds() + (seconds || 0));
+      // Parse the deadline duration string "HH:MM:SS"
+      const prazoTime = selectedDeadline.prazo;
+      const [hoursStr, minutesStr, secondsStr] = prazoTime.split(':');
+      
+      // Convert to numbers (using 0 as default if any part is missing)
+      const hours = parseInt(hoursStr, 10) || 0;
+      const minutes = parseInt(minutesStr, 10) || 0;
+      const seconds = parseInt(secondsStr, 10) || 0;
+      
+      // Calculate total seconds for this deadline
+      const totalDeadlineSeconds = (hours * 3600) + (minutes * 60) + seconds;
+      
+      // Create the deadline date by adding the total seconds to current time
+      const deadlineDate = new Date(currentDate.getTime() + totalDeadlineSeconds * 1000);
 
       const newTicket = {
         titulo: title,
@@ -107,7 +117,7 @@ const NewTicket = () => {
         solicitante_id: user.id,
         responsavel_id: user.id, // Adding responsavel_id
         status: 'Aberto',
-        data_criacao: new Date().toISOString(),
+        data_criacao: currentDate.toISOString(),
         prazo: deadlineDate.toISOString(),
       };
 
