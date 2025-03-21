@@ -69,19 +69,6 @@ const CreateEditUsuarioDialog = ({
     checkSector();
   }, [currentUser]);
 
-  // Check if user can edit this profile
-  useEffect(() => {
-    // If trying to edit self and user is not from Geral sector
-    if (isEditingSelf && !isGeralSector && open) {
-      toast({
-        title: "Operação não permitida",
-        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
-        variant: "destructive",
-      });
-      onOpenChange(false);
-    }
-  }, [isEditingSelf, isGeralSector, open, onOpenChange]);
-  
   // Setup form for creating/editing users
   const form = useForm<UsuarioFormValues>({
     resolver: zodResolver(usuarioSchema),
@@ -112,6 +99,7 @@ const CreateEditUsuarioDialog = ({
     if (open) {
       if (usuario) {
         form.reset({
+          id: usuario.id,  // Add this to track if we're editing self
           nome: usuario.nome,
           email: usuario.email,
           setorId: String(usuario.setor?.id || "0"),
@@ -124,7 +112,7 @@ const CreateEditUsuarioDialog = ({
           email: "",
           setorId: "",
           role: "CLIENT",
-          senha: generatedPassword // Plain text password will be hashed during save
+          senha: generatedPassword
         });
       }
     } else {
@@ -138,6 +126,19 @@ const CreateEditUsuarioDialog = ({
       });
     }
   }, [open, usuario, form, generatedPassword, currentUser]);
+
+  // Check if user can edit this profile
+  useEffect(() => {
+    // If trying to edit self and user is not from Geral sector
+    if (isEditingSelf && !isGeralSector && open) {
+      toast({
+        title: "Operação não permitida",
+        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+        variant: "destructive",
+      });
+      onOpenChange(false);
+    }
+  }, [isEditingSelf, isGeralSector, open, onOpenChange]);
 
   const onSubmit = (values: UsuarioFormValues) => {
     onSave(values, !!usuario);

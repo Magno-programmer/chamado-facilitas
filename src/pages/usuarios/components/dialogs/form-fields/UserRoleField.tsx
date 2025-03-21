@@ -14,6 +14,9 @@ interface UserRoleFieldProps {
 }
 
 const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: UserRoleFieldProps) => {
+  // Calculate if this field should be disabled - only in specific circumstances
+  const isDisabled = isEditingSelf || (!isGeralSector && currentUser?.role !== 'ADMIN');
+
   return (
     <FormField
       control={form.control}
@@ -25,7 +28,7 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
-            disabled={isEditingSelf || (!isGeralSector && currentUser?.role !== 'ADMIN')}
+            disabled={isDisabled}
           >
             <FormControl>
               <SelectTrigger>

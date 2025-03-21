@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
@@ -21,6 +21,11 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
     ? setores 
     : setores.filter(setor => setor.id === currentUser.sectorId);
 
+  // Calculate if this field should be disabled - only when editing self and not from Geral sector
+  const isDisabled = !!currentUser && 
+                    form.getValues('id') === currentUser.id && 
+                    !isGeralSector;
+
   return (
     <FormField
       control={form.control}
@@ -32,6 +37,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
+            disabled={isDisabled}
           >
             <FormControl>
               <SelectTrigger>
