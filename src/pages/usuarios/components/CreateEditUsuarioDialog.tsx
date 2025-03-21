@@ -114,7 +114,7 @@ const CreateEditUsuarioDialog = ({
         form.reset({
           nome: usuario.nome,
           email: usuario.email,
-          setorId: String(usuario.setor?.id || ""),
+          setorId: String(usuario.setor?.id || "0"),
           role: usuario.role,
           senha: ""
         });
@@ -122,7 +122,7 @@ const CreateEditUsuarioDialog = ({
         form.reset({
           nome: "",
           email: "",
-          setorId: currentUser ? String(currentUser.sectorId) : "",
+          setorId: "",
           role: "CLIENT",
           senha: generatedPassword // Plain text password will be hashed during save
         });

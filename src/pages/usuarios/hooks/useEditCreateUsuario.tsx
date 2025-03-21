@@ -109,7 +109,7 @@ export const useEditCreateUsuario = (
       const userData = {
         nome: values.nome,
         email: values.email,
-        setor_id: parseInt(values.setorId),
+        setor_id: values.setorId === "0" ? null : parseInt(values.setorId), // Handle "Sem Setor" case
         role: values.role
       };
       
@@ -144,10 +144,12 @@ export const useEditCreateUsuario = (
               nome: values.nome,
               email: values.email,
               role: values.role,
-              setor: {
-                id: parseInt(values.setorId),
-                nome: setores.find(s => s.id === parseInt(values.setorId))?.nome || ''
-              }
+              setor: values.setorId === "0" 
+                ? { id: 0, nome: "Sem Setor" }
+                : {
+                    id: parseInt(values.setorId),
+                    nome: setores.find(s => s.id === parseInt(values.setorId))?.nome || 'Sem Setor'
+                  }
             };
           }
           return u;
@@ -178,7 +180,12 @@ export const useEditCreateUsuario = (
         if (error) throw error;
         
         if (data && data.length > 0) {
-          setUsuarios([...usuarios, data[0]]);
+          const newUser = {
+            ...data[0],
+            setor: data[0].setor || { id: 0, nome: "Sem Setor" }
+          };
+          
+          setUsuarios([...usuarios, newUser]);
           toast({
             title: "Usuário criado",
             description: `O usuário "${values.nome}" foi criado com sucesso.`,

@@ -28,6 +28,10 @@ const UserFormFields = ({
   currentUser,
   isGeralSector
 }: UserFormFieldsProps) => {
+  // Watch for role changes to determine if we should show the sector field
+  const userRole = form.watch('role');
+  const isClient = userRole === 'CLIENT';
+
   return (
     <div className="space-y-4">
       <UserNameField form={form} />
