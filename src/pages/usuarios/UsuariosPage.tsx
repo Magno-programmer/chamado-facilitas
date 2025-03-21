@@ -13,7 +13,7 @@ import UsuariosDialogs from './components/UsuariosDialogs';
 import { Navigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const UsuariosPage = () => {
