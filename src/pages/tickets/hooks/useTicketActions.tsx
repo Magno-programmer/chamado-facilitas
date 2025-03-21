@@ -8,16 +8,17 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+// Update the schemas to make fields optional with default values
 const completionSchema = z.object({
   completionDescription: z.string().min(20, {
     message: "A descrição de conclusão deve ter no mínimo 20 caracteres para concluir o chamado."
-  })
+  }).optional() // Make it optional in the schema
 });
 
 const assignSchema = z.object({
   responsibleId: z.string().min(1, {
     message: "É necessário selecionar um funcionário responsável."
-  })
+  }).optional() // Make it optional in the schema
 });
 
 type CompletionFormValues = z.infer<typeof completionSchema>;
@@ -94,7 +95,7 @@ export const useTicketActions = (
     setIsUpdating(true);
     try {
       if (status === 'Concluído') {
-        await completionForm.trigger();
+        await completionForm.trigger('completionDescription');
         if (!completionForm.formState.isValid) {
           setIsUpdating(false);
           return;
@@ -104,7 +105,7 @@ export const useTicketActions = (
         
         await updateTicket(ticket.id, { 
           status: status,
-          descricao_conclusao: formValues.completionDescription
+          descricao_conclusao: formValues.completionDescription || ''
         });
       } else {
         await updateTicket(ticket.id, { 
@@ -142,7 +143,7 @@ export const useTicketActions = (
       return;
     }
     
-    await assignForm.trigger();
+    await assignForm.trigger('responsibleId');
     if (!assignForm.formState.isValid) return;
     
     const formValues = assignForm.getValues();
@@ -150,7 +151,7 @@ export const useTicketActions = (
     setIsUpdating(true);
     try {
       await updateTicket(ticket.id, { 
-        responsavel_id: formValues.responsibleId,
+        responsavel_id: formValues.responsibleId || '',
         status: 'Em Andamento' // Change status to "Em Andamento" when assigned
       });
       

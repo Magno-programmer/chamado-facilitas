@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RefreshCw, Check, Clock, MessageSquareText, AlertTriangle } from 'lucide-react';
 import { TicketStatus } from '@/lib/types';
@@ -22,7 +21,7 @@ interface StatusUpdateDialogProps {
   selectedStatus: TicketStatus | null;
   isUpdating: boolean;
   completionForm: UseFormReturn<{
-    completionDescription: string;
+    completionDescription?: string;
   }>;
 }
 

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UseFormReturn } from 'react-hook-form';
 import { User } from '@/lib/types/user.types';
 
+// Update the interface to make responsibleId optional
 interface AssignTicketDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,7 +24,7 @@ interface AssignTicketDialogProps {
   isLoadingEmployees: boolean;
   sectorEmployees: User[];
   assignForm: UseFormReturn<{
-    responsibleId: string;
+    responsibleId?: string; // Made optional to match the actual form type
   }>;
 }
 
