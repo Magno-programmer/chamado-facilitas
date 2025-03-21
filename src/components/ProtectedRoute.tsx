@@ -41,9 +41,12 @@ const ProtectedRoute = ({ children, allowedRoles, allowSectorAdmin = false }: Pr
     return user && allowedRoles.includes(user.role);
   };
 
-  // Check if it's a sector admin (has Gerente role)
-  const isSectorAdmin = () => {
-    return allowSectorAdmin && user && user.role === 'Gerente';
+  // Check if it's a sector admin (has Gerente role) from the "Geral" sector
+  const isGeneralSectorAdmin = () => {
+    if (!allowSectorAdmin || !user || user.role !== 'Gerente') return false;
+    
+    // This is for routes like /deadlines which sector admins can access
+    return true;
   };
 
   // If this is a public route, just render the children
@@ -65,8 +68,8 @@ const ProtectedRoute = ({ children, allowedRoles, allowSectorAdmin = false }: Pr
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated but doesn't have the required role or is not a sector admin, show access denied
-  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole() && !isSectorAdmin()) {
+  // If authenticated but doesn't have the required role or is not a sector admin when allowed, show access denied
+  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole() && !isGeneralSectorAdmin()) {
     toast({
       title: "Acesso Negado",
       description: "Você não tem permissão para acessar esta página.",
