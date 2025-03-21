@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { createTicket } from '@/lib/services/ticketService';
 import { getDeadlines } from '@/lib/services/deadlineService';
+import { Deadline } from '@/lib/types/sector.types';
 import { 
   Select,
   SelectContent, 
@@ -11,17 +12,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-
-interface Deadline {
-  id: number;
-  titulo: string;
-  setor_id: number | null;
-  prazo: string;
-  setor?: {
-    id: number;
-    nome: string;
-  };
-}
 
 const NewTicket = () => {
   const navigate = useNavigate();
@@ -113,7 +103,7 @@ const NewTicket = () => {
         descricao: description,
         setor_id: sectorId,
         solicitante_id: user.id,
-        responsavel_id: user.id, // Assuming the creator is initially responsible
+        responsavel_id: user.id, // Adding responsavel_id
         status: 'Aberto',
         data_criacao: new Date().toISOString(),
         prazo: deadlineDate.toISOString(),
