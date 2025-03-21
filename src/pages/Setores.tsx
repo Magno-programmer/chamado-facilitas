@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,13 +13,13 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Setor {
   id: number;
   nome: string;
 }
 
-// Define form schema for validation
 const setorSchema = z.object({
   nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres")
 });
@@ -37,10 +36,8 @@ const Setores = () => {
   const { user } = useAuth();
   const [isGeralSector, setIsGeralSector] = useState(false);
   
-  // Check if user is admin - only ADMIN can access this page
   const isAdmin = user?.role === 'ADMIN';
 
-  // Redirect if user is not admin
   if (user && !isAdmin) {
     toast({
       title: "Acesso Restrito",
@@ -50,7 +47,6 @@ const Setores = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Setup form for creating/editing sectors
   const form = useForm<SetorFormValues>({
     resolver: zodResolver(setorSchema),
     defaultValues: {
@@ -58,7 +54,6 @@ const Setores = () => {
     }
   });
 
-  // Check if user belongs to "Geral" sector
   useEffect(() => {
     if (!user) return;
     
@@ -81,7 +76,6 @@ const Setores = () => {
     checkSector();
   }, [user]);
 
-  // Reset form and set editing setor when dialog opens/closes
   useEffect(() => {
     if (isDialogOpen) {
       if (editingSetor) {
@@ -201,7 +195,6 @@ const Setores = () => {
       setLoading(true);
       
       if (editingSetor) {
-        // Update existing setor
         const { error } = await supabase
           .from('setores')
           .update({ nome: values.nome })
@@ -218,7 +211,6 @@ const Setores = () => {
           description: `O setor "${values.nome}" foi atualizado com sucesso.`,
         });
       } else {
-        // Create new setor
         const { data, error } = await supabase
           .from('setores')
           .insert([{ nome: values.nome }])
@@ -267,18 +259,13 @@ const Setores = () => {
       </div>
       
       {!isGeralSector && isAdmin && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Apenas administradores do setor GERAL podem criar, editar ou excluir setores.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Alert variant="warning" className="mb-6">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Permissões Administrativas</AlertTitle>
+          <AlertDescription>
+            Apenas administradores do setor GERAL podem criar, editar ou excluir setores.
+          </AlertDescription>
+        </Alert>
       )}
       
       <Card>
@@ -347,7 +334,6 @@ const Setores = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog for creating/editing a setor */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -386,7 +372,6 @@ const Setores = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation dialog for deleting a setor */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
