@@ -1,283 +1,239 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getSectors } from '@/lib/supabase';
-import { getDeadlinesForUser, canManageDeadline } from '@/lib/services/deadlineService';
-import { Clock, Plus, AlertCircle, Info } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import DeadlinesTable from './components/DeadlinesTable';
 import CreateEditDeadlineDialog from './components/CreateEditDeadlineDialog';
 import DeleteDeadlineDialog from './components/DeleteDeadlineDialog';
-import { Navigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import DeadlinesMessage from './components/DeadlinesMessage';
+import { 
+  getDeadlinesForUser, 
+  saveDeadline, 
+  deleteDeadline, 
+  canManageDeadline 
+} from '@/lib/services/deadlineService';
+import { supabase } from '@/integrations/supabase/client';
 import { Deadline } from '@/lib/types/sector.types';
 
 const DeadlinesPage = () => {
   const { user } = useAuth();
-  
-  // Fetch deadlines based on user permissions
-  const { data: deadlines, isLoading, error, refetch } = useQuery({
-    queryKey: ['deadlines', user?.id],
-    queryFn: () => user ? getDeadlinesForUser(user) : Promise.resolve([]),
-    enabled: !!user,
-  });
-
-  const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingDeadline, setDeletingDeadline] = useState<Deadline | null>(null);
-  const [manageableDeadlines, setManageableDeadlines] = useState<{[id: number]: boolean}>({});
+  const [canManageDeadlines, setCanManageDeadlines] = useState<{[id: number]: boolean}>({});
+  const [setores, setSetores] = useState<{id: number, nome: string}[]>([]);
   
-  // Check if user is admin or sector admin (Gerente)
-  const isAdmin = user?.role === 'ADMIN';
-  const isSectorAdmin = user?.role === 'Gerente';
-  
-  // Determine if the user can create new deadlines
-  const [canCreateDeadlines, setCanCreateDeadlines] = useState(false);
-  const [userSector, setUserSector] = useState<string | null>(null);
-  const [isGeralSector, setIsGeralSector] = useState(false);
-
-  // Fetch user's sector name 
   useEffect(() => {
-    if (user) {
-      const fetchSectorInfo = async () => {
-        try {
-          const sectors = await getSectors();
-          const userSector = sectors.find(s => s.id === user.sectorId);
-          setUserSector(userSector?.nome || null);
+    const fetchSetores = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('setores')
+          .select('id, nome')
+          .order('nome');
           
-          // Check if user is from "Geral" sector
-          const isFromGeralSector = userSector?.nome === 'Geral';
-          setIsGeralSector(isFromGeralSector);
-          
-          // Admins and sector admins can create deadlines
-          if (isAdmin || isSectorAdmin) {
-            setCanCreateDeadlines(true);
-          }
+        if (error) throw error;
+        setSetores(data || []);
+      } catch (error) {
+        console.error('Error fetching setores:', error);
+        toast({
+          title: 'Erro ao carregar setores',
+          description: 'Não foi possível carregar a lista de setores.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    fetchSetores();
+  }, []);
+  
+  useEffect(() => {
+    const fetchDeadlines = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const deadlinesData = await getDeadlinesForUser(user);
+        setDeadlines(deadlinesData);
+        
+        // Check management permissions for each deadline
+        const permissions: {[id: number]: boolean} = {};
+        for (const deadline of deadlinesData) {
+          if (!deadline.id) continue;
+          permissions[deadline.id] = await canManageDeadline(user, deadline);
         }
-        catch (error) {
-          console.error('Error fetching sector info:', error);
-        }
+        
+        setCanManageDeadlines(permissions);
+      } catch (error) {
+        console.error('Error fetching deadlines:', error);
+        toast({
+          title: 'Erro ao carregar dados',
+          description: 'Não foi possível carregar os prazos.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDeadlines();
+  }, [user]);
+  
+  const handleCreate = () => {
+    setEditingDeadline(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleEdit = (deadline: Deadline) => {
+    setEditingDeadline(deadline);
+    setIsDialogOpen(true);
+  };
+  
+  const handleDelete = (deadline: Deadline) => {
+    setDeletingDeadline(deadline);
+    setDeleteDialogOpen(true);
+  };
+  
+  const handleSaveDeadline = async (data: Partial<Deadline>) => {
+    try {
+      setLoading(true);
+      
+      // Prepare the deadline object
+      const deadlineData: Partial<Deadline> = {
+        titulo: data.titulo,
+        prazo: data.prazo,
+        setor_id: data.setor_id
       };
       
-      fetchSectorInfo();
-    }
-  }, [user, isAdmin, isSectorAdmin]);
-
-  // Check which deadlines the user can manage (edit/delete)
-  useEffect(() => {
-    if (!user || !deadlines) return;
-    
-    const checkManageableDeadlines = async () => {
-      const manageable: {[id: number]: boolean} = {};
+      const savedDeadline = await saveDeadline(
+        deadlineData, 
+        editingDeadline?.id
+      );
       
-      for (const deadline of deadlines) {
-        const canManage = await canManageDeadline(user, deadline);
-        manageable[deadline.id] = canManage;
+      if (editingDeadline) {
+        // Update in the list
+        setDeadlines(prevDeadlines => 
+          prevDeadlines.map(d => d.id === savedDeadline.id ? savedDeadline : d)
+        );
+        toast({
+          title: 'Prazo atualizado',
+          description: 'O prazo foi atualizado com sucesso.'
+        });
+      } else {
+        // Add to the list
+        setDeadlines(prevDeadlines => [...prevDeadlines, savedDeadline]);
+        toast({
+          title: 'Prazo criado',
+          description: 'O novo prazo foi criado com sucesso.'
+        });
       }
       
-      setManageableDeadlines(manageable);
-    };
-    
-    checkManageableDeadlines();
-  }, [deadlines, user]);
-
-  // Load sectors for the dropdown
-  useEffect(() => {
-    const loadSectors = async () => {
-      try {
-        const sectorsData = await getSectors();
-        setSectors(sectorsData);
-      } catch (error) {
-        console.error('Error loading sectors:', error);
+      // Update permissions for this deadline
+      if (user && savedDeadline.id) {
+        const canManage = await canManageDeadline(user, savedDeadline);
+        setCanManageDeadlines(prev => ({
+          ...prev,
+          [savedDeadline.id!]: canManage
+        }));
       }
-    };
-    
-    loadSectors();
-  }, []);
-
-  // Only admins and sector admins can access this page
-  if (user && !isAdmin && !isSectorAdmin) {
-    toast({
-      title: "Acesso Restrito",
-      description: "Apenas administradores e gerentes de setor podem gerenciar prazos.",
-      variant: "destructive",
-    });
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const handleOpenEdit = async (deadline: Deadline) => {
-    // Check if user can edit this deadline
-    if (user && manageableDeadlines[deadline.id]) {
-      setEditingDeadline(deadline);
-      setIsDialogOpen(true);
-    } else {
-      toast({
-        title: "Acesso Negado",
-        description: "Você não tem permissão para editar este prazo.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleOpenCreate = () => {
-    if (canCreateDeadlines) {
+      
+      setIsDialogOpen(false);
       setEditingDeadline(null);
-      setIsDialogOpen(true);
-    } else {
+    } catch (error) {
+      console.error('Error saving deadline:', error);
       toast({
-        title: "Acesso Negado",
-        description: "Você não tem permissão para criar novos prazos.",
-        variant: "destructive",
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o prazo.',
+        variant: 'destructive'
       });
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleDeleteClick = async (deadline: Deadline) => {
-    // Check if user can delete this deadline
-    if (user && manageableDeadlines[deadline.id]) {
-      setDeletingDeadline(deadline);
-      setDeleteDialogOpen(true);
-    } else {
+  
+  const handleConfirmDelete = async () => {
+    if (!deletingDeadline?.id) return;
+    
+    try {
+      setLoading(true);
+      await deleteDeadline(deletingDeadline.id);
+      
+      setDeadlines(prevDeadlines => 
+        prevDeadlines.filter(d => d.id !== deletingDeadline.id)
+      );
+      
       toast({
-        title: "Acesso Negado",
-        description: "Você não tem permissão para excluir este prazo.",
-        variant: "destructive",
+        title: 'Prazo excluído',
+        description: 'O prazo foi excluído com sucesso.'
       });
+      
+      setDeleteDialogOpen(false);
+      setDeletingDeadline(null);
+    } catch (error) {
+      console.error('Error deleting deadline:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o prazo.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Prazos
-            </CardTitle>
-            <CardDescription>Gerenciamento de prazos para os setores</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center items-center h-40">
-              <div className="animate-pulse flex flex-col items-center">
-                <div className="h-6 w-24 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 w-32 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-500">Erro ao carregar prazos</CardTitle>
-            <CardDescription>
-              Ocorreu um erro ao tentar carregar os prazos. Por favor, tente novamente mais tarde.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
+  
+  const canCreateDeadlines = user?.role === 'ADMIN' || user?.role === 'Gerente';
+  
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Prazos</h1>
         {canCreateDeadlines && (
-          <Button onClick={handleOpenCreate}>
+          <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Prazo
           </Button>
         )}
       </div>
       
-      {isAdmin && !isGeralSector && userSector && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Permissões Específicas</AlertTitle>
-          <AlertDescription>
-            Como administrador do setor {userSector}, você só pode visualizar e gerenciar prazos do seu próprio setor ou prazos sem setor definido.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {isAdmin && isGeralSector && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Permissões Administrativas</AlertTitle>
-          <AlertDescription>
-            Como administrador do setor Geral, você pode gerenciar prazos de todos os setores.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {isSectorAdmin && userSector && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Informação</AlertTitle>
-          <AlertDescription>
-            {isGeralSector 
-              ? "Como gerente do setor Geral, você pode gerenciar prazos de todos os setores."
-              : `Como gerente do setor ${userSector}, você só pode visualizar e gerenciar prazos do seu próprio setor ou prazos sem setor definido.`
-            }
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {!isAdmin && !isSectorAdmin && user && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Visualização Restrita</AlertTitle>
-          <AlertDescription>
-            Você está visualizando apenas os prazos relacionados ao seu setor ou prazos sem setor definido.
-          </AlertDescription>
-        </Alert>
-      )}
+      <DeadlinesMessage 
+        title="Gerenciamento de Prazos"
+        description="Aqui você pode visualizar e gerenciar os prazos para os diferentes setores. Os prazos definidos afetam o tempo disponível para resolução de chamados."
+      />
       
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Prazos
-          </CardTitle>
-          <CardDescription>Gerenciamento de prazos para os setores</CardDescription>
+          <CardTitle>Lista de Prazos</CardTitle>
         </CardHeader>
         <CardContent>
           <DeadlinesTable 
-            deadlines={deadlines || []} 
-            canManageDeadlines={manageableDeadlines}
-            onEdit={handleOpenEdit} 
-            onDelete={handleDeleteClick} 
+            deadlines={deadlines}
+            canManageDeadlines={canManageDeadlines}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </CardContent>
       </Card>
-
+      
       <CreateEditDeadlineDialog 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
-        deadline={editingDeadline} 
-        sectors={sectors}
-        user={user}
-        isSectorAdmin={isSectorAdmin}
-        onSuccess={refetch} 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        deadline={editingDeadline}
+        onSave={handleSaveDeadline}
+        loading={loading}
+        setores={setores}
       />
-
+      
       <DeleteDeadlineDialog 
-        open={deleteDialogOpen} 
-        onOpenChange={setDeleteDialogOpen} 
-        deadline={deletingDeadline} 
-        onSuccess={refetch} 
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        deadline={deletingDeadline}
+        onConfirm={handleConfirmDelete}
+        loading={loading}
       />
     </div>
   );
