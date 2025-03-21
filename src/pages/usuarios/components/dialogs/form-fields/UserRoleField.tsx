@@ -9,9 +9,11 @@ import { User } from '@/lib/types/user.types';
 interface UserRoleFieldProps {
   form: UseFormReturn<UsuarioFormValues>;
   isEditingSelf?: boolean;
+  currentUser?: User | null;
+  isGeralSector?: boolean;
 }
 
-const UserRoleField = ({ form, isEditingSelf }: UserRoleFieldProps) => {
+const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: UserRoleFieldProps) => {
   return (
     <FormField
       control={form.control}
@@ -31,8 +33,11 @@ const UserRoleField = ({ form, isEditingSelf }: UserRoleFieldProps) => {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="ADMIN">Administrador</SelectItem>
+              {isGeralSector && (
+                <SelectItem value="ADMIN">Administrador</SelectItem>
+              )}
               <SelectItem value="Gerente">Gerente</SelectItem>
+              <SelectItem value="Funcionario">Funcionário</SelectItem>
               <SelectItem value="CLIENT">Usuário Comum</SelectItem>
             </SelectContent>
           </Select>

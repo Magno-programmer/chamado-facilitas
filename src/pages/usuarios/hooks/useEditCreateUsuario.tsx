@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createSecureHash } from '@/lib/passwordUtils';
@@ -24,9 +24,43 @@ export const useEditCreateUsuario = (
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
+  const [isGeralSector, setIsGeralSector] = useState(false);
   const { user: currentUser } = useAuth();
 
+  // Check if current user is from "Geral" sector
+  useEffect(() => {
+    const checkSector = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('setores')
+          .select('nome')
+          .eq('id', currentUser.sectorId)
+          .single();
+        
+        if (error) throw error;
+        setIsGeralSector(data?.nome === 'Geral');
+      } catch (error) {
+        console.error('Error checking sector:', error);
+        setIsGeralSector(false);
+      }
+    };
+    
+    checkSector();
+  }, [currentUser]);
+
   const handleOpenEdit = (usuario: Usuario) => {
+    // Only allow editing users from same sector unless user is from Geral sector
+    if (!isGeralSector && usuario.setor?.id !== currentUser?.sectorId) {
+      toast({
+        title: "Acesso negado",
+        description: "Você só pode editar usuários do seu próprio setor.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setEditingUsuario(usuario);
     setIsDialogOpen(true);
   };
@@ -53,6 +87,28 @@ export const useEditCreateUsuario = (
         }
       }
       
+      // If not from Geral sector, prevent creating/editing users from other sectors
+      if (!isGeralSector) {
+        if (parseInt(values.setorId) !== currentUser?.sectorId) {
+          toast({
+            title: "Operação não permitida",
+            description: "Você só pode gerenciar usuários do seu próprio setor.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Non-Geral sector admins can't create ADMIN users
+        if (!isEditing && values.role === 'ADMIN') {
+          toast({
+            title: "Operação não permitida",
+            description: "Apenas administradores do setor Geral podem criar novos usuários administradores.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
       const userData = {
         nome: values.nome,
         email: values.email,
@@ -61,6 +117,16 @@ export const useEditCreateUsuario = (
       };
       
       if (isEditing && editingUsuario) {
+        // If editing user from another sector and user is not from Geral, block
+        if (!isGeralSector && editingUsuario.setor?.id !== currentUser?.sectorId) {
+          toast({
+            title: "Acesso negado",
+            description: "Você só pode editar usuários do seu próprio setor.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         const updateData: any = { ...userData };
         if (values.senha) {
           // Use the secure hash function for password updates
@@ -145,6 +211,7 @@ export const useEditCreateUsuario = (
     handleOpenEdit,
     handleOpenCreate,
     handleSaveUsuario,
-    currentUser
+    currentUser,
+    isGeralSector
   };
 };

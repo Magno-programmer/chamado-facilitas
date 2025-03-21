@@ -43,6 +43,7 @@ interface UsuariosDialogsProps {
   onChangePassword: (id: string, currentPassword: string, newPassword: string) => void;
   loading: boolean;
   currentUser?: any;
+  isGeralSector?: boolean;
 }
 
 const UsuariosDialogs = ({
@@ -71,7 +72,8 @@ const UsuariosDialogs = ({
   onResetPassword,
   onChangePassword,
   loading,
-  currentUser
+  currentUser,
+  isGeralSector
 }: UsuariosDialogsProps) => {
   return (
     <>

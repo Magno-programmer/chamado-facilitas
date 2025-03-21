@@ -7,6 +7,7 @@ import { generateSecurePassword } from '@/lib/passwordUtils';
 import UserForm from './dialogs/UserForm';
 import { usuarioSchema, UsuarioFormValues } from './dialogs/UserFormSchema';
 import { User } from '@/lib/types/user.types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Usuario {
   id: string;
@@ -39,9 +40,33 @@ const CreateEditUsuarioDialog = ({
   currentUser
 }: CreateEditUsuarioDialogProps) => {
   const [generatedPassword, setGeneratedPassword] = useState<string>("");
+  const [isGeralSector, setIsGeralSector] = useState<boolean>(false);
   
   // Check if editing your own profile
   const isEditingSelf = !!usuario && !!currentUser && usuario.id === currentUser.id;
+  
+  // Check if current user is from "Geral" sector
+  useEffect(() => {
+    const checkSector = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('setores')
+          .select('nome')
+          .eq('id', currentUser.sectorId)
+          .single();
+        
+        if (error) throw error;
+        setIsGeralSector(data?.nome === 'Geral');
+      } catch (error) {
+        console.error('Error checking sector:', error);
+        setIsGeralSector(false);
+      }
+    };
+    
+    checkSector();
+  }, [currentUser]);
   
   // Setup form for creating/editing users
   const form = useForm<UsuarioFormValues>({
@@ -83,13 +108,13 @@ const CreateEditUsuarioDialog = ({
         form.reset({
           nome: "",
           email: "",
-          setorId: "",
+          setorId: currentUser ? String(currentUser.sectorId) : "",
           role: "CLIENT",
           senha: generatedPassword // Plain text password will be hashed during save
         });
       }
     }
-  }, [open, usuario, form, generatedPassword]);
+  }, [open, usuario, form, generatedPassword, currentUser]);
 
   const onSubmit = (values: UsuarioFormValues) => {
     onSave(values, !!usuario);
@@ -117,6 +142,8 @@ const CreateEditUsuarioDialog = ({
           generatedPassword={generatedPassword}
           onCancel={() => onOpenChange(false)}
           isEditingSelf={isEditingSelf}
+          currentUser={currentUser}
+          isGeralSector={isGeralSector}
         />
       </DialogContent>
     </Dialog>

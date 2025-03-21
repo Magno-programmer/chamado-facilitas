@@ -5,6 +5,7 @@ import { UseFormReturn } from "react-hook-form";
 import { UsuarioFormValues } from './UserFormSchema';
 import UserFormFields from './UserFormFields';
 import UserFormActions from './UserFormActions';
+import { User } from '@/lib/types/user.types';
 
 interface UserFormProps {
   form: UseFormReturn<UsuarioFormValues>;
@@ -15,6 +16,8 @@ interface UserFormProps {
   generatedPassword: string;
   onCancel: () => void;
   isEditingSelf?: boolean;
+  currentUser?: User | null;
+  isGeralSector?: boolean;
 }
 
 const UserForm = ({ 
@@ -25,7 +28,9 @@ const UserForm = ({
   loading, 
   generatedPassword,
   onCancel,
-  isEditingSelf
+  isEditingSelf,
+  currentUser,
+  isGeralSector
 }: UserFormProps) => {
   return (
     <Form {...form}>
@@ -36,6 +41,8 @@ const UserForm = ({
           isEditing={isEditing} 
           generatedPassword={generatedPassword} 
           isEditingSelf={isEditingSelf}
+          currentUser={currentUser}
+          isGeralSector={isGeralSector}
         />
         <UserFormActions 
           isEditing={isEditing} 
