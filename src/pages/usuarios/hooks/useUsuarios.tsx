@@ -41,7 +41,7 @@ export const useUsuarios = (setores: {id: number, nome: string}[]) => {
     setResetPasswordUser,
     newPassword,
     setNewPassword,
-    openResetPassword,
+    handleResetPasswordClick,
     handleResetPassword
   } = useResetPassword(setLoading);
   
@@ -52,11 +52,11 @@ export const useUsuarios = (setores: {id: number, nome: string}[]) => {
     changePasswordUser,
     currentPassword,
     setCurrentPassword,
-    newPassword: newChangePassword,
-    setNewPassword: setNewChangePassword,
+    newChangePassword,
+    setNewChangePassword,
     confirmPassword,
     setConfirmPassword,
-    openChangePassword,
+    handleChangePasswordClick,
     handleChangePassword
   } = useChangePassword(setLoading);
 
@@ -68,9 +68,9 @@ export const useUsuarios = (setores: {id: number, nome: string}[]) => {
     handleSaveUsuario,
     handleDeleteClick,
     handleDelete,
-    openResetPassword,
+    handleResetPasswordClick,
     handleResetPassword,
-    openChangePassword,
+    handleChangePasswordClick,
     handleChangePassword,
     isDialogOpen,
     setIsDialogOpen,

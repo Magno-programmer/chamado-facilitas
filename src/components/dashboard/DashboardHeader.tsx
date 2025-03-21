@@ -2,9 +2,10 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { UserRole } from '@/lib/types';
 
 interface DashboardHeaderProps {
-  userRole: 'ADMIN' | 'CLIENT';
+  userRole: UserRole;
   showTable: boolean;
   toggleView: () => void;
 }

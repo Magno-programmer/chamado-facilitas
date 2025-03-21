@@ -2,10 +2,11 @@
 import React from 'react';
 import { TicketWithDetails } from '@/lib/types';
 import TicketsTable from '@/components/TicketsTable';
+import { UserRole } from '@/lib/types';
 
 interface TicketsTableViewProps {
   tickets: TicketWithDetails[];
-  userRole: 'ADMIN' | 'CLIENT';
+  userRole: UserRole;
 }
 
 const TicketsTableView: React.FC<TicketsTableViewProps> = ({ tickets, userRole }) => {

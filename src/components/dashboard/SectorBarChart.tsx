@@ -3,10 +3,11 @@ import React from 'react';
 import { BarChart } from 'lucide-react';
 import { BarChart as RechartBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { DashboardStats } from '@/lib/types/dashboard.types';
+import { UserRole } from '@/lib/types';
 
 interface SectorBarChartProps {
   stats: DashboardStats;
-  userRole: 'ADMIN' | 'CLIENT';
+  userRole: UserRole;
 }
 
 const SectorBarChart: React.FC<SectorBarChartProps> = ({ stats, userRole }) => {

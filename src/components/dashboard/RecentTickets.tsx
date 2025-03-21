@@ -3,10 +3,11 @@ import React from 'react';
 import { List } from 'lucide-react';
 import { TicketWithDetails } from '@/lib/types';
 import TicketCard from '@/components/TicketCard';
+import { UserRole } from '@/lib/types';
 
 interface RecentTicketsProps {
   tickets: TicketWithDetails[];
-  userRole: 'ADMIN' | 'CLIENT';
+  userRole: UserRole;
 }
 
 const RecentTickets: React.FC<RecentTicketsProps> = ({ tickets, userRole }) => {
