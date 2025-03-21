@@ -17,7 +17,7 @@ import NewTicket from '@/pages/tickets/NewTicket';
 import TicketDetails from '@/pages/tickets/TicketDetails';
 import Setores from '@/pages/Setores';
 import UsuariosPage from '@/pages/usuarios';
-import DeadlinesPage from '@/pages/deadlines';
+import Deadlines from '@/pages/deadlines';
 
 import './App.css';
 
@@ -79,9 +79,9 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              <Route path="/prazos" element={
+              <Route path="/deadlines" element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <DeadlinesPage />
+                  <Deadlines />
                 </ProtectedRoute>
               } />
               
