@@ -41,9 +41,9 @@ const ProtectedRoute = ({ children, allowedRoles, allowSectorAdmin = false }: Pr
     return user && allowedRoles.includes(user.role);
   };
 
-  // Check if it's a sector admin (has Gerente role) from the "Geral" sector
+  // Check if it's a sector admin (has GERENTE role) from the "Geral" sector
   const isGeneralSectorAdmin = () => {
-    if (!allowSectorAdmin || !user || user.role !== 'Gerente') return false;
+    if (!allowSectorAdmin || !user || user.role !== 'GERENTE') return false;
     
     // This is for routes like /deadlines which sector admins can access
     return true;

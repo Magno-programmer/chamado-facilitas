@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Deadline } from '@/lib/types/sector.types';
 import { User } from '@/lib/types/user.types';
@@ -18,7 +17,7 @@ export const getDeadlines = async (): Promise<Deadline[]> => {
 
 // Get deadlines based on user permissions
 export const getDeadlinesForUser = async (user: User): Promise<Deadline[]> => {
-  // First check if the user belongs to the "Geral" sector
+  // First check if the user belongs to the "GERAL" sector
   const { data: sectorData, error: sectorError } = await supabase
     .from('setores')
     .select('nome')
@@ -26,9 +25,9 @@ export const getDeadlinesForUser = async (user: User): Promise<Deadline[]> => {
     .single();
   
   if (sectorError) throw sectorError;
-  const isGeralSector = sectorData && sectorData.nome === 'Geral';
+  const isGeralSector = sectorData && sectorData.nome === 'GERAL';
   
-  // For ADMIN users in "Geral" sector, return all deadlines
+  // For ADMIN users in "GERAL" sector, return all deadlines
   if (user.role === 'ADMIN' && isGeralSector) {
     return getDeadlines();
   }
@@ -47,13 +46,13 @@ export const getDeadlinesForUser = async (user: User): Promise<Deadline[]> => {
     return data as Deadline[];
   }
   
-  // For Gerente (sector admin) of "Geral" sector, they can see all deadlines
-  if (user.role === 'Gerente' && isGeralSector) {
+  // For GERENTE (sector admin) of "GERAL" sector, they can see all deadlines
+  if (user.role === 'GERENTE' && isGeralSector) {
     return getDeadlines();
   }
   
   // For sector admins of specific sectors, only show deadlines for their sector
-  if (user.role === 'Gerente') {
+  if (user.role === 'GERENTE') {
     const { data, error } = await supabase
       .from('prazos')
       .select(`
@@ -130,7 +129,7 @@ export const deleteDeadline = async (deadlineId: number): Promise<void> => {
 
 // Check if user can manage a specific deadline
 export const canManageDeadline = async (user: User, deadline: Deadline): Promise<boolean> => {
-  // Check if user belongs to "Geral" sector
+  // Check if user belongs to "GERAL" sector
   const { data: sectorData, error: sectorError } = await supabase
     .from('setores')
     .select('nome')
@@ -138,15 +137,15 @@ export const canManageDeadline = async (user: User, deadline: Deadline): Promise
     .single();
   
   if (sectorError) return false;
-  const isGeralSector = sectorData && sectorData.nome === 'Geral';
+  const isGeralSector = sectorData && sectorData.nome === 'GERAL';
   
-  // "Geral" sector admin or "Geral" ADMIN can manage all deadlines
-  if (isGeralSector && (user.role === 'ADMIN' || user.role === 'Gerente')) {
+  // "GERAL" sector admin or "GERAL" ADMIN can manage all deadlines
+  if (isGeralSector && (user.role === 'ADMIN' || user.role === 'GERENTE')) {
     return true;
   }
   
-  // Specific sector ADMIN or Gerente can only manage deadlines for their sector or with no sector
-  if (user.role === 'ADMIN' || user.role === 'Gerente') {
+  // Specific sector ADMIN or GERENTE can only manage deadlines for their sector or with no sector
+  if (user.role === 'ADMIN' || user.role === 'GERENTE') {
     return deadline.setor_id === null || deadline.setor_id === user.sectorId;
   }
   

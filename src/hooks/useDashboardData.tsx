@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { TicketWithDetails, UserRole } from '@/lib/types';
 import { DashboardStats } from '@/lib/types/dashboard.types';
@@ -25,7 +26,7 @@ export const useDashboardData = ({ isAuthenticated, user }: DashboardDataProps) 
   // Helper function to convert string role to UserRole type
   const convertToUserRole = (role: string): UserRole => {
     if (role === 'ADMIN') return 'ADMIN'; 
-    if (role === 'Gerente') return 'Gerente';
+    if (role === 'GERENTE') return 'GERENTE';
     return 'CLIENT';
   };
 

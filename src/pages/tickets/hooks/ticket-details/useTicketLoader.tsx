@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getTicketById } from '@/lib/services/ticketService';
 import { TicketWithDetails, TicketStatus } from '@/lib/types';
-import { User as UserType } from '@/lib/types/user.types';
+import { User as UserType, UserRole } from '@/lib/types/user.types';
 
 export const useTicketLoader = (
   id: string | undefined, 
@@ -40,8 +40,8 @@ export const useTicketLoader = (
         
         const convertToUserRole = (role: string): UserType['role'] => {
           if (role === 'ADMIN') return 'ADMIN'; 
-          if (role === 'Gerente') return 'Gerente';
-          if (role === 'Funcionario') return 'Funcionario';
+          if (role === 'GERENTE') return 'GERENTE';
+          if (role === 'FUNCIONARIO') return 'FUNCIONARIO';
           return 'CLIENT';
         };
         
@@ -85,7 +85,7 @@ export const useTicketLoader = (
         }
         
         // Check if user can view this ticket
-        if (user && !canManageAllTickets && user.role !== 'Funcionario' && ticketData.solicitante_id !== user.id) {
+        if (user && !canManageAllTickets && user.role !== 'FUNCIONARIO' && ticketData.solicitante_id !== user.id) {
           toast({
             title: "Acesso negado",
             description: "Você só pode visualizar seus próprios chamados.",

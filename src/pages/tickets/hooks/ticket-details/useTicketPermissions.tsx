@@ -20,7 +20,7 @@ export const useTicketPermissions = (
   }
   
   const isAdmin = user.role === 'ADMIN';
-  const isSectorManager = user.role === 'Gerente';
+  const isSectorManager = user.role === 'GERENTE';
   const isUserWithoutSector = user.sectorId === null || user.sectorId === 0;
   const canManageAllTickets = isAdmin || isSectorManager;
   

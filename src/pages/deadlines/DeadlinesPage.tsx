@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSectors } from '@/lib/supabase';
@@ -32,9 +31,9 @@ const DeadlinesPage = () => {
   const [deletingDeadline, setDeletingDeadline] = useState<Deadline | null>(null);
   const [manageableDeadlines, setManageableDeadlines] = useState<{[id: number]: boolean}>({});
   
-  // Check if user is admin or sector admin (Gerente)
+  // Check if user is admin or sector admin (GERENTE)
   const isAdmin = user?.role === 'ADMIN';
-  const isSectorAdmin = user?.role === 'Gerente';
+  const isSectorAdmin = user?.role === 'GERENTE';
   
   // Determine if the user can create new deadlines
   const [canCreateDeadlines, setCanCreateDeadlines] = useState(false);

@@ -24,7 +24,7 @@ const Tickets = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   const isAdmin = user?.role === 'ADMIN';
-  const isSectorManager = user?.role === 'Gerente';
+  const isSectorManager = user?.role === 'GERENTE';
   const isUserWithoutSector = user?.sectorId === null || user?.sectorId === 0;
   const canManageAllTickets = isAdmin || isSectorManager;
   const canOnlySeeOwnTickets = isUserWithoutSector || user?.role === 'CLIENT';
@@ -37,8 +37,8 @@ const Tickets = () => {
 
   const convertToUserRole = (role: string): UserRole => {
     if (role === 'ADMIN') return 'ADMIN'; 
-    if (role === 'Gerente') return 'Gerente';
-    if (role === 'Funcionario') return 'Funcionario';
+    if (role === 'GERENTE') return 'GERENTE';
+    if (role === 'FUNCIONARIO') return 'FUNCIONARIO';
     return 'CLIENT';
   };
 
@@ -141,7 +141,7 @@ const Tickets = () => {
             ticket.status === 'Aguardando Prazo' ||
             ticket.status === 'Aberto'
           );
-        } else if (user?.role === 'Funcionario') {
+        } else if (user?.role === 'FUNCIONARIO') {
           userTickets = mappedTickets.filter(ticket => 
             ticket.responsibleId === user?.id || 
             (ticket.sectorId === user?.sectorId && !ticket.responsibleId)

@@ -31,9 +31,9 @@ const Navbar = () => {
   // Check if we should hide the navigation tabs (on index or login page)
   const shouldHideNavTabs = location.pathname === '/' || location.pathname === '/login';
 
-  // Check if user is admin or sector admin (Gerente)
+  // Check if user is admin or sector admin (GERENTE)
   const isAdmin = user?.role === 'ADMIN';
-  const isSectorAdmin = user?.role === 'Gerente';
+  const isSectorAdmin = user?.role === 'GERENTE';
   const canAccessDeadlines = isAdmin || isSectorAdmin;
 
   // Don't render navbar on login page

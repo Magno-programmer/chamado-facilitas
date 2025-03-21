@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@/lib/types/user.types';
+import type { User, UserRole } from '@/lib/types/user.types';
 import { createSecureHash, verifyPassword } from '../passwordUtils';
 
 /**
@@ -124,13 +123,12 @@ export const customSignIn = async (email: string, password: string): Promise<Use
     await updatePasswordHash(data.id, password);
     
     // Map the database user to our User type
-    // FIX: Corrigido para preservar o papel do usuário conforme definido no banco de dados
     const user: User = {
       id: data.id,
       name: data.nome,
       email: data.email,
       sectorId: data.setor_id,
-      role: data.role // Corrigido para usar o role exato do banco de dados
+      role: data.role as UserRole // Cast to UserRole type
     };
     
     console.log('DEBUG - customSignIn - Mapped user data with role:', user.role);
