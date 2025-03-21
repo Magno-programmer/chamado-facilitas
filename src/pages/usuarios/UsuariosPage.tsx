@@ -36,7 +36,7 @@ const UsuariosPage = () => {
           .single();
         
         if (error) throw error;
-        setIsGeralSector(data?.nome === 'Geral');
+        setIsGeralSector(data?.nome === 'GERAL');
         setUserSector(data?.nome || null);
       } catch (error) {
         console.error('Error checking sector:', error);
@@ -166,7 +166,7 @@ const UsuariosPage = () => {
           <Info className="h-4 w-4" />
           <AlertTitle>Permissões Administrativas</AlertTitle>
           <AlertDescription>
-            Como administrador do setor Geral, você pode gerenciar usuários de todos os setores.
+            Como administrador do setor GERAL, você pode gerenciar usuários de todos os setores.
           </AlertDescription>
         </Alert>
       )}

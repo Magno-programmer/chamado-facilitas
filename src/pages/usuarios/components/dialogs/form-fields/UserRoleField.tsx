@@ -37,8 +37,8 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
             </FormControl>
             <SelectContent>
               <SelectItem value="ADMIN">Administrador</SelectItem>
-              <SelectItem value="Gerente">Gerente</SelectItem>
-              <SelectItem value="Funcionario">Funcionário</SelectItem>
+              <SelectItem value="GERENTE">Gerente</SelectItem>
+              <SelectItem value="FUNCIONARIO">Funcionário</SelectItem>
               <SelectItem value="CLIENT">Usuário Comum</SelectItem>
             </SelectContent>
           </Select>
@@ -49,7 +49,7 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
           )}
           {!isGeralSector && !isEditingSelf && currentUser?.role !== 'ADMIN' && (
             <p className="text-sm text-muted-foreground mt-1">
-              Apenas administradores ou usuários do setor Geral podem modificar funções.
+              Apenas administradores ou usuários do setor GERAL podem modificar funções.
             </p>
           )}
           <FormMessage />

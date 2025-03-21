@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +26,7 @@ export const useEditCreateUsuario = (
   const [isGeralSector, setIsGeralSector] = useState(false);
   const { user: currentUser } = useAuth();
 
-  // Check if current user is from "Geral" sector
+  // Check if current user is from "GERAL" sector
   useEffect(() => {
     const checkSector = async () => {
       if (!currentUser) return;
@@ -40,7 +39,7 @@ export const useEditCreateUsuario = (
           .single();
         
         if (error) throw error;
-        setIsGeralSector(data?.nome === 'Geral');
+        setIsGeralSector(data?.nome === 'GERAL');
       } catch (error) {
         console.error('Error checking sector:', error);
         setIsGeralSector(false);
@@ -51,17 +50,17 @@ export const useEditCreateUsuario = (
   }, [currentUser]);
 
   const handleOpenEdit = (usuario: Usuario) => {
-    // Don't allow editing your own profile unless you're from Geral sector
+    // Don't allow editing your own profile unless you're from GERAL sector
     if (usuario.id === currentUser?.id && !isGeralSector) {
       toast({
         title: "Acesso negado",
-        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor GERAL.",
         variant: "destructive",
       });
       return;
     }
     
-    // Only allow editing users from same sector unless user is from Geral sector
+    // Only allow editing users from same sector unless user is from GERAL sector
     if (!isGeralSector && usuario.setor?.id !== currentUser?.sectorId) {
       toast({
         title: "Acesso negado",
@@ -84,17 +83,17 @@ export const useEditCreateUsuario = (
     try {
       setLoading(true);
       
-      // Check if user is trying to edit their own profile and they're not from Geral sector
+      // Check if user is trying to edit their own profile and they're not from GERAL sector
       if (isEditing && editingUsuario && currentUser && editingUsuario.id === currentUser.id && !isGeralSector) {
         toast({
           title: "Operação não permitida",
-          description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+          description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor GERAL.",
           variant: "destructive",
         });
         return;
       }
       
-      // If not from Geral sector, prevent creating/editing users from other sectors
+      // If not from GERAL sector, prevent creating/editing users from other sectors
       if (!isGeralSector) {
         if (parseInt(values.setorId) !== currentUser?.sectorId) {
           toast({
@@ -106,15 +105,16 @@ export const useEditCreateUsuario = (
         }
       }
       
+      // Ensure role is in uppercase
       const userData = {
         nome: values.nome,
         email: values.email,
-        setor_id: values.setorId === "0" ? null : parseInt(values.setorId), // Handle "Sem Setor" case
-        role: values.role
+        setor_id: values.setorId === "0" ? null : parseInt(values.setorId),
+        role: values.role.toUpperCase() // Ensure role is uppercase
       };
       
       if (isEditing && editingUsuario) {
-        // If editing user from another sector and user is not from Geral, block
+        // If editing user from another sector and user is not from GERAL, block
         if (!isGeralSector && editingUsuario.setor?.id !== currentUser?.sectorId) {
           toast({
             title: "Acesso negado",

@@ -42,8 +42,8 @@ const UsuarioTableRow = ({
   const displayRole = (role: string) => {
     switch(role) {
       case "ADMIN": return "Administrador";
-      case "Gerente": return "Gerente";
-      case "Funcionario": return "Funcionário";
+      case "GERENTE": return "Gerente";
+      case "FUNCIONARIO": return "Funcionário";
       case "CLIENT": return "Cliente";
       default: return role;
     }

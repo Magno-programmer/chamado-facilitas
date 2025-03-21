@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
@@ -46,7 +45,7 @@ const CreateEditUsuarioDialog = ({
   // Check if editing your own profile
   const isEditingSelf = !!usuario && !!currentUser && usuario.id === currentUser.id;
   
-  // Check if current user is from "Geral" sector
+  // Check if current user is from "GERAL" sector
   useEffect(() => {
     const checkSector = async () => {
       if (!currentUser) return;
@@ -59,7 +58,7 @@ const CreateEditUsuarioDialog = ({
           .single();
         
         if (error) throw error;
-        setIsGeralSector(data?.nome === 'Geral');
+        setIsGeralSector(data?.nome === 'GERAL');
       } catch (error) {
         console.error('Error checking sector:', error);
         setIsGeralSector(false);
@@ -129,11 +128,11 @@ const CreateEditUsuarioDialog = ({
 
   // Check if user can edit this profile
   useEffect(() => {
-    // If trying to edit self and user is not from Geral sector
+    // If trying to edit self and user is not from GERAL sector
     if (isEditingSelf && !isGeralSector && open) {
       toast({
         title: "Operação não permitida",
-        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor GERAL.",
         variant: "destructive",
       });
       onOpenChange(false);

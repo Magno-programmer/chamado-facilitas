@@ -1,6 +1,6 @@
 
 // User-related types
-export type UserRole = 'ADMIN' | 'CLIENT' | 'Gerente' | 'Funcionario';
+export type UserRole = 'ADMIN' | 'CLIENT' | 'GERENTE' | 'FUNCIONARIO';
 
 export interface User {
   id: string; // Changed to string for compatibility with Supabase
