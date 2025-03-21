@@ -35,7 +35,7 @@ const Setores = () => {
   const [deletingSetor, setDeletingSetor] = useState<Setor | null>(null);
   const { user } = useAuth();
   const [isGeralSector, setIsGeralSector] = useState(false);
-  
+  const [userSector, setUserSector] = useState<string | null>(null);
   const isAdmin = user?.role === 'ADMIN';
 
   if (user && !isAdmin) {
@@ -67,6 +67,7 @@ const Setores = () => {
         
         if (error) throw error;
         setIsGeralSector(data?.nome === 'Geral');
+        setUserSector(data?.nome || null);
       } catch (error) {
         console.error('Erro ao verificar setor do usuário:', error);
         setIsGeralSector(false);
@@ -258,12 +259,22 @@ const Setores = () => {
         )}
       </div>
       
-      {!isGeralSector && isAdmin && (
-        <Alert variant="warning" className="mb-6">
-          <AlertCircle className="h-5 w-5" />
+      {isAdmin && !isGeralSector && userSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Permissões Específicas</AlertTitle>
+          <AlertDescription>
+            Como administrador do setor {userSector}, você só pode visualizar e gerenciar setores do seu próprio setor.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {isAdmin && isGeralSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
           <AlertTitle>Permissões Administrativas</AlertTitle>
           <AlertDescription>
-            Apenas administradores do setor GERAL podem criar, editar ou excluir setores.
+            Como administrador do setor Geral, você pode gerenciar todos os setores.
           </AlertDescription>
         </Alert>
       )}

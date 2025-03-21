@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const UsuariosPage = () => {
   const [loading, setLoading] = useState(false);
   const [isGeralSector, setIsGeralSector] = useState(false);
+  const [userSector, setUserSector] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
   
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -36,6 +37,7 @@ const UsuariosPage = () => {
         
         if (error) throw error;
         setIsGeralSector(data?.nome === 'Geral');
+        setUserSector(data?.nome || null);
       } catch (error) {
         console.error('Error checking sector:', error);
         setIsGeralSector(false);
@@ -149,12 +151,22 @@ const UsuariosPage = () => {
         isAdmin={isAdmin} 
       />
       
-      {!isGeralSector && isAdmin && (
-        <Alert variant="warning" className="mb-6">
-          <AlertCircle className="h-5 w-5" />
+      {isAdmin && !isGeralSector && userSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Permissões Específicas</AlertTitle>
+          <AlertDescription>
+            Como administrador do setor {userSector}, você só pode visualizar e gerenciar usuários do seu próprio setor.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {isAdmin && isGeralSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
           <AlertTitle>Permissões Administrativas</AlertTitle>
           <AlertDescription>
-            Como administrador de um setor específico, você só pode gerenciar usuários do seu próprio setor.
+            Como administrador do setor Geral, você pode gerenciar usuários de todos os setores.
           </AlertDescription>
         </Alert>
       )}
