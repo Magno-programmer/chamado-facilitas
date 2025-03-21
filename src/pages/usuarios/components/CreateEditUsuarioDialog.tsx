@@ -8,6 +8,7 @@ import UserForm from './dialogs/UserForm';
 import { usuarioSchema, UsuarioFormValues } from './dialogs/UserFormSchema';
 import { User } from '@/lib/types/user.types';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Usuario {
   id: string;
@@ -67,6 +68,19 @@ const CreateEditUsuarioDialog = ({
     
     checkSector();
   }, [currentUser]);
+
+  // Check if user can edit this profile
+  useEffect(() => {
+    // If trying to edit self and user is not from Geral sector
+    if (isEditingSelf && !isGeralSector && open) {
+      toast({
+        title: "Operação não permitida",
+        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+        variant: "destructive",
+      });
+      onOpenChange(false);
+    }
+  }, [isEditingSelf, isGeralSector, open, onOpenChange]);
   
   // Setup form for creating/editing users
   const form = useForm<UsuarioFormValues>({

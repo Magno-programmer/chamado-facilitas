@@ -32,9 +32,20 @@ const UserForm = ({
   currentUser,
   isGeralSector
 }: UserFormProps) => {
+  // Determine if the entire form should be read-only
+  const isFormReadOnly = isEditingSelf && !isGeralSector;
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {isFormReadOnly && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <p className="text-sm text-yellow-700">
+              Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.
+            </p>
+          </div>
+        )}
+        
         <UserFormFields 
           form={form} 
           setores={setores} 
@@ -44,10 +55,12 @@ const UserForm = ({
           currentUser={currentUser}
           isGeralSector={isGeralSector}
         />
+        
         <UserFormActions 
           isEditing={isEditing} 
           loading={loading} 
-          onCancel={onCancel} 
+          onCancel={onCancel}
+          disabled={isFormReadOnly}
         />
       </form>
     </Form>

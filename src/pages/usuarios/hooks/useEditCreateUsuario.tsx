@@ -51,6 +51,16 @@ export const useEditCreateUsuario = (
   }, [currentUser]);
 
   const handleOpenEdit = (usuario: Usuario) => {
+    // Don't allow editing your own profile unless you're from Geral sector
+    if (usuario.id === currentUser?.id && !isGeralSector) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Only allow editing users from same sector unless user is from Geral sector
     if (!isGeralSector && usuario.setor?.id !== currentUser?.sectorId) {
       toast({
@@ -74,17 +84,14 @@ export const useEditCreateUsuario = (
     try {
       setLoading(true);
       
-      // Check if user is trying to edit their own role
-      if (isEditing && editingUsuario && currentUser && editingUsuario.id === currentUser.id) {
-        // If attempting to change their own role, prevent it
-        if (values.role !== editingUsuario.role) {
-          toast({
-            title: "Operação não permitida",
-            description: "Você não pode alterar sua própria função no sistema.",
-            variant: "destructive",
-          });
-          return;
-        }
+      // Check if user is trying to edit their own profile and they're not from Geral sector
+      if (isEditing && editingUsuario && currentUser && editingUsuario.id === currentUser.id && !isGeralSector) {
+        toast({
+          title: "Operação não permitida",
+          description: "Você não pode editar seu próprio perfil. Solicite a um administrador do setor Geral.",
+          variant: "destructive",
+        });
+        return;
       }
       
       // If not from Geral sector, prevent creating/editing users from other sectors

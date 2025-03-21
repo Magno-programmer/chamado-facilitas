@@ -25,7 +25,7 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
-            disabled={isEditingSelf}
+            disabled={isEditingSelf || (!isGeralSector && currentUser?.role !== 'ADMIN')}
           >
             <FormControl>
               <SelectTrigger>
@@ -42,6 +42,11 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
           {isEditingSelf && (
             <p className="text-sm text-muted-foreground mt-1">
               Você não pode alterar sua própria função no sistema.
+            </p>
+          )}
+          {!isGeralSector && !isEditingSelf && currentUser?.role !== 'ADMIN' && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Apenas administradores ou usuários do setor Geral podem modificar funções.
             </p>
           )}
           <FormMessage />

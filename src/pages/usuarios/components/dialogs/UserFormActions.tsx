@@ -1,24 +1,24 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
 
 interface UserFormActionsProps {
   isEditing: boolean;
   loading: boolean;
   onCancel: () => void;
+  disabled?: boolean;
 }
 
-const UserFormActions = ({ isEditing, loading, onCancel }: UserFormActionsProps) => {
+const UserFormActions = ({ isEditing, loading, onCancel, disabled = false }: UserFormActionsProps) => {
   return (
-    <DialogFooter>
-      <Button type="button" variant="outline" onClick={onCancel}>
+    <div className="flex justify-end space-x-2 pt-4">
+      <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
         Cancelar
       </Button>
-      <Button type="submit" disabled={loading}>
-        {isEditing ? 'Atualizar' : 'Criar'}
+      <Button type="submit" disabled={loading || disabled}>
+        {isEditing ? 'Atualizar' : 'Criar'} Usuário
       </Button>
-    </DialogFooter>
+    </div>
   );
 };
 
