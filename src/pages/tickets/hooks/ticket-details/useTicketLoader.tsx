@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getTicketById } from '@/lib/services/ticketService';
-import { TicketWithDetails } from '@/lib/types';
+import { TicketWithDetails, TicketStatus } from '@/lib/types';
 import { User as UserType } from '@/lib/types/user.types';
 
 export const useTicketLoader = (
@@ -53,7 +53,7 @@ export const useTicketLoader = (
           sectorId: ticketData.setor_id,
           requesterId: ticketData.solicitante_id,
           responsibleId: ticketData.responsavel_id,
-          status: ticketData.status,
+          status: ticketData.status as TicketStatus,
           createdAt: ticketData.data_criacao,
           deadline: ticketData.prazo,
           sector: {

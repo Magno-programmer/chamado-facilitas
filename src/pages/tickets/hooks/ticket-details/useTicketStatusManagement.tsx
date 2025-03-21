@@ -8,23 +8,20 @@ export const useTicketStatusManagement = (ticket: TicketWithDetails | null) => {
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus | null>(null);
   const { toast } = useToast();
 
-  const handleTicketExpired = async () => {
+  const handleTicketExpired = async (): Promise<void> => {
     if (!ticket || ticket.status === 'Concluído' || ticket.status === 'Atrasado') return;
     
     try {
       const { updateTicket } = await import('@/lib/services/ticketService');
-      await updateTicket(ticket.id, { status: 'Atrasado' });
+      await updateTicket(ticket.id, { status: 'Atrasado' as TicketStatus });
       
       toast({
         title: "Status atualizado",
         description: "O chamado foi marcado como atrasado devido ao prazo expirado.",
         variant: "destructive",
       });
-      
-      return 'Atrasado' as TicketStatus;
     } catch (error) {
       console.error('Error updating ticket status:', error);
-      return null;
     }
   };
 
