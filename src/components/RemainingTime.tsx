@@ -27,30 +27,29 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
         return 'Expirado';
       }
       
-      // Calculate total duration between creation and deadline
-      const startDate = createdAt ? new Date(createdAt) : now;
-      
       // Calculate remaining time directly
-      const remainingTime = deadlineDate.getTime() - now.getTime();
-      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTime / 1000));
+      const remainingTimeMs = deadlineDate.getTime() - now.getTime();
+      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTimeMs / 1000));
       
       console.log('RemainingTime Debug: Calculation details', {
-        startDate: startDate.toISOString(),
         deadlineDate: deadlineDate.toISOString(),
         nowDate: now.toISOString(),
-        remainingTime: remainingTime,
-        remainingTimeInMinutes: remainingTime / (60 * 1000),
+        remainingTimeMs: remainingTimeMs,
+        remainingTimeInMinutes: remainingTimeMs / (60 * 1000),
         totalRemainingSeconds: totalRemainingSeconds
       });
       
       // Calculate components
-      const days = Math.floor(totalRemainingSeconds / (24 * 60 * 60));
-      const hours = Math.floor((totalRemainingSeconds % (24 * 60 * 60)) / (60 * 60));
-      const minutes = Math.floor((totalRemainingSeconds % (60 * 60)) / 60);
+      const days = Math.floor(totalRemainingSeconds / 86400); // 86400 = 24 * 60 * 60
+      const hours = Math.floor((totalRemainingSeconds % 86400) / 3600); // 3600 = 60 * 60
+      const minutes = Math.floor((totalRemainingSeconds % 3600) / 60);
       const seconds = totalRemainingSeconds % 60;
       
       console.log('RemainingTime Debug: Time components', {
-        days, hours, minutes, seconds
+        days, hours, minutes, seconds,
+        totalRemainingSeconds: totalRemainingSeconds,
+        remainingTimeInHours: totalRemainingSeconds / 3600,
+        remainingTimeInMinutes: totalRemainingSeconds / 60
       });
       
       // Format with leading zeros and handle day count
