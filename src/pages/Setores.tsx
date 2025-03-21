@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +35,7 @@ const Setores = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingSetor, setDeletingSetor] = useState<Setor | null>(null);
   const { user } = useAuth();
+  const [isGeralSector, setIsGeralSector] = useState(false);
   
   // Check if user is admin - only ADMIN can access this page
   const isAdmin = user?.role === 'ADMIN';
@@ -55,6 +57,29 @@ const Setores = () => {
       nome: ""
     }
   });
+
+  // Check if user belongs to "Geral" sector
+  useEffect(() => {
+    if (!user) return;
+    
+    const checkSector = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('setores')
+          .select('nome')
+          .eq('id', user.sectorId)
+          .single();
+        
+        if (error) throw error;
+        setIsGeralSector(data?.nome === 'Geral');
+      } catch (error) {
+        console.error('Erro ao verificar setor do usuário:', error);
+        setIsGeralSector(false);
+      }
+    };
+    
+    checkSector();
+  }, [user]);
 
   // Reset form and set editing setor when dialog opens/closes
   useEffect(() => {
@@ -96,22 +121,50 @@ const Setores = () => {
   }, []);
 
   const handleOpenEdit = (setor: Setor) => {
+    if (!isGeralSector) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Apenas administradores do setor GERAL podem editar setores.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setEditingSetor(setor);
     setIsDialogOpen(true);
   };
 
   const handleOpenCreate = () => {
+    if (!isGeralSector) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Apenas administradores do setor GERAL podem criar novos setores.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setEditingSetor(null);
     setIsDialogOpen(true);
   };
 
   const handleDeleteClick = (setor: Setor) => {
+    if (!isGeralSector) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Apenas administradores do setor GERAL podem excluir setores.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setDeletingSetor(setor);
     setDeleteDialogOpen(true);
   };
 
   const handleDelete = async () => {
     if (!deletingSetor) return;
+    if (!isGeralSector) return;
     
     try {
       setLoading(true);
@@ -142,6 +195,8 @@ const Setores = () => {
   };
 
   const onSubmit = async (values: SetorFormValues) => {
+    if (!isGeralSector) return;
+    
     try {
       setLoading(true);
       
@@ -200,12 +255,31 @@ const Setores = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Setores</h1>
         {isAdmin && (
-          <Button onClick={handleOpenCreate}>
+          <Button 
+            onClick={handleOpenCreate}
+            disabled={!isGeralSector}
+            title={!isGeralSector ? "Apenas administradores do setor GERAL podem criar novos setores" : ""}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Novo Setor
           </Button>
         )}
       </div>
+      
+      {!isGeralSector && isAdmin && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Apenas administradores do setor GERAL podem criar, editar ou excluir setores.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Card>
         <CardHeader>
@@ -237,10 +311,22 @@ const Setores = () => {
                       {isAdmin && (
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(setor)}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleOpenEdit(setor)}
+                              disabled={!isGeralSector}
+                              title={!isGeralSector ? "Apenas administradores do setor GERAL podem editar setores" : ""}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(setor)}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeleteClick(setor)}
+                              disabled={!isGeralSector}
+                              title={!isGeralSector ? "Apenas administradores do setor GERAL podem excluir setores" : ""}
+                            >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
