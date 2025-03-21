@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/pagination';
 import StatusBadge from './StatusBadge';
 import ProgressBar from './ProgressBar';
+import RemainingTime from './RemainingTime';
 import { TicketWithDetails } from '@/lib/types/ticket.types';
 
 interface TicketsTableProps {
@@ -39,7 +41,7 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
   const paginatedTickets = tickets.slice(startIndex, startIndex + pageSize);
   
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
   };
   
   const handleRowClick = (ticketId: number) => {
@@ -60,6 +62,7 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
               <TableHead>Status</TableHead>
               <TableHead>Criado em</TableHead>
               <TableHead>Prazo</TableHead>
+              <TableHead>Tempo Restante</TableHead>
               <TableHead>Progresso</TableHead>
             </TableRow>
           </TableHeader>
@@ -81,6 +84,9 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
                   </TableCell>
                   <TableCell>{formatDate(ticket.createdAt)}</TableCell>
                   <TableCell>{formatDate(ticket.deadline)}</TableCell>
+                  <TableCell>
+                    <RemainingTime deadline={ticket.deadline} createdAt={ticket.createdAt} />
+                  </TableCell>
                   <TableCell className="w-[150px]">
                     <ProgressBar 
                       percentage={ticket.percentageRemaining} 
@@ -93,7 +99,7 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
+                <TableCell colSpan={10} className="h-24 text-center">
                   Nenhum chamado encontrado.
                 </TableCell>
               </TableRow>

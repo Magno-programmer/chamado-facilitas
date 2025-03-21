@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { Clock, User } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import ProgressBar from './ProgressBar';
+import RemainingTime from './RemainingTime';
 import { TicketWithDetails } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +21,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onClick 
 }) => {
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd 'de' MMMM, yyyy", { locale: ptBR });
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
   };
 
   return (
@@ -50,7 +51,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         className="mb-4" 
       />
       
-      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-2">
         <div className="flex items-center">
           <User className="h-3.5 w-3.5 mr-1" />
           <span>{ticket.sector?.name || 'Setor não definido'}</span>
@@ -60,6 +61,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
           <span>
             {formatDate(ticket.deadline)}
           </span>
+        </div>
+      </div>
+      
+      <div className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-end">
+          <Clock className="h-3.5 w-3.5 mr-1" />
+          <span>Tempo restante: <RemainingTime deadline={ticket.deadline} createdAt={ticket.createdAt} /></span>
         </div>
       </div>
     </div>
