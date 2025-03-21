@@ -1,18 +1,18 @@
-
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Navigate } from 'react-router-dom';
 
 interface Setor {
   id: number;
@@ -35,8 +35,18 @@ const Setores = () => {
   const [deletingSetor, setDeletingSetor] = useState<Setor | null>(null);
   const { user } = useAuth();
   
-  // Check if user is admin
+  // Check if user is admin - only ADMIN can access this page
   const isAdmin = user?.role === 'ADMIN';
+
+  // Redirect if user is not admin
+  if (user && !isAdmin) {
+    toast({
+      title: "Acesso Restrito",
+      description: "Apenas administradores podem gerenciar setores.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Setup form for creating/editing sectors
   const form = useForm<SetorFormValues>({

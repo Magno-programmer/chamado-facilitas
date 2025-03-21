@@ -45,7 +45,7 @@ const TicketDetails = () => {
     },
   });
 
-  // Check if user is an admin or manager
+  // Check if user is an admin or manager - both can manage tickets
   const canManageTickets = user?.role === 'ADMIN' || user?.role === 'Gerente';
 
   useEffect(() => {
@@ -327,15 +327,13 @@ const TicketDetails = () => {
                     </Button>
                   )}
                   
-                  {user?.role === 'ADMIN' && (
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir Chamado
-                    </Button>
-                  )}
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir Chamado
+                  </Button>
                 </div>
               </div>
             )}

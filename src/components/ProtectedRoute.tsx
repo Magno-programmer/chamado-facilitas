@@ -6,10 +6,11 @@ import { toast } from '@/hooks/use-toast';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   
   // Public routes that don't require authentication
@@ -33,6 +34,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
   }, [isAuthenticated, isLoading, isPublicRoute]);
 
+  // Check role-based access
+  const hasRequiredRole = () => {
+    if (!allowedRoles || allowedRoles.length === 0) return true;
+    return user && allowedRoles.includes(user.role);
+  };
+
   // If this is a public route, just render the children
   if (isPublicRoute) {
     return <>{children}</>;
@@ -47,12 +54,22 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // If not authenticated and not a public route, redirect to login page
+  // If not authenticated, redirect to login page
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated, render the protected route
+  // If authenticated but doesn't have the required role, show access denied
+  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole()) {
+    toast({
+      title: "Acesso Negado",
+      description: "Você não tem permissão para acessar esta página.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // If authenticated and has required role, render the protected route
   return <>{children}</>;
 };
 

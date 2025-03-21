@@ -1,39 +1,66 @@
-
-import React from 'react';
-import { useAuth } from "@/hooks/useAuth";
+import React, { useState } from 'react';
+import { generateSecurePassword } from '@/lib/passwordUtils';
+import { useAuth } from '@/hooks/useAuth';
+import { useFetchUsuarios } from './hooks/useFetchUsuarios';
 import { useSetores } from './hooks/useSetores';
-import { useUsuarios } from './hooks/useUsuarios';
+import { useEditCreateUsuario } from './hooks/useEditCreateUsuario';
+import { useDeleteUsuario } from './hooks/useDeleteUsuario';
+import { useResetPassword } from './hooks/useResetPassword';
+import { useChangePassword } from './hooks/useChangePassword';
 import UsuariosHeader from './components/UsuariosHeader';
 import UsuariosContent from './components/UsuariosContent';
 import UsuariosDialogs from './components/UsuariosDialogs';
+import { Navigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const UsuariosPage = () => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const [loading, setLoading] = useState(false);
+  const { user: currentUser } = useAuth();
+  
+  // Check if user is admin - only ADMIN can access this page
+  const isAdmin = currentUser?.role === 'ADMIN';
+
+  // Redirect if user is not admin
+  if (currentUser && !isAdmin) {
+    toast({
+      title: "Acesso Restrito",
+      description: "Apenas administradores podem gerenciar usuários.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Various hooks for user management
+  const { usuarios, setUsuarios } = useFetchUsuarios();
   const { setores } = useSetores();
   
+  const { 
+    isDialogOpen, 
+    setIsDialogOpen, 
+    editingUsuario, 
+    handleOpenEdit, 
+    handleOpenCreate, 
+    handleSaveUsuario 
+  } = useEditCreateUsuario(usuarios, setUsuarios, setores, setLoading);
+  
   const {
-    usuarios,
-    loading,
-    handleOpenEdit,
-    handleOpenCreate,
-    handleSaveUsuario,
-    handleDeleteClick,
-    handleDelete,
-    openResetPassword,
-    handleResetPassword,
-    openChangePassword,
-    handleChangePassword,
-    isDialogOpen,
-    setIsDialogOpen,
-    editingUsuario,
     deleteDialogOpen,
     setDeleteDialogOpen,
     deletingUsuario,
+    handleDeleteClick,
+    handleDelete
+  } = useDeleteUsuario(usuarios, setUsuarios, setLoading);
+  
+  const {
     resetPasswordDialog,
     setResetPasswordDialog,
     resetPasswordUser,
     newPassword,
+    handleResetPasswordClick,
+    handleResetPassword
+  } = useResetPassword(setLoading);
+  
+  const {
     changePasswordDialog,
     setChangePasswordDialog,
     changePasswordUser,
@@ -43,8 +70,9 @@ const UsuariosPage = () => {
     setNewChangePassword,
     confirmPassword,
     setConfirmPassword,
-    currentUser
-  } = useUsuarios(setores);
+    handleChangePasswordClick,
+    handleChangePassword
+  } = useChangePassword(setLoading);
 
   return (
     <div className="container mx-auto py-8">
@@ -54,16 +82,17 @@ const UsuariosPage = () => {
       />
       
       <UsuariosContent 
-        usuarios={usuarios}
-        loading={loading}
+        usuarios={usuarios} 
+        loading={loading} 
+        onEdit={handleOpenEdit} 
+        onDelete={handleDeleteClick} 
+        onResetPassword={handleResetPasswordClick}
+        onChangePassword={handleChangePasswordClick}
         isAdmin={isAdmin}
-        onEdit={handleOpenEdit}
-        onDelete={handleDeleteClick}
-        onResetPassword={openResetPassword}
-        onChangePassword={openChangePassword}
+        currentUser={currentUser}
       />
-
-      <UsuariosDialogs 
+      
+      <UsuariosDialogs
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
         editingUsuario={editingUsuario}

@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getDeadlines, getSectors } from '@/lib/supabase';
-import { Clock, Plus } from 'lucide-react';
+import { Clock, Plus, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import DeadlinesTable from './components/DeadlinesTable';
 import CreateEditDeadlineDialog from './components/CreateEditDeadlineDialog';
 import DeleteDeadlineDialog from './components/DeleteDeadlineDialog';
+import { Navigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const DeadlinesPage = () => {
   const { data: deadlines, isLoading, error, refetch } = useQuery({
@@ -25,6 +26,16 @@ const DeadlinesPage = () => {
   
   // Check if user is admin
   const isAdmin = user?.role === 'ADMIN';
+
+  // Redirect if user is not admin
+  if (user && !isAdmin) {
+    toast({
+      title: "Acesso Restrito",
+      description: "Apenas administradores podem gerenciar prazos.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Load sectors for the dropdown
   useEffect(() => {

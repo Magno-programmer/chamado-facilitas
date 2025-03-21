@@ -43,7 +43,13 @@ const UsuarioTableRow = ({
       <TableCell className="font-medium">{usuario.nome}</TableCell>
       <TableCell>{usuario.email}</TableCell>
       <TableCell>{usuario.setor?.nome || "-"}</TableCell>
-      <TableCell>{usuario.role === "ADMIN" ? "Administrador" : "Cliente"}</TableCell>
+      <TableCell>
+        {usuario.role === "ADMIN" 
+          ? "Administrador" 
+          : usuario.role === "Gerente" 
+            ? "Gerente" 
+            : "Cliente"}
+      </TableCell>
       <TableCell className="text-right">
         {isAdmin && (
           <DropdownMenu>
