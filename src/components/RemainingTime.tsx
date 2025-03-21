@@ -39,10 +39,10 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
         totalRemainingSeconds: totalRemainingSeconds
       });
       
-      // Calculate components
-      const days = Math.floor(totalRemainingSeconds / 86400); // 86400 = 24 * 60 * 60
-      const hours = Math.floor((totalRemainingSeconds % 86400) / 3600); // 3600 = 60 * 60
-      const minutes = Math.floor((totalRemainingSeconds % 3600) / 60);
+      // Calculate components directly from seconds
+      const days = Math.floor(totalRemainingSeconds / 86400); // 86400 seconds in a day
+      const hours = Math.floor((totalRemainingSeconds % 86400) / 3600); // 3600 seconds in an hour
+      const minutes = Math.floor((totalRemainingSeconds % 3600) / 60); // 60 seconds in a minute
       const seconds = totalRemainingSeconds % 60;
       
       console.log('RemainingTime Debug: Time components', {
