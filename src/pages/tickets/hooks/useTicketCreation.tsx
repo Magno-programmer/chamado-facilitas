@@ -41,10 +41,10 @@ export const useTicketCreation = () => {
   ) => {
     e.preventDefault();
     
-    if (!selectedDeadlineId || !description) {
+    if (!description) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, selecione um prazo e preencha a descrição.',
+        title: 'Campo obrigatório',
+        description: 'Por favor, preencha a descrição.',
         variant: 'destructive',
       });
       return;
@@ -62,18 +62,32 @@ export const useTicketCreation = () => {
     setIsSubmitting(true);
 
     try {
-      const selectedDeadline = deadlines.find((d) => d.id === selectedDeadlineId);
+      const isClient = user.role === 'CLIENT';
+      const currentDate = new Date();
       
-      if (!selectedDeadline) {
-        throw new Error('Prazo selecionado não encontrado');
+      // Default values for CLIENT users
+      let sectorId = 1; // Default sector
+      let deadlineDate = new Date(currentDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
+      let ticketTitle = "Novo chamado";
+      
+      // For non-CLIENT users, use the selected deadline if provided
+      if (!isClient && selectedDeadlineId) {
+        const selectedDeadline = deadlines.find((d) => d.id === selectedDeadlineId);
+        
+        if (selectedDeadline) {
+          sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
+          deadlineDate = calculateDeadlineDate(selectedDeadline);
+          ticketTitle = selectedDeadline.titulo;
+        }
       }
 
-      const sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
-      const currentDate = new Date();
-      const deadlineDate = calculateDeadlineDate(selectedDeadline);
+      // For CLIENT users, use the description as title if no title is provided
+      if (isClient) {
+        ticketTitle = title || description.substring(0, 50) + (description.length > 50 ? "..." : "");
+      }
 
       const newTicket = {
-        titulo: title,
+        titulo: ticketTitle,
         descricao: description,
         setor_id: sectorId,
         solicitante_id: user.id,

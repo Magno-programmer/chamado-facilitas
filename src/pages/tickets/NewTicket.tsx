@@ -5,8 +5,12 @@ import TicketDescription from './components/TicketDescription';
 import TicketFormActions from './components/TicketFormActions';
 import { useDeadlines } from './hooks/useDeadlines';
 import { useTicketCreation } from './hooks/useTicketCreation';
+import { useAuth } from '@/hooks/useAuth';
 
 const NewTicket = () => {
+  const { user } = useAuth();
+  const isClient = user?.role === 'CLIENT';
+  
   const { 
     selectedDeadlineId, 
     deadlines, 
@@ -24,15 +28,15 @@ const NewTicket = () => {
     handleCancel
   } = useTicketCreation();
 
-  // Update title when deadline changes
+  // Update title when deadline changes (for non-client users)
   useEffect(() => {
-    if (selectedDeadlineId) {
+    if (!isClient && selectedDeadlineId) {
       const selectedDeadline = deadlines.find((d) => d.id === selectedDeadlineId);
       if (selectedDeadline) {
         setTitle(selectedDeadline.titulo);
       }
     }
-  }, [selectedDeadlineId, deadlines, setTitle]);
+  }, [selectedDeadlineId, deadlines, setTitle, isClient]);
 
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
@@ -46,12 +50,14 @@ const NewTicket = () => {
           onSubmit={(e) => handleSubmit(e, selectedDeadlineId, deadlines)} 
           className="space-y-6"
         >
-          <DeadlineSelector
-            deadlines={deadlines}
-            selectedDeadlineId={selectedDeadlineId}
-            onDeadlineChange={handleDeadlineChange}
-            isLoading={isLoadingDeadlines}
-          />
+          {!isClient && (
+            <DeadlineSelector
+              deadlines={deadlines}
+              selectedDeadlineId={selectedDeadlineId}
+              onDeadlineChange={handleDeadlineChange}
+              isLoading={isLoadingDeadlines}
+            />
+          )}
 
           <TicketDescription
             description={description}
@@ -60,7 +66,7 @@ const NewTicket = () => {
 
           <TicketFormActions
             isSubmitting={isSubmitting}
-            isDisabled={isSubmitting || isLoadingDeadlines || deadlines.length === 0}
+            isDisabled={isSubmitting || (!isClient && (isLoadingDeadlines || deadlines.length === 0))}
             onCancel={handleCancel}
           />
         </form>

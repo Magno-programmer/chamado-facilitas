@@ -3,7 +3,7 @@
 import { Sector } from './sector.types';
 import { User } from './user.types';
 
-export type TicketStatus = 'Aberto' | 'Em Andamento' | 'Concluído' | 'Atrasado';
+export type TicketStatus = 'Aberto' | 'Em Andamento' | 'Concluído' | 'Atrasado' | 'Aguardando Prazo';
 
 export interface Ticket {
   id: number;
