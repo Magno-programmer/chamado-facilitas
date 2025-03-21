@@ -21,25 +21,24 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       
       // Calculate remaining time directly
       const remainingTimeMs = deadlineDate.getTime() - now.getTime();
-      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTimeMs / 100000));
+      const remainingTimeMinutes = Math.max(0, Math.floor(remainingTimeMs / 60000)); // Convert ms to minutes
       
-      console.log('totalRemainingSeconds:', totalRemainingSeconds);
+      console.log('remainingTimeMinutes:', remainingTimeMinutes);
       
-      // Calculate components directly from seconds
-      const days = Math.floor(totalRemainingSeconds / 86400); // 86400 seconds in a day
-      const hours = Math.floor((totalRemainingSeconds % 86400) / 3600); // 3600 seconds in an hour
-      const minutes = Math.floor((totalRemainingSeconds % 3600) / 60); // 60 seconds in a minute
-      const seconds = totalRemainingSeconds % 60;
+      // Calculate components directly from minutes
+      const days = Math.floor(remainingTimeMinutes / 1440); // 1440 minutes in a day (24 * 60)
+      const hours = Math.floor((remainingTimeMinutes % 1440) / 60); // 60 minutes in an hour
+      const minutes = remainingTimeMinutes % 60; // Remaining minutes
+      
+      console.log(`Remaining time: ${days} days, ${hours} hours, and ${minutes} minutes.`);
       
       // Format with leading zeros and handle day count
       if (days > 0) {
-        return `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       } else if (hours > 0) {
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      } else if (minutes > 0) {
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       } else {
-        return `${seconds}s`;
+        return `${minutes}m`;
       }
     };
     
