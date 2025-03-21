@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +12,17 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 
+interface Deadline {
+  id: number;
+  titulo: string;
+  setor_id: number | null;
+  prazo: string;
+  setor?: {
+    id: number;
+    nome: string;
+  };
+}
+
 const NewTicket = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -20,7 +30,7 @@ const NewTicket = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedDeadlineId, setSelectedDeadlineId] = useState<number | null>(null);
-  const [deadlines, setDeadlines] = useState<{id: number, titulo: string, setor_id: number, prazo: string, setor?: {id: number, nome: string}}[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDeadlines, setIsLoadingDeadlines] = useState(true);
 
@@ -89,7 +99,8 @@ const NewTicket = () => {
         throw new Error('Prazo selecionado não encontrado');
       }
 
-      // Calculate the deadline date based on the selected prazo time
+      const sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
+
       const prazoTime = selectedDeadline.prazo; // Format: "HH:MM:SS"
       const [hours, minutes] = prazoTime.split(':').map(Number);
       
@@ -100,7 +111,7 @@ const NewTicket = () => {
       const newTicket = {
         titulo: title,
         descricao: description,
-        setor_id: selectedDeadline.setor_id || 1, // Use sector from deadline or default to 1 if not available
+        setor_id: sectorId,
         solicitante_id: user.id,
         responsavel_id: user.id, // Assuming the creator is initially responsible
         status: 'Aberto',

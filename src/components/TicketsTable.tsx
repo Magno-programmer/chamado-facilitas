@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -83,7 +82,12 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
                   <TableCell>{formatDate(ticket.createdAt)}</TableCell>
                   <TableCell>{formatDate(ticket.deadline)}</TableCell>
                   <TableCell className="w-[150px]">
-                    <ProgressBar percentage={ticket.percentageRemaining} />
+                    <ProgressBar 
+                      percentage={ticket.percentageRemaining} 
+                      deadline={ticket.deadline} 
+                      createdAt={ticket.createdAt} 
+                      autoUpdate={true}
+                    />
                   </TableCell>
                 </TableRow>
               ))

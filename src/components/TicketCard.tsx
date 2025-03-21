@@ -42,7 +42,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </p>
       </div>
       
-      <ProgressBar percentage={ticket.percentageRemaining} className="mb-4" />
+      <ProgressBar 
+        percentage={ticket.percentageRemaining} 
+        deadline={ticket.deadline} 
+        createdAt={ticket.createdAt} 
+        autoUpdate={true}
+        className="mb-4" 
+      />
       
       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
         <div className="flex items-center">
