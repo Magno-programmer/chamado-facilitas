@@ -21,7 +21,7 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       
       // Calculate remaining time directly
       const remainingTimeMs = deadlineDate.getTime() - now.getTime();
-      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTimeMs / 10));
+      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTimeMs / 100000));
       
       console.log('totalRemainingSeconds:', totalRemainingSeconds);
       
