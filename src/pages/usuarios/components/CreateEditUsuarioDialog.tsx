@@ -89,7 +89,7 @@ const CreateEditUsuarioDialog = ({
       nome: "",
       email: "",
       setorId: "",
-      role: "",
+      role: "CLIENT",
       senha: ""
     }
   });
@@ -127,6 +127,15 @@ const CreateEditUsuarioDialog = ({
           senha: generatedPassword // Plain text password will be hashed during save
         });
       }
+    } else {
+      // Properly reset the form when closing to prevent lingering state
+      form.reset({
+        nome: "",
+        email: "",
+        setorId: "",
+        role: "CLIENT",
+        senha: ""
+      });
     }
   }, [open, usuario, form, generatedPassword, currentUser]);
 
@@ -137,7 +146,19 @@ const CreateEditUsuarioDialog = ({
   const isEditing = !!usuario;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      // Ensure form is reset when dialog is closed
+      if (!isOpen) {
+        form.reset({
+          nome: "",
+          email: "",
+          setorId: "",
+          role: "CLIENT",
+          senha: ""
+        });
+      }
+      onOpenChange(isOpen);
+    }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{usuario ? 'Editar Usuário' : 'Criar Novo Usuário'}</DialogTitle>
@@ -154,7 +175,17 @@ const CreateEditUsuarioDialog = ({
           isEditing={isEditing}
           loading={loading}
           generatedPassword={generatedPassword}
-          onCancel={() => onOpenChange(false)}
+          onCancel={() => {
+            // Make sure form is properly reset before closing
+            form.reset({
+              nome: "",
+              email: "",
+              setorId: "",
+              role: "CLIENT",
+              senha: ""
+            });
+            onOpenChange(false);
+          }}
           isEditingSelf={isEditingSelf}
           currentUser={currentUser}
           isGeralSector={isGeralSector}

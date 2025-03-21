@@ -35,9 +35,14 @@ const UserForm = ({
   // Determine if the entire form should be read-only
   const isFormReadOnly = isEditingSelf && !isGeralSector;
   
+  // Handle form submission with validation
+  const handleSubmit = (values: UsuarioFormValues) => {
+    onSubmit(values);
+  };
+  
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         {isFormReadOnly && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
             <p className="text-sm text-yellow-700">
