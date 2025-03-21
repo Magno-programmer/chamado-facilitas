@@ -19,8 +19,8 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
   
   // Set default to "Sem Setor" (value "0") for client users when creating a new user
   useEffect(() => {
-    if (isClient) {
-      // Always set CLIENT users to "Sem Setor" (0)
+    if (isClient && !form.getValues('setorId')) {
+      // Set default for new CLIENT users to "Sem Setor" (0)
       form.setValue('setorId', "0", { shouldValidate: true });
     } else if (currentUser && !form.getValues('setorId')) {
       // For non-clients, set to current user's sector if not already set
@@ -39,12 +39,11 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
       name="setorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{isClient ? "Setor (Sem Setor)" : "Setor *"}</FormLabel>
+          <FormLabel>{isClient ? "Setor (Padrão: Sem Setor)" : "Setor *"}</FormLabel>
           <Select 
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
-            disabled={isClient}
           >
             <FormControl>
               <SelectTrigger>
@@ -52,11 +51,9 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {isClient && (
-                <SelectItem key="0" value="0">
-                  Sem Setor
-                </SelectItem>
-              )}
+              <SelectItem key="0" value="0">
+                Sem Setor
+              </SelectItem>
               {filteredSetores.map((setor) => (
                 <SelectItem key={setor.id} value={String(setor.id)}>
                   {setor.nome}
@@ -66,7 +63,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           </Select>
           {isClient && (
             <p className="text-sm text-muted-foreground mt-1">
-              Usuários comuns são sempre "Sem Setor".
+              Usuários comuns podem ser associados a um setor, mas o padrão é "Sem Setor".
             </p>
           )}
           <FormMessage />
