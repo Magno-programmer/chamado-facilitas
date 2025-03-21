@@ -13,15 +13,23 @@ interface TicketCardProps {
   ticket: TicketWithDetails;
   className?: string;
   onClick?: () => void;
+  onStatusChange?: (ticketId: number, newStatus: string) => void;
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({ 
   ticket, 
   className,
-  onClick 
+  onClick,
+  onStatusChange
 }) => {
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
+  };
+
+  const handleExpired = () => {
+    if (ticket.status !== 'Concluído' && ticket.status !== 'Atrasado') {
+      onStatusChange?.(ticket.id, 'Atrasado');
+    }
   };
 
   return (
@@ -67,7 +75,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
       <div className="text-xs text-muted-foreground">
         <div className="flex items-center justify-end">
           <Clock className="h-3.5 w-3.5 mr-1" />
-          <span>Tempo restante: <RemainingTime deadline={ticket.deadline} createdAt={ticket.createdAt} /></span>
+          <span>Tempo restante: <RemainingTime 
+            deadline={ticket.deadline} 
+            createdAt={ticket.createdAt} 
+            onExpired={handleExpired}
+          /></span>
         </div>
       </div>
     </div>

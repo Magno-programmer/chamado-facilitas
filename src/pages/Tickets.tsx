@@ -4,6 +4,8 @@ import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
 import { TicketStatus, TicketWithDetails } from '@/lib/types/ticket.types';
 import { UserRole } from '@/lib/types/user.types';
 import { getSectors, getTickets } from '@/lib/supabase';
+import { updateTicket } from '@/lib/services/ticketService';
+import { toast } from '@/hooks/use-toast';
 import TicketCard from '@/components/TicketCard';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -30,6 +32,52 @@ const Tickets = () => {
     if (role === 'ADMIN') return 'ADMIN'; 
     if (role === 'Gerente') return 'Gerente';
     return 'CLIENT';
+  };
+
+  const checkAndUpdateExpiredTickets = async (tickets: TicketWithDetails[]) => {
+    const now = new Date();
+    const expiredTickets = tickets.filter(ticket => 
+      ticket.status !== 'Concluído' && 
+      ticket.status !== 'Atrasado' && 
+      new Date(ticket.deadline) < now
+    );
+    
+    for (const ticket of expiredTickets) {
+      try {
+        await updateTicket(ticket.id, { status: 'Atrasado' });
+        setTickets(prevTickets => 
+          prevTickets.map(t => 
+            t.id === ticket.id ? { ...t, status: 'Atrasado' as TicketStatus } : t
+          )
+        );
+      } catch (error) {
+        console.error(`Failed to update ticket ${ticket.id} status:`, error);
+      }
+    }
+    
+    if (expiredTickets.length > 0) {
+      setFilteredTickets(prevTickets => 
+        prevTickets.map(t => 
+          expiredTickets.some(et => et.id === t.id) 
+            ? { ...t, status: 'Atrasado' as TicketStatus } 
+            : t
+        )
+      );
+      
+      if (expiredTickets.length === 1) {
+        toast({
+          title: "Chamado Atrasado",
+          description: "Um chamado foi marcado como atrasado devido ao prazo expirado.",
+          variant: "warning",
+        });
+      } else if (expiredTickets.length > 1) {
+        toast({
+          title: "Chamados Atrasados",
+          description: `${expiredTickets.length} chamados foram marcados como atrasados devido aos prazos expirados.`,
+          variant: "warning",
+        });
+      }
+    }
   };
 
   useEffect(() => {
@@ -79,6 +127,8 @@ const Tickets = () => {
         
         setTickets(userTickets);
         setFilteredTickets(userTickets);
+        
+        await checkAndUpdateExpiredTickets(userTickets);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {

@@ -45,7 +45,6 @@ const TicketDetails = () => {
     },
   });
 
-  // Check if user is an admin or manager - both can manage tickets
   const canManageTickets = user?.role === 'ADMIN' || user?.role === 'Gerente';
 
   useEffect(() => {
@@ -99,7 +98,6 @@ const TicketDetails = () => {
         };
         
         setTicket(mappedTicket);
-        // Pre-fill the form with existing completion description if any
         if (ticketData.descricao_conclusao) {
           form.setValue('completionDescription', ticketData.descricao_conclusao);
         }
@@ -214,6 +212,24 @@ const TicketDetails = () => {
     setIsStatusUpdateDialogOpen(true);
   };
 
+  const handleTicketExpired = async () => {
+    if (!ticket || ticket.status === 'Concluído' || ticket.status === 'Atrasado') return;
+    
+    try {
+      await updateTicket(ticket.id, { status: 'Atrasado' });
+      
+      setTicket(prev => prev ? { ...prev, status: 'Atrasado' } : null);
+      
+      toast({
+        title: "Status atualizado",
+        description: "O chamado foi marcado como atrasado devido ao prazo expirado.",
+        variant: "warning",
+      });
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+    }
+  };
+
   if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20">
@@ -291,7 +307,11 @@ const TicketDetails = () => {
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Tempo Restante</h3>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <RemainingTime deadline={ticket.deadline} createdAt={ticket.createdAt} />
+                  <RemainingTime 
+                    deadline={ticket.deadline} 
+                    createdAt={ticket.createdAt} 
+                    onExpired={handleTicketExpired}
+                  />
                 </div>
               </div>
               <div>
@@ -374,7 +394,6 @@ const TicketDetails = () => {
         </div>
       </div>
 
-      {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -404,7 +423,6 @@ const TicketDetails = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Status update dialog */}
       <Dialog open={isStatusUpdateDialogOpen} onOpenChange={setIsStatusUpdateDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>

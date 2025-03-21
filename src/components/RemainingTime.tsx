@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
 
 interface RemainingTimeProps {
   deadline: string;
   createdAt?: string;
+  onExpired?: () => void;
 }
 
-const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) => {
+const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt, onExpired }) => {
   const [remainingTime, setRemainingTime] = useState<string>('');
+  const [isExpired, setIsExpired] = useState<boolean>(false);
   
   useEffect(() => {
     const calculateRemainingTime = () => {
@@ -16,7 +17,16 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       const deadlineDate = new Date(deadline);
       
       if (now > deadlineDate) {
+        if (!isExpired) {
+          setIsExpired(true);
+          onExpired?.();
+        }
         return 'Expirado';
+      }
+      
+      // Reset expired state if deadline is updated and is now in the future
+      if (isExpired) {
+        setIsExpired(false);
       }
       
       // Calculate total seconds of difference
@@ -47,7 +57,7 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, isExpired, onExpired]);
   
   return <span>{remainingTime}</span>;
 };
