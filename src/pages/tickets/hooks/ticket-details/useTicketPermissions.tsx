@@ -28,6 +28,8 @@ export const useTicketPermissions = (
   
   const canDeleteTicket = canManageAllTickets || (isUserWithoutSector && isOwnTicket);
   const canEditTicket = canManageAllTickets && !isUserWithoutSector;
+  
+  // Only GERENTE and ADMIN can assign tickets, and only when ticket is Aberto or Aguardando Prazo
   const canAssignTicket = (isSectorManager || isAdmin) && ticket && 
     (ticket.status === 'Aberto' || ticket.status === 'Aguardando Prazo');
 

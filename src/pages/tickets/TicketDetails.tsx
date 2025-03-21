@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { TicketStatus } from '@/lib/types/ticket.types';
 import { useTicketDetails } from './hooks/useTicketDetails';
 import { useTicketActions } from './hooks/useTicketActions';
+import { useDeadlines } from './hooks/useDeadlines';
 import TicketDetailsContent from './components/TicketDetailsContent';
 import TicketInfoPanel from './components/TicketInfoPanel';
 import DeleteTicketDialog from './components/dialogs/DeleteTicketDialog';
@@ -35,6 +37,9 @@ const TicketDetails = () => {
     loadTicket,
     handleTicketExpired
   } = useTicketDetails(id);
+
+  // Add deadlines data
+  const { deadlines, isLoadingDeadlines } = useDeadlines();
 
   const {
     completionForm,
@@ -133,6 +138,8 @@ const TicketDetails = () => {
         isUpdating={isUpdating}
         isLoadingEmployees={isLoadingEmployees}
         sectorEmployees={sectorEmployees}
+        deadlines={deadlines}
+        isLoadingDeadlines={isLoadingDeadlines}
         assignForm={assignForm}
       />
     </div>

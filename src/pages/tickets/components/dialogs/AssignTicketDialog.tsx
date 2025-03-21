@@ -14,8 +14,9 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { User } from '@/lib/types/user.types';
+import { Deadline } from '@/lib/types/sector.types';
+import DeadlineSelector from '../DeadlineSelector';
 
-// Update the interface to make responsibleId optional
 interface AssignTicketDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,8 +24,11 @@ interface AssignTicketDialogProps {
   isUpdating: boolean;
   isLoadingEmployees: boolean;
   sectorEmployees: User[];
+  deadlines: Deadline[];
+  isLoadingDeadlines: boolean;
   assignForm: UseFormReturn<{
-    responsibleId?: string; // Made optional to match the actual form type
+    responsibleId?: string;
+    deadlineId?: string;
   }>;
 }
 
@@ -35,6 +39,8 @@ const AssignTicketDialog: React.FC<AssignTicketDialogProps> = ({
   isUpdating,
   isLoadingEmployees,
   sectorEmployees,
+  deadlines,
+  isLoadingDeadlines,
   assignForm
 }) => {
   return (
@@ -43,7 +49,7 @@ const AssignTicketDialog: React.FC<AssignTicketDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Atribuir Chamado</DialogTitle>
           <DialogDescription>
-            Selecione o funcionário que será responsável por este chamado.
+            Selecione o funcionário que será responsável por este chamado e o prazo de atendimento.
           </DialogDescription>
         </DialogHeader>
         
@@ -91,12 +97,28 @@ const AssignTicketDialog: React.FC<AssignTicketDialogProps> = ({
                 </FormItem>
               )}
             />
+            
+            <FormField
+              control={assignForm.control}
+              name="deadlineId"
+              render={({ field }) => (
+                <FormItem>
+                  <DeadlineSelector
+                    deadlines={deadlines}
+                    selectedDeadlineId={field.value ? parseInt(field.value) : null}
+                    onDeadlineChange={field.onChange}
+                    isLoading={isLoadingDeadlines}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating} type="button">
                 Cancelar
               </Button>
-              <Button variant="default" type="submit" disabled={isUpdating || isLoadingEmployees}>
+              <Button variant="default" type="submit" disabled={isUpdating || isLoadingEmployees || isLoadingDeadlines}>
                 {isUpdating ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

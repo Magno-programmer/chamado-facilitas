@@ -7,18 +7,23 @@ import { TicketStatus, TicketWithDetails } from '@/lib/types';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format, parseISO, addHours } from 'date-fns';
+import { getDeadlineById } from '@/lib/services/deadlineService';
 
-// Update the schemas to make fields optional with default values
+// Update the schemas to include deadline
 const completionSchema = z.object({
   completionDescription: z.string().min(20, {
     message: "A descrição de conclusão deve ter no mínimo 20 caracteres para concluir o chamado."
-  }).optional() // Make it optional in the schema
+  }).optional()
 });
 
 const assignSchema = z.object({
   responsibleId: z.string().min(1, {
     message: "É necessário selecionar um funcionário responsável."
-  }).optional() // Make it optional in the schema
+  }).optional(),
+  deadlineId: z.string().min(1, {
+    message: "É necessário selecionar um prazo."
+  }).optional()
 });
 
 type CompletionFormValues = z.infer<typeof completionSchema>;
@@ -44,6 +49,7 @@ export const useTicketActions = (
     resolver: zodResolver(assignSchema),
     defaultValues: {
       responsibleId: ticket?.responsibleId || '',
+      deadlineId: ''
     },
   });
 
@@ -143,21 +149,45 @@ export const useTicketActions = (
       return;
     }
     
-    await assignForm.trigger('responsibleId');
+    await assignForm.trigger(['responsibleId', 'deadlineId']);
     if (!assignForm.formState.isValid) return;
     
     const formValues = assignForm.getValues();
     
     setIsUpdating(true);
     try {
+      // First get the deadline details to calculate the new deadline date
+      if (!formValues.deadlineId) {
+        throw new Error("Prazo não selecionado");
+      }
+      
+      const deadlineInfo = await getDeadlineById(parseInt(formValues.deadlineId));
+      if (!deadlineInfo) {
+        throw new Error("Prazo não encontrado");
+      }
+      
+      // Parse the prazo field from the deadline (time) and add it to the current date
+      const deadlineTime = deadlineInfo.prazo;
+      const deadlineHours = parseInt(deadlineTime.split(':')[0]);
+      const deadlineMinutes = parseInt(deadlineTime.split(':')[1]);
+      
+      // Calculate new deadline date - current date plus the hours and minutes from the deadline
+      const newDeadlineDate = new Date();
+      newDeadlineDate.setHours(newDeadlineDate.getHours() + deadlineHours);
+      newDeadlineDate.setMinutes(newDeadlineDate.getMinutes() + deadlineMinutes);
+
+      // Format for Supabase
+      const formattedDeadline = format(newDeadlineDate, "yyyy-MM-dd'T'HH:mm:ssXXX");
+      
       await updateTicket(ticket.id, { 
         responsavel_id: formValues.responsibleId || '',
-        status: 'Em Andamento' // Change status to "Em Andamento" when assigned
+        status: 'Em Andamento', // Change status to "Em Andamento" when assigned
+        prazo: formattedDeadline
       });
       
       toast({
         title: "Chamado atribuído",
-        description: "O chamado foi atribuído com sucesso.",
+        description: "O chamado foi atribuído com sucesso com o novo prazo.",
       });
       
       loadTicket();
@@ -165,7 +195,7 @@ export const useTicketActions = (
       console.error('Error assigning ticket:', error);
       toast({
         title: "Erro ao atribuir o chamado",
-        description: "Não foi possível atribuir o chamado.",
+        description: "Não foi possível atribuir o chamado ou definir o prazo.",
         variant: "destructive",
       });
     } finally {
