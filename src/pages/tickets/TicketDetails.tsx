@@ -1,376 +1,54 @@
-import React, { useEffect, useState } from 'react';
+
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, Clock, RefreshCw, User, Trash2, Check, MessageSquareText, AlertTriangle, UserCheck } from 'lucide-react';
-import { getTicketById, updateTicket, deleteTicket } from '@/lib/services/ticketService';
-import { TicketWithDetails, TicketStatus } from '@/lib/types/ticket.types';
-import { UserRole, User as UserType } from '@/lib/types/user.types';
-import StatusBadge from '@/components/StatusBadge';
-import ProgressBar from '@/components/ProgressBar';
-import RemainingTime from '@/components/RemainingTime';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-
-const completionSchema = z.object({
-  completionDescription: z.string().min(20, {
-    message: "A descrição de conclusão deve ter no mínimo 20 caracteres para concluir o chamado."
-  })
-});
-
-const assignSchema = z.object({
-  responsibleId: z.string().min(1, {
-    message: "É necessário selecionar um funcionário responsável."
-  })
-});
-
-type CompletionFormValues = z.infer<typeof completionSchema>;
-type AssignFormValues = z.infer<typeof assignSchema>;
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { TicketStatus } from '@/lib/types/ticket.types';
+import { useTicketDetails } from './hooks/useTicketDetails';
+import { useTicketActions } from './hooks/useTicketActions';
+import TicketDetailsContent from './components/TicketDetailsContent';
+import TicketInfoPanel from './components/TicketInfoPanel';
+import DeleteTicketDialog from './components/dialogs/DeleteTicketDialog';
+import StatusUpdateDialog from './components/dialogs/StatusUpdateDialog';
+import AssignTicketDialog from './components/dialogs/AssignTicketDialog';
 
 const TicketDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [ticket, setTicket] = useState<TicketWithDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isStatusUpdateDialogOpen, setIsStatusUpdateDialogOpen] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<TicketStatus | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [sectorEmployees, setSectorEmployees] = useState<UserType[]>([]);
-  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
-
-  const completionForm = useForm<CompletionFormValues>({
-    resolver: zodResolver(completionSchema),
-    defaultValues: {
-      completionDescription: '',
-    },
-  });
-
-  const assignForm = useForm<AssignFormValues>({
-    resolver: zodResolver(assignSchema),
-    defaultValues: {
-      responsibleId: '',
-    },
-  });
-
-  const isAdmin = user?.role === 'ADMIN';
-  const isSectorManager = user?.role === 'Gerente';
-  const isUserWithoutSector = user?.sectorId === null || user?.sectorId === 0;
-  const canManageAllTickets = isAdmin || isSectorManager;
   
-  const isOwnTicket = ticket && user && ticket.requesterId === user.id;
-  
-  const canDeleteTicket = canManageAllTickets || (isUserWithoutSector && isOwnTicket);
-  const canEditTicket = canManageAllTickets && !isUserWithoutSector;
-  const canAssignTicket = (isSectorManager || isAdmin) && ticket && (ticket.status === 'Aberto' || ticket.status === 'Aguardando Prazo');
+  const {
+    ticket,
+    setTicket,
+    isLoading,
+    authLoading,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isStatusUpdateDialogOpen,
+    setIsStatusUpdateDialogOpen,
+    isAssignDialogOpen,
+    setIsAssignDialogOpen,
+    selectedStatus,
+    setSelectedStatus,
+    sectorEmployees,
+    isLoadingEmployees,
+    canDeleteTicket,
+    canEditTicket,
+    canAssignTicket,
+    loadTicket,
+    handleTicketExpired
+  } = useTicketDetails(id);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-
-  const loadSectorEmployees = async (sectorId: number) => {
-    setIsLoadingEmployees(true);
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('setor_id', sectorId)
-        .eq('role', 'Funcionario');
-      
-      if (error) throw error;
-      
-      const employees = data.map(emp => ({
-        id: emp.id,
-        name: emp.nome,
-        email: emp.email,
-        sectorId: emp.setor_id,
-        role: emp.role as UserRole
-      }));
-      
-      setSectorEmployees(employees);
-    } catch (error) {
-      console.error('Error loading sector employees:', error);
-      toast({
-        title: "Erro ao carregar funcionários",
-        description: "Não foi possível carregar a lista de funcionários do setor.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingEmployees(false);
-    }
-  };
-
-  const loadTicket = async () => {
-    setIsLoading(true);
-    try {
-      if (id) {
-        const ticketData = await getTicketById(parseInt(id));
-        
-        const convertToUserRole = (role: string): UserRole => {
-          if (role === 'ADMIN') return 'ADMIN'; 
-          if (role === 'Gerente') return 'Gerente';
-          if (role === 'Funcionario') return 'Funcionario';
-          return 'CLIENT';
-        };
-        
-        const mappedTicket: TicketWithDetails = {
-          id: ticketData.id,
-          title: ticketData.titulo,
-          description: ticketData.descricao || '',
-          completionDescription: ticketData.descricao_conclusao,
-          sectorId: ticketData.setor_id,
-          requesterId: ticketData.solicitante_id,
-          responsibleId: ticketData.responsavel_id,
-          status: ticketData.status as TicketStatus,
-          createdAt: ticketData.data_criacao,
-          deadline: ticketData.prazo,
-          sector: {
-            id: ticketData.setor.id,
-            name: ticketData.setor.nome
-          },
-          requester: {
-            id: ticketData.solicitante.id,
-            name: ticketData.solicitante.nome,
-            email: ticketData.solicitante.email,
-            sectorId: ticketData.solicitante.setor_id,
-            role: convertToUserRole(ticketData.solicitante.role)
-          },
-          responsible: ticketData.responsavel ? {
-            id: ticketData.responsavel.id,
-            name: ticketData.responsavel.nome,
-            email: ticketData.responsavel.email,
-            sectorId: ticketData.responsavel.setor_id,
-            role: convertToUserRole(ticketData.responsavel.role)
-          } : null,
-          percentageRemaining: calculatePercentageRemaining(ticketData.data_criacao, ticketData.prazo)
-        };
-        
-        setTicket(mappedTicket);
-        
-        // If this is a ticket with a sector, load employees for that sector
-        if (mappedTicket.sectorId && (canAssignTicket)) {
-          loadSectorEmployees(mappedTicket.sectorId);
-        }
-        
-        if (ticketData.descricao_conclusao) {
-          completionForm.setValue('completionDescription', ticketData.descricao_conclusao);
-        }
-        
-        // Set default responsible in the form if exists
-        if (ticketData.responsavel_id) {
-          assignForm.setValue('responsibleId', ticketData.responsavel_id);
-        }
-        
-        // Check if user can view this ticket
-        if (user && !canManageAllTickets && user.role !== 'Funcionario' && ticketData.solicitante_id !== user.id) {
-          toast({
-            title: "Acesso negado",
-            description: "Você só pode visualizar seus próprios chamados.",
-            variant: "destructive",
-          });
-          navigate('/tickets');
-        }
-      }
-    } catch (error) {
-      console.error('Error loading ticket:', error);
-      toast({
-        title: "Erro ao carregar o chamado",
-        description: "Não foi possível carregar os detalhes do chamado.",
-        variant: "destructive",
-      });
-      navigate('/tickets');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated && id) {
-      loadTicket();
-    }
-  }, [id, isAuthenticated, navigate]);
-
-  const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
-    const now = new Date();
-    const start = new Date(createdAt);
-    const end = new Date(deadline);
-    
-    const totalTime = end.getTime() - start.getTime();
-    const elapsedTime = now.getTime() - start.getTime();
-    
-    if (totalTime <= 0) return 0;
-    
-    const percentage = 100 - (elapsedTime / totalTime) * 100;
-    return Math.max(0, Math.min(100, percentage));
-  };
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
-  };
-
-  const handleDeleteTicket = async () => {
-    if (!ticket) return;
-    
-    if (!canDeleteTicket) {
-      toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para excluir este chamado.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsUpdating(true);
-    try {
-      await deleteTicket(ticket.id);
-      
-      toast({
-        title: "Chamado excluído",
-        description: "O chamado foi excluído com sucesso.",
-      });
-      navigate('/tickets');
-    } catch (error) {
-      console.error('Error deleting ticket:', error);
-      toast({
-        title: "Erro ao excluir o chamado",
-        description: "Não foi possível excluir o chamado.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const handleStatusUpdate = async (status: TicketStatus) => {
-    if (!ticket) return;
-    
-    if (!canEditTicket) {
-      toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para atualizar este chamado.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsUpdating(true);
-    try {
-      if (status === 'Concluído') {
-        await completionForm.trigger();
-        if (!completionForm.formState.isValid) {
-          setIsUpdating(false);
-          return;
-        }
-        
-        const formValues = completionForm.getValues();
-        
-        await updateTicket(ticket.id, { 
-          status: status,
-          descricao_conclusao: formValues.completionDescription
-        });
-      } else {
-        await updateTicket(ticket.id, { 
-          status: status
-        });
-      }
-      
-      toast({
-        title: "Status atualizado",
-        description: `O chamado foi atualizado para "${status}".`,
-      });
-      
-      setIsStatusUpdateDialogOpen(false);
-      loadTicket();
-    } catch (error) {
-      console.error('Error updating ticket status:', error);
-      toast({
-        title: "Erro ao atualizar o status",
-        description: "Não foi possível atualizar o status do chamado.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleAssignTicket = async () => {
-    if (!ticket) return;
-    
-    if (!canAssignTicket) {
-      toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para atribuir este chamado.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await assignForm.trigger();
-    if (!assignForm.formState.isValid) return;
-    
-    const formValues = assignForm.getValues();
-    
-    setIsUpdating(true);
-    try {
-      await updateTicket(ticket.id, { 
-        responsavel_id: formValues.responsibleId,
-        status: 'Em Andamento' // Change status to "Em Andamento" when assigned
-      });
-      
-      toast({
-        title: "Chamado atribuído",
-        description: "O chamado foi atribuído com sucesso.",
-      });
-      
-      setIsAssignDialogOpen(false);
-      loadTicket();
-    } catch (error) {
-      console.error('Error assigning ticket:', error);
-      toast({
-        title: "Erro ao atribuir o chamado",
-        description: "Não foi possível atribuir o chamado.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const {
+    completionForm,
+    assignForm,
+    isUpdating,
+    handleDeleteTicket,
+    handleStatusUpdate,
+    handleAssignTicket
+  } = useTicketActions(ticket, setTicket, loadTicket);
 
   const openStatusDialog = (status: TicketStatus) => {
     setSelectedStatus(status);
     setIsStatusUpdateDialogOpen(true);
-  };
-
-  const handleTicketExpired = async () => {
-    if (!ticket || ticket.status === 'Concluído' || ticket.status === 'Atrasado') return;
-    
-    try {
-      await updateTicket(ticket.id, { status: 'Atrasado' });
-      
-      setTicket(prev => prev ? { ...prev, status: 'Atrasado' } : null);
-      
-      toast({
-        title: "Status atualizado",
-        description: "O chamado foi marcado como atrasado devido ao prazo expirado.",
-        variant: "destructive",
-      });
-    } catch (error) {
-      console.error('Error updating ticket status:', error);
-    }
   };
 
   if (isLoading || authLoading) {
@@ -400,8 +78,6 @@ const TicketDetails = () => {
     );
   }
 
-  const isCompleted = ticket.status === 'Concluído';
-
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
       <div className="flex items-center mb-6">
@@ -417,341 +93,49 @@ const TicketDetails = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl border shadow-sm p-6 mb-6">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-semibold">{ticket.title}</h2>
-              <StatusBadge status={ticket.status} />
-            </div>
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Descrição</h3>
-              <p className="whitespace-pre-line">{ticket.description || 'Sem descrição'}</p>
-            </div>
-            
-            {ticket.completionDescription && (
-              <div className="mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
-                <h3 className="text-sm font-medium text-green-700 mb-2">Descrição de Conclusão</h3>
-                <p className="whitespace-pre-line text-green-800">{ticket.completionDescription}</p>
-              </div>
-            )}
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Progresso</h3>
-              <ProgressBar 
-                percentage={ticket.percentageRemaining}
-                deadline={ticket.deadline}
-                createdAt={ticket.createdAt}
-                autoUpdate={!isCompleted}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Tempo Restante</h3>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <RemainingTime 
-                    deadline={ticket.deadline} 
-                    createdAt={ticket.createdAt} 
-                    onExpired={handleTicketExpired}
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Setor</h3>
-                <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{ticket.sector?.name || 'Não definido'}</span>
-                </div>
-              </div>
-            </div>
-            
-            {(canEditTicket || canDeleteTicket || canAssignTicket) && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">Ações de Gerenciamento</h3>
-                <div className="flex flex-wrap gap-4">
-                  {canAssignTicket && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsAssignDialogOpen(true)}
-                    >
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Atribuir a Funcionário
-                    </Button>
-                  )}
-                  
-                  {canEditTicket && ticket.status !== 'Em Andamento' && ticket.status !== 'Concluído' && (
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => openStatusDialog('Em Andamento')}
-                    >
-                      <Clock className="mr-2 h-4 w-4" />
-                      Iniciar Atendimento
-                    </Button>
-                  )}
-                  
-                  {canEditTicket && ticket.status !== 'Concluído' && (
-                    <Button 
-                      variant="default" 
-                      onClick={() => openStatusDialog('Concluído')}
-                    >
-                      <Check className="mr-2 h-4 w-4" />
-                      Concluir Chamado
-                    </Button>
-                  )}
-                  
-                  {canDeleteTicket && (
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir Chamado
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <TicketDetailsContent
+            ticket={ticket}
+            canEditTicket={canEditTicket}
+            canDeleteTicket={canDeleteTicket}
+            canAssignTicket={canAssignTicket}
+            onOpenAssignDialog={() => setIsAssignDialogOpen(true)}
+            onOpenStatusDialog={openStatusDialog}
+            onOpenDeleteDialog={() => setIsDeleteDialogOpen(true)}
+            handleTicketExpired={handleTicketExpired}
+          />
         </div>
         
         <div>
-          <div className="bg-white rounded-xl border shadow-sm p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Informações do Chamado</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Solicitante</p>
-                <p className="font-medium">{ticket.requester?.name}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground">Responsável</p>
-                <p className="font-medium">{ticket.responsible?.name || 'Não atribuído'}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground">Data de criação</p>
-                <p className="font-medium">{formatDate(ticket.createdAt)}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground">Prazo</p>
-                <p className="font-medium">{formatDate(ticket.deadline)}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <StatusBadge status={ticket.status} />
-              </div>
-            </div>
-          </div>
+          <TicketInfoPanel ticket={ticket} />
         </div>
       </div>
 
-      {/* Delete Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Excluir Chamado</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir este chamado? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isUpdating}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteTicket} disabled={isUpdating}>
-              {isUpdating ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <DeleteTicketDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onDelete={() => handleDeleteTicket(canDeleteTicket)}
+        isDeleting={isUpdating}
+      />
 
-      {/* Status Update Dialog */}
-      <Dialog open={isStatusUpdateDialogOpen} onOpenChange={setIsStatusUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedStatus === 'Em Andamento' ? 'Iniciar Atendimento' : 'Concluir Chamado'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedStatus === 'Em Andamento' 
-                ? 'Iniciar o atendimento deste chamado? O status será alterado para "Em Andamento".'
-                : 'Para concluir este chamado, é necessário fornecer uma descrição de conclusão com pelo menos 20 caracteres.'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedStatus === 'Concluído' && (
-            <Form {...completionForm}>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                completionForm.handleSubmit(() => handleStatusUpdate('Concluído'))();
-              }} className="space-y-4">
-                <FormField
-                  control={completionForm.control}
-                  name="completionDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição de Conclusão</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descreva a solução implementada em detalhes..."
-                          className="min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <MessageSquareText className="h-4 w-4 mr-2" />
-                  <span>
-                    {completionForm.watch('completionDescription')?.length || 0} / 20 caracteres mínimos
-                  </span>
-                </div>
-                {completionForm.watch('completionDescription')?.length < 20 && (
-                  <div className="flex items-center text-sm text-amber-500">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    <span>
-                      É necessário uma descrição de conclusão com pelo menos 20 caracteres
-                    </span>
-                  </div>
-                )}
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsStatusUpdateDialogOpen(false)} disabled={isUpdating} type="button">
-                    Cancelar
-                  </Button>
-                  <Button variant="default" type="submit" disabled={isUpdating}>
-                    {isUpdating ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Concluir Chamado
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-          
-          {selectedStatus === 'Em Andamento' && (
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsStatusUpdateDialogOpen(false)} disabled={isUpdating}>
-                Cancelar
-              </Button>
-              <Button variant="default" onClick={() => handleStatusUpdate('Em Andamento')} disabled={isUpdating}>
-                {isUpdating ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <Clock className="mr-2 h-4 w-4" />
-                    Iniciar Atendimento
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StatusUpdateDialog
+        isOpen={isStatusUpdateDialogOpen}
+        onOpenChange={setIsStatusUpdateDialogOpen}
+        onStatusUpdate={(status) => handleStatusUpdate(status, canEditTicket)}
+        selectedStatus={selectedStatus}
+        isUpdating={isUpdating}
+        completionForm={completionForm}
+      />
 
-      {/* Assign Employee Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Atribuir Chamado</DialogTitle>
-            <DialogDescription>
-              Selecione o funcionário que será responsável por este chamado.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...assignForm}>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              assignForm.handleSubmit(handleAssignTicket)();
-            }} className="space-y-4">
-              <FormField
-                control={assignForm.control}
-                name="responsibleId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Funcionário Responsável</FormLabel>
-                    <Select 
-                      disabled={isLoadingEmployees} 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um funcionário" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoadingEmployees ? (
-                          <div className="flex items-center justify-center p-2">
-                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                            <span>Carregando funcionários...</span>
-                          </div>
-                        ) : sectorEmployees.length > 0 ? (
-                          sectorEmployees.map(emp => (
-                            <SelectItem key={emp.id} value={emp.id}>
-                              {emp.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 text-center text-muted-foreground">
-                            Nenhum funcionário disponível neste setor
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)} disabled={isUpdating} type="button">
-                  Cancelar
-                </Button>
-                <Button variant="default" type="submit" disabled={isUpdating || isLoadingEmployees}>
-                  {isUpdating ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Atribuir Chamado
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <AssignTicketDialog
+        isOpen={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        onAssign={() => handleAssignTicket(canAssignTicket)}
+        isUpdating={isUpdating}
+        isLoadingEmployees={isLoadingEmployees}
+        sectorEmployees={sectorEmployees}
+        assignForm={assignForm}
+      />
     </div>
   );
 };
