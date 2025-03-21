@@ -14,8 +14,16 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       const now = new Date();
       const deadlineDate = new Date(deadline);
       
+      console.log('RemainingTime Debug:', {
+        now: now.toISOString(),
+        deadline: deadline,
+        deadlineDate: deadlineDate.toISOString(),
+        createdAt: createdAt || 'Not provided'
+      });
+      
       // If past the deadline, show expired
       if (now > deadlineDate) {
+        console.log('RemainingTime Debug: Deadline expired');
         return 'Expirado';
       }
       
@@ -29,11 +37,24 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       // Calculate remaining time in seconds
       const totalRemainingSeconds = Math.floor((totalDuration - elapsedTime) / 1000);
       
+      console.log('RemainingTime Debug: Calculation details', {
+        startDate: startDate.toISOString(),
+        totalDuration: totalDuration,
+        totalDurationInMinutes: totalDuration / (60 * 1000),
+        elapsedTime: elapsedTime,
+        elapsedTimeInMinutes: elapsedTime / (60 * 1000),
+        totalRemainingSeconds: totalRemainingSeconds
+      });
+      
       // Calculate components
       const days = Math.floor(totalRemainingSeconds / (24 * 60 * 60));
       const hours = Math.floor((totalRemainingSeconds % (24 * 60 * 60)) / (60 * 60));
       const minutes = Math.floor((totalRemainingSeconds % (60 * 60)) / 60);
       const seconds = totalRemainingSeconds % 60;
+      
+      console.log('RemainingTime Debug: Time components', {
+        days, hours, minutes, seconds
+      });
       
       // Format with leading zeros and handle day count
       if (days > 0) {
