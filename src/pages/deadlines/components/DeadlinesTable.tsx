@@ -30,7 +30,15 @@ const DeadlinesTable = ({
   // Function to format the prazo time string to a more readable format
   const formatDeadlineTime = (prazoString: string) => {
     // The prazo string comes in a time format, likely HH:MM:SS
-    // Format it to display in a more user-friendly way
+    if (!prazoString) return '-';
+    
+    // Extract hours and minutes
+    const match = prazoString.match(/^(\d{2}):(\d{2})/);
+    if (match) {
+      const [, hours, minutes] = match;
+      return `${hours}h${minutes}min`;
+    }
+    
     return prazoString;
   };
 

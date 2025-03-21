@@ -216,8 +216,8 @@ const CreateEditDeadlineDialog = ({
                   <FormLabel>Setor {isSectorFieldDisabled() && '(determinado pelo seu setor)'}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value} 
-                    defaultValue={field.value}
+                    value={field.value || undefined} 
+                    defaultValue={field.value || undefined}
                     disabled={isSectorFieldDisabled()}
                   >
                     <FormControl>
@@ -226,7 +226,7 @@ const CreateEditDeadlineDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Todos os setores</SelectItem>
+                      <SelectItem value="all_sectors">Todos os setores</SelectItem>
                       {availableSectors.map((sector) => (
                         <SelectItem key={sector.id} value={String(sector.id)}>
                           {sector.nome}
