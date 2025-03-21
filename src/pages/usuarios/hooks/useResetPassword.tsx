@@ -20,7 +20,7 @@ export const useResetPassword = (setLoading: (loading: boolean) => void) => {
   const [resetPasswordUser, setResetPasswordUser] = useState<Usuario | null>(null);
   const [newPassword, setNewPassword] = useState("");
 
-  const openResetPassword = (usuario: Usuario) => {
+  const handleResetPasswordClick = (usuario: Usuario) => {
     const randomPassword = generateSecurePassword();
     setNewPassword(randomPassword);
     setResetPasswordUser(usuario);
@@ -67,7 +67,7 @@ export const useResetPassword = (setLoading: (loading: boolean) => void) => {
     setResetPasswordUser,
     newPassword,
     setNewPassword,
-    openResetPassword,
+    handleResetPasswordClick,
     handleResetPassword
   };
 };

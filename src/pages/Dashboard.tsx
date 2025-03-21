@@ -15,6 +15,7 @@ import { UserRole } from '@/lib/types/user.types';
 const Dashboard = () => {
   const [currentView, setCurrentView] = useState<'card' | 'table'>('card');
   const { user, isAuthenticated } = useAuth();
+  const [showTable, setShowTable] = useState(false);
   
   // Use custom hook to manage dashboard data
   const { stats, allTickets, recentTickets, isLoading } = useDashboardData({
@@ -22,31 +23,26 @@ const Dashboard = () => {
     user
   });
 
+  const toggleView = () => {
+    setShowTable(!showTable);
+  };
+
   const renderDashboardContent = () => {
     // For any authenticated user
     return (
       <>
-        <DashboardStats stats={stats} loading={isLoading} />
+        <DashboardStats stats={stats} />
         
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6 mt-6">
           <Card className="md:col-span-4">
             <CardContent className="p-0">
-              <StatusDistributionChart 
-                openTickets={stats.openTickets} 
-                inProgressTickets={stats.inProgressTickets} 
-                completedTickets={stats.completedTickets} 
-                lateTickets={stats.lateTickets}
-                loading={isLoading}
-              />
+              <StatusDistributionChart stats={stats} />
             </CardContent>
           </Card>
           
           <Card className="md:col-span-3">
             <CardContent className="p-0">
-              <SectorBarChart 
-                data={stats.ticketsBySector} 
-                loading={isLoading}
-              />
+              <SectorBarChart stats={stats} userRole={user?.role || 'CLIENT'} />
             </CardContent>
           </Card>
         </div>
@@ -60,7 +56,10 @@ const Dashboard = () => {
             <TabsContent value="recent" className="space-y-4">
               <div className="grid grid-cols-1 gap-6">
                 <Card>
-                  <RecentTickets tickets={recentTickets} loading={isLoading} />
+                  <RecentTickets 
+                    tickets={recentTickets} 
+                    userRole={user?.role || 'CLIENT'} 
+                  />
                   <CardFooter className="flex justify-end py-4">
                     <TabsTrigger 
                       value="all" 
@@ -94,8 +93,7 @@ const Dashboard = () => {
                   </div>
                   <TicketsTableView 
                     tickets={allTickets} 
-                    viewType={currentView}
-                    loading={isLoading}
+                    userRole={user?.role || 'CLIENT'} 
                   />
                 </CardContent>
               </Card>
@@ -109,9 +107,9 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <DashboardHeader 
-        user={user} 
-        title={`Dashboard`} 
-        subtitle="Visão geral do sistema"
+        userRole={user?.role || 'CLIENT'} 
+        showTable={showTable}
+        toggleView={toggleView}
       />
       {renderDashboardContent()}
     </div>

@@ -18,13 +18,13 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
   const [changePasswordDialog, setChangePasswordDialog] = useState(false);
   const [changePasswordUser, setChangePasswordUser] = useState<Usuario | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newChangePassword, setNewChangePassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  const openChangePassword = (usuario: Usuario) => {
+  const handleChangePasswordClick = (usuario: Usuario) => {
     setChangePasswordUser(usuario);
     setCurrentPassword("");
-    setNewPassword("");
+    setNewChangePassword("");
     setConfirmPassword("");
     setChangePasswordDialog(true);
   };
@@ -39,7 +39,7 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
       return false;
     }
     
-    if (!newPassword) {
+    if (!newChangePassword) {
       toast({
         title: "Campo obrigatório",
         description: "A nova senha é obrigatória.",
@@ -48,7 +48,7 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
       return false;
     }
     
-    if (newPassword !== confirmPassword) {
+    if (newChangePassword !== confirmPassword) {
       toast({
         title: "Senhas não conferem",
         description: "A confirmação da nova senha não confere.",
@@ -57,7 +57,7 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
       return false;
     }
     
-    if (newPassword.length < 8) {
+    if (newChangePassword.length < 8) {
       toast({
         title: "Senha muito curta",
         description: "A nova senha deve ter pelo menos 8 caracteres.",
@@ -80,7 +80,7 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
       const { success, message } = await changeUserPassword(
         changePasswordUser.id,
         currentPassword,
-        newPassword
+        newChangePassword
       );
       
       if (success) {
@@ -114,11 +114,11 @@ export const useChangePassword = (setLoading: (loading: boolean) => void) => {
     changePasswordUser,
     currentPassword,
     setCurrentPassword,
-    newPassword,
-    setNewPassword,
+    newChangePassword,
+    setNewChangePassword,
     confirmPassword,
     setConfirmPassword,
-    openChangePassword,
+    handleChangePasswordClick,
     handleChangePassword
   };
 };
