@@ -17,7 +17,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
   const userRole = form.watch('role');
   const isClient = userRole === 'CLIENT';
   
-  // Set default to "Sem Setor" (value "0") for client users when creating a new user
+  // Set default to "Sem Setor" (value "0") only when first changing to CLIENT role
   useEffect(() => {
     if (isClient && !form.getValues('setorId')) {
       // Set default for new CLIENT users to "Sem Setor" (0)
@@ -39,7 +39,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
       name="setorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{isClient ? "Setor (Padrão: Sem Setor)" : "Setor *"}</FormLabel>
+          <FormLabel>{isClient ? "Setor (opcional)" : "Setor *"}</FormLabel>
           <Select 
             onValueChange={field.onChange} 
             value={field.value} 
@@ -47,7 +47,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder={isClient ? "Sem Setor" : "Selecione um setor"} />
+                <SelectValue placeholder="Selecione um setor" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
@@ -63,7 +63,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           </Select>
           {isClient && (
             <p className="text-sm text-muted-foreground mt-1">
-              Usuários comuns podem ser associados a um setor, mas o padrão é "Sem Setor".
+              Usuários comuns podem ser associados a um setor ou ficar "Sem Setor".
             </p>
           )}
           <FormMessage />

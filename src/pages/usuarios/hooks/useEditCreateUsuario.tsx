@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -90,7 +91,7 @@ export const useEditCreateUsuario = (
       }
       
       if (!isGeralSector) {
-        if (parseInt(values.setorId) !== currentUser?.sectorId) {
+        if (parseInt(values.setorId) !== currentUser?.sectorId && values.setorId !== "0") {
           toast({
             title: "Operação não permitida",
             description: "Você só pode gerenciar usuários do seu próprio setor.",
@@ -108,7 +109,7 @@ export const useEditCreateUsuario = (
       };
       
       if (isEditing && editingUsuario) {
-        if (!isGeralSector && editingUsuario.setor?.id !== currentUser?.sectorId) {
+        if (!isGeralSector && editingUsuario.setor?.id !== currentUser?.sectorId && editingUsuario.setor?.id !== 0) {
           toast({
             title: "Acesso negado",
             description: "Você só pode editar usuários do seu próprio setor.",
