@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSectors } from '@/lib/supabase';
@@ -51,12 +50,8 @@ const DeadlinesPage = () => {
           
           // Sector admins can create deadlines if they belong to any sector
           setCanCreateDeadlines(true);
-          
-          // If they belong to "Geral" sector, they can manage all deadlines
-          if (userSector?.nome === 'Geral') {
-            setCanCreateDeadlines(true);
-          }
-        } catch (error) {
+        }
+        catch (error) {
           console.error('Error fetching sector info:', error);
         }
       };
@@ -209,7 +204,7 @@ const DeadlinesPage = () => {
           <AlertDescription>
             {userSector === 'Geral' 
               ? "Como gerente do setor Geral, você pode gerenciar prazos de todos os setores."
-              : `Como gerente do setor ${userSector}, você só pode gerenciar prazos do seu próprio setor ou prazos sem setor definido.`
+              : `Como gerente do setor ${userSector}, você só pode visualizar e gerenciar prazos do seu próprio setor ou prazos sem setor definido.`
             }
           </AlertDescription>
         </Alert>

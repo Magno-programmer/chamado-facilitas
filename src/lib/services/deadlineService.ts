@@ -37,8 +37,21 @@ export const getDeadlinesForUser = async (user: User): Promise<Deadline[]> => {
     return getDeadlines();
   }
   
-  // For regular users and sector admins of specific sectors,
-  // only show deadlines for their sector or with no sector (applicable to all)
+  // For sector admins of specific sectors, only show deadlines for their sector
+  if (user.role === 'Gerente') {
+    const { data, error } = await supabase
+      .from('prazos')
+      .select(`
+        *,
+        setor:setores(*)
+      `)
+      .or(`setor_id.eq.${user.sectorId},setor_id.is.null`);
+    
+    if (error) throw error;
+    return data as Deadline[];
+  }
+  
+  // For regular users, only show deadlines for their sector or with no sector
   const { data, error } = await supabase
     .from('prazos')
     .select(`
