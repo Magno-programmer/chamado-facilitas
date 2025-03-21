@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +7,7 @@ import { saveDeadline } from '@/lib/services/deadlineService';
 import { User } from '@/lib/types/user.types';
 import { Deadline } from '@/lib/types/sector.types';
 import { deadlineSchema, DeadlineFormValues } from '../components/dialogs/DeadlineFormSchema';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseDeadlineFormProps {
   deadline: Deadline | null;
@@ -27,6 +29,7 @@ export const useDeadlineForm = ({
   onClose
 }: UseDeadlineFormProps) => {
   const [availableSectors, setAvailableSectors] = useState<{ id: number; nome: string }[]>([]);
+  const [isGeralSector, setIsGeralSector] = useState(false);
   
   // Setup form for creating/editing deadlines
   const form = useForm<DeadlineFormValues>({
@@ -38,31 +41,49 @@ export const useDeadlineForm = ({
     }
   });
 
+  // Check if user is from "Geral" sector
+  useEffect(() => {
+    if (!user) return;
+    
+    const checkSector = async () => {
+      const { data, error } = await supabase
+        .from('setores')
+        .select('nome')
+        .eq('id', user.sectorId)
+        .single();
+      
+      if (error) return;
+      setIsGeralSector(data?.nome === 'Geral');
+    };
+    
+    checkSector();
+  }, [user]);
+  
   // Filter available sectors based on user permissions
   useEffect(() => {
     if (!user) return;
     
-    // If admin, show all sectors
-    if (isAdmin) {
+    // If admin or sector admin from "Geral", show all sectors
+    if ((isAdmin || isSectorAdmin) && isGeralSector) {
       setAvailableSectors(sectors);
       return;
     }
     
-    // If sector admin, check if they're from "Geral" sector
-    const userSector = sectors.find(s => s.id === user.sectorId);
-    if (isSectorAdmin && userSector) {
-      if (userSector.nome === 'Geral') {
-        // "Geral" sector admin can choose any sector
-        setAvailableSectors(sectors);
-      } else {
-        // Other sector admins can only select their own sector or no sector
+    // For admin or sector admin from specific sector
+    if ((isAdmin || isSectorAdmin)) {
+      // Get user's sector
+      const userSector = sectors.find(s => s.id === user.sectorId);
+      if (userSector) {
+        // They can only select their own sector
         setAvailableSectors([userSector]);
+      } else {
+        setAvailableSectors([]);
       }
     } else {
       // Default to empty list if user doesn't have permissions
       setAvailableSectors([]);
     }
-  }, [user, sectors, isAdmin, isSectorAdmin]);
+  }, [user, sectors, isAdmin, isSectorAdmin, isGeralSector]);
 
   // Reset form and set editing deadline when dialog opens/closes
   useEffect(() => {
@@ -73,29 +94,20 @@ export const useDeadlineForm = ({
         setorId: deadline.setor_id ? String(deadline.setor_id) : undefined
       });
     } else {
-      // For new deadlines, preselect user's sector if they're a sector admin
-      if (isSectorAdmin && !isAdmin && user) {
+      // For new deadlines, preselect user's sector if they're not from "Geral"
+      if ((isAdmin || isSectorAdmin) && !isGeralSector && user) {
         const defaultSectorId = user.sectorId.toString();
-        // Check if this is not a "Geral" sector admin - if it is, don't preselect
-        const userSector = sectors.find(s => s.id === user.sectorId);
-        if (userSector && userSector.nome !== 'Geral') {
-          form.reset({ titulo: "", prazo: "", setorId: defaultSectorId });
-        } else {
-          form.reset({ titulo: "", prazo: "", setorId: undefined });
-        }
+        form.reset({ titulo: "", prazo: "", setorId: defaultSectorId });
       } else {
         form.reset({ titulo: "", prazo: "", setorId: undefined });
       }
     }
-  }, [deadline, form, isSectorAdmin, isAdmin, user, sectors]);
+  }, [deadline, form, isAdmin, isSectorAdmin, isGeralSector, user]);
 
   const onSubmit = async (values: DeadlineFormValues) => {
     try {
-      // Get user's sector for validation
-      const userSector = sectors.find(s => s.id === user?.sectorId);
-      
-      // Validate that sector admins can only create/edit deadlines for their sector
-      if (isSectorAdmin && !isAdmin && userSector?.nome !== 'Geral') {
+      // Validate that sector-specific admins/managers can only create/edit deadlines for their sector
+      if ((isAdmin || isSectorAdmin) && !isGeralSector) {
         const selectedSectorId = values.setorId ? parseInt(values.setorId) : null;
         
         // If trying to set a sector that's not their own
@@ -136,13 +148,14 @@ export const useDeadlineForm = ({
   };
 
   // Determine if the sector field should be disabled
-  // For sector admins who are not from "Geral" sector, they can only use their own sector
+  // For non-Geral sector admins/managers, they can only use their own sector
   const isSectorFieldDisabled = () => {
-    if (!user || isAdmin) return false;
+    if (!user) return false;
     
-    if (isSectorAdmin) {
-      const userSector = sectors.find(s => s.id === user.sectorId);
-      return userSector?.nome !== 'Geral';
+    // If user is admin or sector admin but not from "Geral" sector
+    // then they can only manage their own sector deadlines
+    if ((isAdmin || isSectorAdmin) && !isGeralSector) {
+      return true;
     }
     
     return false;

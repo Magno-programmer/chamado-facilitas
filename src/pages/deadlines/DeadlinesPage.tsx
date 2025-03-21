@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSectors } from '@/lib/supabase';
@@ -38,18 +39,25 @@ const DeadlinesPage = () => {
   // Determine if the user can create new deadlines
   const [canCreateDeadlines, setCanCreateDeadlines] = useState(false);
   const [userSector, setUserSector] = useState<string | null>(null);
+  const [isGeralSector, setIsGeralSector] = useState(false);
 
-  // Fetch user's sector name if they are a sector admin
+  // Fetch user's sector name 
   useEffect(() => {
-    if (user && isSectorAdmin) {
+    if (user) {
       const fetchSectorInfo = async () => {
         try {
           const sectors = await getSectors();
           const userSector = sectors.find(s => s.id === user.sectorId);
           setUserSector(userSector?.nome || null);
           
-          // Sector admins can create deadlines if they belong to any sector
-          setCanCreateDeadlines(true);
+          // Check if user is from "Geral" sector
+          const isFromGeralSector = userSector?.nome === 'Geral';
+          setIsGeralSector(isFromGeralSector);
+          
+          // Admins and sector admins can create deadlines
+          if (isAdmin || isSectorAdmin) {
+            setCanCreateDeadlines(true);
+          }
         }
         catch (error) {
           console.error('Error fetching sector info:', error);
@@ -57,9 +65,6 @@ const DeadlinesPage = () => {
       };
       
       fetchSectorInfo();
-    } else if (isAdmin) {
-      // Admins can always create deadlines
-      setCanCreateDeadlines(true);
     }
   }, [user, isAdmin, isSectorAdmin]);
 
@@ -197,12 +202,32 @@ const DeadlinesPage = () => {
         )}
       </div>
       
+      {isAdmin && !isGeralSector && userSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Permissões Específicas</AlertTitle>
+          <AlertDescription>
+            Como administrador do setor {userSector}, você só pode visualizar e gerenciar prazos do seu próprio setor ou prazos sem setor definido.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {isAdmin && isGeralSector && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Permissões Administrativas</AlertTitle>
+          <AlertDescription>
+            Como administrador do setor Geral, você pode gerenciar prazos de todos os setores.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {isSectorAdmin && userSector && (
         <Alert className="mb-6">
           <Info className="h-4 w-4" />
           <AlertTitle>Informação</AlertTitle>
           <AlertDescription>
-            {userSector === 'Geral' 
+            {isGeralSector 
               ? "Como gerente do setor Geral, você pode gerenciar prazos de todos os setores."
               : `Como gerente do setor ${userSector}, você só pode visualizar e gerenciar prazos do seu próprio setor ou prazos sem setor definido.`
             }
