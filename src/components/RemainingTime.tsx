@@ -29,20 +29,17 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       
       // Calculate total duration between creation and deadline
       const startDate = createdAt ? new Date(createdAt) : now;
-      const totalDuration = deadlineDate.getTime() - startDate.getTime();
       
-      // Calculate elapsed time since creation
-      const elapsedTime = now.getTime() - startDate.getTime();
-      
-      // Calculate remaining time in seconds
-      const totalRemainingSeconds = Math.floor((totalDuration - elapsedTime) / 1000);
+      // Calculate remaining time directly
+      const remainingTime = deadlineDate.getTime() - now.getTime();
+      const totalRemainingSeconds = Math.max(0, Math.floor(remainingTime / 1000));
       
       console.log('RemainingTime Debug: Calculation details', {
         startDate: startDate.toISOString(),
-        totalDuration: totalDuration,
-        totalDurationInMinutes: totalDuration / (60 * 1000),
-        elapsedTime: elapsedTime,
-        elapsedTimeInMinutes: elapsedTime / (60 * 1000),
+        deadlineDate: deadlineDate.toISOString(),
+        nowDate: now.toISOString(),
+        remainingTime: remainingTime,
+        remainingTimeInMinutes: remainingTime / (60 * 1000),
         totalRemainingSeconds: totalRemainingSeconds
       });
       
