@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import NewTicket from "./pages/tickets/NewTicket";
+import TicketDetails from "./pages/tickets/TicketDetails";
 import Deadlines from "./pages/deadlines";
 import Setores from "./pages/Setores";
 import Usuarios from "./pages/usuarios";
@@ -43,6 +44,11 @@ const App = () => (
             <Route path="/tickets/new" element={
               <ProtectedRoute>
                 <NewTicket />
+              </ProtectedRoute>
+            } />
+            <Route path="/tickets/:id" element={
+              <ProtectedRoute>
+                <TicketDetails />
               </ProtectedRoute>
             } />
             <Route path="/deadlines" element={
