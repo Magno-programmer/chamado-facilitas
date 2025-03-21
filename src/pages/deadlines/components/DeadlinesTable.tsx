@@ -16,12 +16,17 @@ import { Deadline } from '@/lib/types/sector.types';
 
 interface DeadlinesTableProps {
   deadlines: Deadline[];
-  isAdmin: boolean;
+  canManageDeadlines: {[id: number]: boolean};
   onEdit: (deadline: Deadline) => void;
   onDelete: (deadline: Deadline) => void;
 }
 
-const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTableProps) => {
+const DeadlinesTable = ({ 
+  deadlines, 
+  canManageDeadlines, 
+  onEdit, 
+  onDelete 
+}: DeadlinesTableProps) => {
   // Function to format the prazo time string to a more readable format
   const formatDeadlineTime = (prazoString: string) => {
     // The prazo string comes in a time format, likely HH:MM:SS
@@ -37,7 +42,7 @@ const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTable
           <TableHead>Título</TableHead>
           <TableHead>Setor</TableHead>
           <TableHead>Prazo</TableHead>
-          {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+          <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -52,23 +57,25 @@ const DeadlinesTable = ({ deadlines, isAdmin, onEdit, onDelete }: DeadlinesTable
               )}
             </TableCell>
             <TableCell>{formatDeadlineTime(deadline.prazo)}</TableCell>
-            {isAdmin && (
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(deadline)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(deadline)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            )}
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-2">
+                {canManageDeadlines[deadline.id] && (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(deadline)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(deadline)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </TableCell>
           </TableRow>
         ))}
         {deadlines.length === 0 && (
           <TableRow>
-            <TableCell colSpan={isAdmin ? 4 : 3} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
               Nenhum prazo cadastrado
             </TableCell>
           </TableRow>

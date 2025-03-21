@@ -79,8 +79,9 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              {/* ADMIN or Sector Admin (Gerente) can access deadlines */}
               <Route path="/deadlines" element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <ProtectedRoute allowedRoles={['ADMIN']} allowSectorAdmin={true}>
                   <Deadlines />
                 </ProtectedRoute>
               } />

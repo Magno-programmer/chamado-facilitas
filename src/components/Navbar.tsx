@@ -22,7 +22,7 @@ const NavItem = ({ to, label, currentPath }: { to: string; label: string; curren
 const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -30,6 +30,11 @@ const Navbar = () => {
 
   // Check if we should hide the navigation tabs (on index or login page)
   const shouldHideNavTabs = location.pathname === '/' || location.pathname === '/login';
+
+  // Check if user is admin or sector admin (Gerente)
+  const isAdmin = user?.role === 'ADMIN';
+  const isSectorAdmin = user?.role === 'Gerente';
+  const canAccessDeadlines = isAdmin || isSectorAdmin;
 
   // Don't render navbar on login page
   if (!isAuthenticated && location.pathname !== '/') {
@@ -51,9 +56,19 @@ const Navbar = () => {
             <>
               <NavItem to="/dashboard" label="Dashboard" currentPath={location.pathname} />
               <NavItem to="/tickets" label="Chamados" currentPath={location.pathname} />
-              <NavItem to="/deadlines" label="Prazos" currentPath={location.pathname} />
-              <NavItem to="/setores" label="Setores" currentPath={location.pathname} />
-              <NavItem to="/usuarios" label="Usuários" currentPath={location.pathname} />
+              
+              {/* Show Deadlines to both ADMIN and Gerente */}
+              {canAccessDeadlines && (
+                <NavItem to="/deadlines" label="Prazos" currentPath={location.pathname} />
+              )}
+              
+              {/* Admin-only menu items */}
+              {isAdmin && (
+                <>
+                  <NavItem to="/setores" label="Setores" currentPath={location.pathname} />
+                  <NavItem to="/usuarios" label="Usuários" currentPath={location.pathname} />
+                </>
+              )}
               
               <button 
                 onClick={logout}
@@ -116,27 +131,38 @@ const Navbar = () => {
               >
                 Chamados
               </Link>
-              <Link 
-                to="/deadlines" 
-                className="px-4 py-2 rounded-md hover:bg-secondary"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Prazos
-              </Link>
-              <Link 
-                to="/setores" 
-                className="px-4 py-2 rounded-md hover:bg-secondary"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Setores
-              </Link>
-              <Link 
-                to="/usuarios" 
-                className="px-4 py-2 rounded-md hover:bg-secondary"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Usuários
-              </Link>
+              
+              {/* Show Deadlines to both ADMIN and Gerente */}
+              {canAccessDeadlines && (
+                <Link 
+                  to="/deadlines" 
+                  className="px-4 py-2 rounded-md hover:bg-secondary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Prazos
+                </Link>
+              )}
+              
+              {/* Admin-only menu items */}
+              {isAdmin && (
+                <>
+                  <Link 
+                    to="/setores" 
+                    className="px-4 py-2 rounded-md hover:bg-secondary"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Setores
+                  </Link>
+                  <Link 
+                    to="/usuarios" 
+                    className="px-4 py-2 rounded-md hover:bg-secondary"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Usuários
+                  </Link>
+                </>
+              )}
+              
               <button 
                 onClick={logout}
                 className="flex items-center px-4 py-2 text-destructive hover:bg-destructive/10 rounded-md"

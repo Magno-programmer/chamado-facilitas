@@ -7,9 +7,10 @@ import { toast } from '@/hooks/use-toast';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  allowSectorAdmin?: boolean; // New prop to allow sector admins
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, allowedRoles, allowSectorAdmin = false }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   
@@ -40,6 +41,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return user && allowedRoles.includes(user.role);
   };
 
+  // Check if it's a sector admin (has Gerente role)
+  const isSectorAdmin = () => {
+    return allowSectorAdmin && user && user.role === 'Gerente';
+  };
+
   // If this is a public route, just render the children
   if (isPublicRoute) {
     return <>{children}</>;
@@ -59,8 +65,8 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated but doesn't have the required role, show access denied
-  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole()) {
+  // If authenticated but doesn't have the required role or is not a sector admin, show access denied
+  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole() && !isSectorAdmin()) {
     toast({
       title: "Acesso Negado",
       description: "Você não tem permissão para acessar esta página.",
@@ -69,7 +75,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If authenticated and has required role, render the protected route
+  // If authenticated and has required role or is a valid sector admin, render the protected route
   return <>{children}</>;
 };
 
