@@ -17,14 +17,16 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
   const userRole = form.watch('role');
   const isClient = userRole === 'CLIENT';
   
-  // Set default to "Sem Setor" (value "0") only when first changing to CLIENT role
+  // Set default to "Sem Setor" (value "0") for client users when creating a new user
   useEffect(() => {
-    if (isClient && !form.getValues('setorId')) {
-      // Set default for new CLIENT users to "Sem Setor" (0)
-      form.setValue('setorId', "0", { shouldValidate: true });
+    if (isClient) {
+      // Only set to "Sem Setor" if it's not already set to something else
+      if (!form.getValues('setorId')) {
+        form.setValue('setorId', "0");
+      }
     } else if (currentUser && !form.getValues('setorId')) {
       // For non-clients, set to current user's sector if not already set
-      form.setValue('setorId', String(currentUser.sectorId), { shouldValidate: true });
+      form.setValue('setorId', String(currentUser.sectorId));
     }
   }, [isClient, currentUser, form]);
 
@@ -39,11 +41,12 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
       name="setorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{isClient ? "Setor (opcional)" : "Setor *"}</FormLabel>
+          <FormLabel>Setor</FormLabel>
           <Select 
             onValueChange={field.onChange} 
             value={field.value} 
             defaultValue={field.value}
+            disabled={isClient}
           >
             <FormControl>
               <SelectTrigger>
@@ -51,9 +54,11 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem key="0" value="0">
-                Sem Setor
-              </SelectItem>
+              {isClient && (
+                <SelectItem key="0" value="0">
+                  Sem Setor
+                </SelectItem>
+              )}
               {filteredSetores.map((setor) => (
                 <SelectItem key={setor.id} value={String(setor.id)}>
                   {setor.nome}
@@ -63,7 +68,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           </Select>
           {isClient && (
             <p className="text-sm text-muted-foreground mt-1">
-              Usuários comuns podem ser associados a um setor ou ficar "Sem Setor".
+              Usuários comuns são definidos como "Sem Setor" por padrão.
             </p>
           )}
           <FormMessage />
