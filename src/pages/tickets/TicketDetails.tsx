@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
@@ -88,7 +87,7 @@ const TicketDetails = () => {
           <ArrowLeft className="h-5 w-5 mr-2" />
           Voltar
         </button>
-        <h1 className="text-3xl font-bold">Detalhes do Chamado #{ticket.id}</h1>
+        <h1 className="text-3xl font-bold">Detalhes do Chamado #{ticket?.id}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
