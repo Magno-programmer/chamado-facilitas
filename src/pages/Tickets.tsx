@@ -35,6 +35,7 @@ const Tickets = () => {
   const convertToUserRole = (role: string): UserRole => {
     if (role === 'ADMIN') return 'ADMIN'; 
     if (role === 'Gerente') return 'Gerente';
+    if (role === 'Funcionario') return 'Funcionario';
     return 'CLIENT';
   };
 
@@ -126,8 +127,19 @@ const Tickets = () => {
         }));
         
         let userTickets;
-        if (canManageAllTickets) {
+        if (isAdmin) {
           userTickets = mappedTickets;
+        } else if (isSectorManager) {
+          userTickets = mappedTickets.filter(ticket => 
+            ticket.sectorId === user?.sectorId || 
+            ticket.status === 'Aguardando Prazo' ||
+            ticket.status === 'Aberto'
+          );
+        } else if (user?.role === 'Funcionario') {
+          userTickets = mappedTickets.filter(ticket => 
+            ticket.responsibleId === user?.id || 
+            (ticket.sectorId === user?.sectorId && !ticket.responsibleId)
+          );
         } else {
           userTickets = mappedTickets.filter(ticket => ticket.requesterId === user?.id);
         }
@@ -167,7 +179,7 @@ const Tickets = () => {
     if (isAuthenticated && user) {
       loadData();
     }
-  }, [isAuthenticated, user, canManageAllTickets, isUserWithoutSector]);
+  }, [isAuthenticated, user, isAdmin, isSectorManager, isUserWithoutSector]);
 
   const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
     const now = new Date();

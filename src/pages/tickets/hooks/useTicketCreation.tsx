@@ -69,6 +69,7 @@ export const useTicketCreation = () => {
       let sectorId = 1; // Default sector
       let deadlineDate = new Date(currentDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
       let ticketTitle = "Novo chamado";
+      let ticketStatus = 'Aguardando Prazo'; // Default status for client tickets
       
       // For non-CLIENT users, use the selected deadline if provided
       if (!isClient && selectedDeadlineId) {
@@ -78,6 +79,7 @@ export const useTicketCreation = () => {
           sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
           deadlineDate = calculateDeadlineDate(selectedDeadline);
           ticketTitle = selectedDeadline.titulo;
+          ticketStatus = 'Aberto'; // Staff created tickets are "Aberto" by default
         }
       }
 
@@ -91,8 +93,8 @@ export const useTicketCreation = () => {
         descricao: description,
         setor_id: sectorId,
         solicitante_id: user.id,
-        responsavel_id: user.id, // Adding responsavel_id
-        status: 'Aberto',
+        responsavel_id: null, // Don't set responsible ID initially
+        status: ticketStatus,
         data_criacao: currentDate.toISOString(),
         prazo: deadlineDate.toISOString(),
       };
