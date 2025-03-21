@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
@@ -68,13 +69,13 @@ const Tickets = () => {
         toast({
           title: "Chamado Atrasado",
           description: "Um chamado foi marcado como atrasado devido ao prazo expirado.",
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive"
         });
       } else if (expiredTickets.length > 1) {
         toast({
           title: "Chamados Atrasados",
           description: `${expiredTickets.length} chamados foram marcados como atrasados devido aos prazos expirados.`,
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive"
         });
       }
     }

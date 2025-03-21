@@ -223,7 +223,7 @@ const TicketDetails = () => {
       toast({
         title: "Status atualizado",
         description: "O chamado foi marcado como atrasado devido ao prazo expirado.",
-        variant: "warning",
+        variant: "destructive",
       });
     } catch (error) {
       console.error('Error updating ticket status:', error);

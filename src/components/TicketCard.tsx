@@ -6,7 +6,7 @@ import { Clock, User } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import ProgressBar from './ProgressBar';
 import RemainingTime from './RemainingTime';
-import { TicketWithDetails } from '@/lib/types';
+import { TicketWithDetails } from '@/lib/types/ticket.types';
 import { cn } from '@/lib/utils';
 
 interface TicketCardProps {
