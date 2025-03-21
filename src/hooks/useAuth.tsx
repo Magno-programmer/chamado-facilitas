@@ -1,163 +1,95 @@
 
-import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { User } from '@/lib/types/user.types';
-import { toast } from '@/hooks/use-toast';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, UserRole } from '@/lib/types'; 
 import { customSignIn, signOut } from '@/lib/services/authService';
-import { useLocation } from 'react-router-dom';
 
-// Define the shape of our authentication context
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  logout: () => Promise<void>;
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create a provider component
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLogout, setIsLogout] = useState<boolean>(false);
-  const location = useLocation();
-
-  // Check for existing user session on mount and when location changes
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Check for existing auth on first load
   useEffect(() => {
-    const checkUserSession = async () => {
+    const checkAuthStatus = () => {
       try {
-        // If we're on the index or login page, reset the auth state
-        if (location.pathname === '/' || location.pathname === '/login') {
-          localStorage.removeItem('user');
-          setUser(null);
-          setIsLoading(false);
-          return;
+        // Try to get user data from localStorage
+        const storedUserData = localStorage.getItem('user');
+        
+        if (storedUserData) {
+          const userData = JSON.parse(storedUserData);
+          setUser(userData);
         }
-
-        // Check for user in localStorage for other routes
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-        setIsLoading(false);
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.error('Auth status check error:', error);
+        // If there's an error, clear the localStorage
         localStorage.removeItem('user');
+      } finally {
         setIsLoading(false);
       }
     };
     
-    checkUserSession();
-  }, [location.pathname]);
-
-  // Login function
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
+    checkAuthStatus();
+  }, []);
+  
+  const login = async (email: string, password: string) => {
     try {
-      // Use our custom sign in function
+      setIsLoading(true);
+      console.log('Attempting login with:', email);
+      
       const userData = await customSignIn(email, password);
       
-      if (userData) {
-        setUser(userData);
-        setIsLogout(false);
-        
-        // Store user in localStorage for session persistence
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo, ${userData.name}!`,
-          variant: "default"
-        });
-        
-        // Add notification about improved password security
-        toast({
-          title: "Segurança reforçada",
-          description: "Sua senha foi protegida com um hash de segurança no formato UUID.",
-          variant: "default"
-        });
-        
-        return true;
+      if (!userData) {
+        return { success: false, message: 'Email ou senha inválidos.' };
       }
       
-      toast({
-        title: "Erro ao fazer login",
-        description: "Email ou senha inválidos.",
-        variant: "destructive",
-      });
-      
-      return false;
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      return { success: true, message: 'Login bem-sucedido.' };
     } catch (error) {
       console.error('Login error:', error);
-      
-      toast({
-        title: "Erro ao fazer login",
-        description: error instanceof Error ? error.message : "Email ou senha inválidos.",
-        variant: "destructive",
-      });
-      
-      return false;
+      return { success: false, message: 'Ocorreu um erro durante o login.' };
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Logout function
+  
   const logout = async () => {
     try {
+      setIsLoading(true);
       await signOut();
-      setUser(null);
-      setIsLogout(true);
       
-      // Remove user from localStorage
+      // Clear localStorage and user state
       localStorage.removeItem('user');
-      
-      // Show friendly goodbye message
-      const goodbyeMessages = [
-        "Até breve! Esperamos vê-lo novamente em breve.",
-        "Adeus e volte sempre! Foi um prazer atendê-lo.",
-        "Logout realizado com sucesso. Tenha um ótimo dia!",
-        "Você saiu da sua conta. Sentiremos sua falta!",
-        "Até a próxima visita! Obrigado por usar o Facilitas."
-      ];
-      
-      const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
-      
-      toast({
-        title: "Sessão encerrada",
-        description: randomMessage,
-      });
+      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      
-      toast({
-        title: "Erro ao fazer logout",
-        description: "Ocorreu um erro ao tentar desconectar.",
-        variant: "destructive",
-      });
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   const value = {
     user,
-    isLoading,
     isAuthenticated: !!user,
+    isLoading,
     login,
     logout
   };
-
+  
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
-// Custom hook to use the auth context
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   
   if (context === undefined) {
@@ -165,4 +97,4 @@ export function useAuth() {
   }
   
   return context;
-}
+};
