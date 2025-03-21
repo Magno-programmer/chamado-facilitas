@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSectors } from '@/lib/supabase';
@@ -100,7 +99,7 @@ const DeadlinesPage = () => {
     loadSectors();
   }, []);
 
-  // Redirect if user doesn't have permission
+  // Only admins and sector admins can access this page
   if (user && !isAdmin && !isSectorAdmin) {
     toast({
       title: "Acesso Restrito",
@@ -211,6 +210,16 @@ const DeadlinesPage = () => {
               ? "Como gerente do setor Geral, você pode gerenciar prazos de todos os setores."
               : `Como gerente do setor ${userSector}, você só pode gerenciar prazos do seu próprio setor ou prazos sem setor definido.`
             }
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!isAdmin && !isSectorAdmin && user && (
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Visualização Restrita</AlertTitle>
+          <AlertDescription>
+            Você está visualizando apenas os prazos relacionados ao seu setor ou prazos sem setor definido.
           </AlertDescription>
         </Alert>
       )}

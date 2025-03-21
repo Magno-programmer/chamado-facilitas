@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Deadline } from '@/lib/types/sector.types';
 import { User } from '@/lib/types/user.types';
@@ -36,7 +37,8 @@ export const getDeadlinesForUser = async (user: User): Promise<Deadline[]> => {
     return getDeadlines();
   }
   
-  // Otherwise, sector admins can only see deadlines for their sector or with no sector
+  // For regular users and sector admins of specific sectors,
+  // only show deadlines for their sector or with no sector (applicable to all)
   const { data, error } = await supabase
     .from('prazos')
     .select(`
