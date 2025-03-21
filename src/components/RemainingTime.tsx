@@ -12,7 +12,9 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
   useEffect(() => {
     const calculateRemainingTime = () => {
       const now = new Date();
-      const deadlineDate = new Date(deadline);
+      
+      // Converte a deadline para UTC
+      const deadlineDate = new Date(deadline + 'Z'); // Adicionando "Z" para indicar que é em UTC
       
       console.log('now:', now);
       console.log('deadlineDate:', deadlineDate);
