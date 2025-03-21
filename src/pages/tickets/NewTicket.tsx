@@ -4,7 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { createTicket } from '@/lib/services/ticketService';
-import { getSectors } from '@/lib/supabase';
+import { getDeadlines } from '@/lib/services/deadlineService';
+import { 
+  Select,
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const NewTicket = () => {
   const navigate = useNavigate();
@@ -12,39 +19,53 @@ const NewTicket = () => {
   const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [sectorId, setSectorId] = useState<number | null>(null);
-  const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
-  const [deadline, setDeadline] = useState('');
+  const [selectedDeadlineId, setSelectedDeadlineId] = useState<number | null>(null);
+  const [deadlines, setDeadlines] = useState<{id: number, titulo: string, setor_id: number, prazo: string, setor?: {id: number, nome: string}}[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingDeadlines, setIsLoadingDeadlines] = useState(true);
 
   useEffect(() => {
-    const loadSectors = async () => {
+    const loadDeadlines = async () => {
       try {
-        const sectorsData = await getSectors();
-        setSectors(sectorsData);
-        if (sectorsData.length > 0) {
-          setSectorId(sectorsData[0].id);
+        setIsLoadingDeadlines(true);
+        const deadlinesData = await getDeadlines();
+        setDeadlines(deadlinesData);
+        if (deadlinesData.length > 0) {
+          setSelectedDeadlineId(deadlinesData[0].id);
+          setTitle(deadlinesData[0].titulo);
         }
       } catch (error) {
-        console.error('Error loading sectors:', error);
+        console.error('Error loading deadlines:', error);
         toast({
           title: 'Erro',
-          description: 'Não foi possível carregar os setores.',
+          description: 'Não foi possível carregar os prazos cadastrados.',
           variant: 'destructive',
         });
+      } finally {
+        setIsLoadingDeadlines(false);
       }
     };
 
-    loadSectors();
+    loadDeadlines();
   }, [toast]);
+
+  const handleDeadlineChange = (deadlineId: string) => {
+    const selectedId = Number(deadlineId);
+    setSelectedDeadlineId(selectedId);
+    
+    const selectedDeadline = deadlines.find((d) => d.id === selectedId);
+    if (selectedDeadline) {
+      setTitle(selectedDeadline.titulo);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !sectorId || !deadline) {
+    if (!selectedDeadlineId || !description) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Por favor, preencha todos os campos obrigatórios.',
+        description: 'Por favor, selecione um prazo e preencha a descrição.',
         variant: 'destructive',
       });
       return;
@@ -62,15 +83,29 @@ const NewTicket = () => {
     setIsSubmitting(true);
 
     try {
+      const selectedDeadline = deadlines.find((d) => d.id === selectedDeadlineId);
+      
+      if (!selectedDeadline) {
+        throw new Error('Prazo selecionado não encontrado');
+      }
+
+      // Calculate the deadline date based on the selected prazo time
+      const prazoTime = selectedDeadline.prazo; // Format: "HH:MM:SS"
+      const [hours, minutes] = prazoTime.split(':').map(Number);
+      
+      const deadlineDate = new Date();
+      deadlineDate.setHours(deadlineDate.getHours() + hours);
+      deadlineDate.setMinutes(deadlineDate.getMinutes() + minutes);
+
       const newTicket = {
         titulo: title,
         descricao: description,
-        setor_id: sectorId,
+        setor_id: selectedDeadline.setor_id || 1, // Use sector from deadline or default to 1 if not available
         solicitante_id: user.id,
-        responsavel_id: user.id, // Added this line to fix the type error
+        responsavel_id: user.id, // Assuming the creator is initially responsible
         status: 'Aberto',
         data_criacao: new Date().toISOString(),
-        prazo: new Date(deadline).toISOString(),
+        prazo: deadlineDate.toISOString(),
       };
 
       await createTicket(newTicket);
@@ -97,9 +132,6 @@ const NewTicket = () => {
     navigate('/tickets');
   };
 
-  // Calculate minimum date (today) for the deadline picker
-  const today = new Date().toISOString().split('T')[0];
-
   return (
     <div className="min-h-screen flex flex-col p-4 md:p-8 pt-20 animate-slide-up">
       <div className="mb-8">
@@ -110,23 +142,37 @@ const NewTicket = () => {
       <div className="bg-white rounded-xl border shadow-sm p-6 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium mb-1">
-              Título <span className="text-red-500">*</span>
+            <label htmlFor="deadline-title" className="block text-sm font-medium mb-1">
+              Selecione um Prazo <span className="text-red-500">*</span>
             </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Digite o título do chamado"
-              required
-            />
+            {isLoadingDeadlines ? (
+              <div className="w-full p-2 border rounded-lg bg-gray-50">Carregando prazos...</div>
+            ) : deadlines.length === 0 ? (
+              <div className="w-full p-2 border rounded-lg bg-red-50 text-red-500">
+                Nenhum prazo cadastrado. Você precisa cadastrar prazos primeiro.
+              </div>
+            ) : (
+              <Select
+                value={selectedDeadlineId?.toString() || ''}
+                onValueChange={handleDeadlineChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um prazo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {deadlines.map((deadline) => (
+                    <SelectItem key={deadline.id} value={deadline.id.toString()}>
+                      {deadline.titulo} {deadline.setor?.nome ? `(${deadline.setor.nome})` : ''} - {deadline.prazo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium mb-1">
-              Descrição
+              Descrição <span className="text-red-500">*</span>
             </label>
             <textarea
               id="description"
@@ -134,43 +180,6 @@ const NewTicket = () => {
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-32"
               placeholder="Descreva detalhadamente o problema ou solicitação"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="sector" className="block text-sm font-medium mb-1">
-              Setor <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="sector"
-              value={sectorId || ''}
-              onChange={(e) => setSectorId(Number(e.target.value))}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              required
-            >
-              {sectors.length === 0 ? (
-                <option value="">Carregando setores...</option>
-              ) : (
-                sectors.map((sector) => (
-                  <option key={sector.id} value={sector.id}>
-                    {sector.nome}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="deadline" className="block text-sm font-medium mb-1">
-              Prazo <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="deadline"
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              min={today}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -187,7 +196,7 @@ const NewTicket = () => {
             <button
               type="submit"
               className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingDeadlines || deadlines.length === 0}
             >
               {isSubmitting ? (
                 <>
