@@ -103,9 +103,7 @@ export const useEditCreateUsuario = (
       const userData = {
         nome: values.nome,
         email: values.email,
-        setor_id: values.role === 'CLIENT' && (values.setorId === "0" || !values.setorId) 
-          ? null 
-          : parseInt(values.setorId),
+        setor_id: values.role === 'CLIENT' ? null : parseInt(values.setorId),
         role: values.role
       };
       
@@ -138,7 +136,7 @@ export const useEditCreateUsuario = (
               nome: values.nome,
               email: values.email,
               role: values.role,
-              setor: values.role === 'CLIENT' && (values.setorId === "0" || !values.setorId)
+              setor: values.role === 'CLIENT'
                 ? { id: 0, nome: "Sem Setor" }
                 : {
                     id: parseInt(values.setorId),

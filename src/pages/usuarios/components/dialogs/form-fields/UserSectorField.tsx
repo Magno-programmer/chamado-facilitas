@@ -20,10 +20,8 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
   // Set default to "Sem Setor" (value "0") for client users when creating a new user
   useEffect(() => {
     if (isClient) {
-      // Only set to "Sem Setor" if it's not already set to something else
-      if (!form.getValues('setorId')) {
-        form.setValue('setorId', "0", { shouldValidate: true });
-      }
+      // Always set CLIENT users to "Sem Setor" (0)
+      form.setValue('setorId', "0", { shouldValidate: true });
     } else if (currentUser && !form.getValues('setorId')) {
       // For non-clients, set to current user's sector if not already set
       form.setValue('setorId', String(currentUser.sectorId), { shouldValidate: true });
@@ -41,7 +39,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
       name="setorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{isClient ? "Setor (Opcional)" : "Setor *"}</FormLabel>
+          <FormLabel>{isClient ? "Setor (Sem Setor)" : "Setor *"}</FormLabel>
           <Select 
             onValueChange={field.onChange} 
             value={field.value} 
@@ -50,7 +48,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder={isClient ? "Sem Setor (Padrão)" : "Selecione um setor"} />
+                <SelectValue placeholder={isClient ? "Sem Setor" : "Selecione um setor"} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
@@ -68,7 +66,7 @@ const UserSectorField = ({ form, setores, currentUser, isGeralSector }: UserSect
           </Select>
           {isClient && (
             <p className="text-sm text-muted-foreground mt-1">
-              Usuários comuns não precisam de um setor definido.
+              Usuários comuns são sempre "Sem Setor".
             </p>
           )}
           <FormMessage />
