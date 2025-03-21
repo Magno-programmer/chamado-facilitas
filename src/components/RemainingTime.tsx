@@ -19,14 +19,21 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
         return 'Expirado';
       }
       
-      // Calculate total seconds of difference between now and deadline
-      const totalDiffInSeconds = Math.floor((deadlineDate.getTime() - now.getTime()) / 1000);
+      // Calculate total duration between creation and deadline
+      const startDate = createdAt ? new Date(createdAt) : now;
+      const totalDuration = deadlineDate.getTime() - startDate.getTime();
+      
+      // Calculate elapsed time since creation
+      const elapsedTime = now.getTime() - startDate.getTime();
+      
+      // Calculate remaining time in seconds
+      const totalRemainingSeconds = Math.floor((totalDuration - elapsedTime) / 1000);
       
       // Calculate components
-      const days = Math.floor(totalDiffInSeconds / (24 * 60 * 60));
-      const hours = Math.floor((totalDiffInSeconds % (24 * 60 * 60)) / (60 * 60));
-      const minutes = Math.floor((totalDiffInSeconds % (60 * 60)) / 60);
-      const seconds = totalDiffInSeconds % 60;
+      const days = Math.floor(totalRemainingSeconds / (24 * 60 * 60));
+      const hours = Math.floor((totalRemainingSeconds % (24 * 60 * 60)) / (60 * 60));
+      const minutes = Math.floor((totalRemainingSeconds % (60 * 60)) / 60);
+      const seconds = totalRemainingSeconds % 60;
       
       // Format with leading zeros and handle day count
       if (days > 0) {
@@ -47,7 +54,7 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, createdAt]);
   
   return <span>{remainingTime}</span>;
 };
