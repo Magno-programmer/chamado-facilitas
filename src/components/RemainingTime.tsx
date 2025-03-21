@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
 
 interface RemainingTimeProps {
   deadline: string;
@@ -15,11 +14,12 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       const now = new Date();
       const deadlineDate = new Date(deadline);
       
+      // If past the deadline, show expired
       if (now > deadlineDate) {
         return 'Expirado';
       }
       
-      // Calculate total seconds of difference
+      // Calculate total seconds of difference between now and deadline
       const totalDiffInSeconds = Math.floor((deadlineDate.getTime() - now.getTime()) / 1000);
       
       // Calculate components
