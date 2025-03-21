@@ -6,6 +6,6 @@ export interface User {
   id: string; // Changed to string for compatibility with Supabase
   name: string;
   email: string;
-  sectorId: number;
+  sectorId: number | null; // Update to allow null for users without sector
   role: UserRole;
 }

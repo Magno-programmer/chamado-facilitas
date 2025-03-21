@@ -121,7 +121,7 @@ export type Database = {
           nome: string
           role: string
           senha_hash: string
-          setor_id: number
+          setor_id: number | null
         }
         Insert: {
           email: string
@@ -129,7 +129,7 @@ export type Database = {
           nome: string
           role?: string
           senha_hash: string
-          setor_id: number
+          setor_id?: number | null
         }
         Update: {
           email?: string
@@ -137,7 +137,7 @@ export type Database = {
           nome?: string
           role?: string
           senha_hash?: string
-          setor_id?: number
+          setor_id?: number | null
         }
         Relationships: [
           {

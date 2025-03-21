@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
@@ -22,6 +21,10 @@ const Tickets = () => {
   const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
 
   const isAdmin = user?.role === 'ADMIN';
+  const isSectorManager = user?.role === 'Gerente';
+  const isUserWithoutSector = user?.sectorId === null || user?.sectorId === 0;
+  const canManageAllTickets = isAdmin || isSectorManager;
+  const canOnlySeeOwnTickets = isUserWithoutSector || user?.role === 'CLIENT';
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -69,13 +72,13 @@ const Tickets = () => {
         toast({
           title: "Chamado Atrasado",
           description: "Um chamado foi marcado como atrasado devido ao prazo expirado.",
-          variant: "destructive", // Changed from "warning" to "destructive"
+          variant: "destructive",
         });
       } else if (expiredTickets.length > 1) {
         toast({
           title: "Chamados Atrasados",
           description: `${expiredTickets.length} chamados foram marcados como atrasados devido aos prazos expirados.`,
-          variant: "destructive", // Changed from "warning" to "destructive"
+          variant: "destructive",
         });
       }
     }
@@ -122,14 +125,38 @@ const Tickets = () => {
           percentageRemaining: calculatePercentageRemaining(ticket.data_criacao, ticket.prazo)
         }));
         
-        const userTickets = isAdmin 
-          ? mappedTickets 
-          : mappedTickets.filter(ticket => ticket.requesterId === user?.id);
+        let userTickets;
+        if (canManageAllTickets) {
+          userTickets = mappedTickets;
+        } else {
+          userTickets = mappedTickets.filter(ticket => ticket.requesterId === user?.id);
+        }
         
         setTickets(userTickets);
         setFilteredTickets(userTickets);
         
         await checkAndUpdateExpiredTickets(userTickets);
+        
+        if (isUserWithoutSector) {
+          const inProgressTickets = userTickets.filter(t => t.status === 'Em Andamento');
+          const completedTickets = userTickets.filter(t => t.status === 'Concluído');
+          
+          if (inProgressTickets.length > 0) {
+            toast({
+              title: "Chamados em andamento",
+              description: `Você tem ${inProgressTickets.length} chamado(s) em andamento.`,
+              variant: "default",
+            });
+          }
+          
+          if (completedTickets.length > 0) {
+            toast({
+              title: "Chamados concluídos",
+              description: `Você tem ${completedTickets.length} chamado(s) concluído(s).`,
+              variant: "default",
+            });
+          }
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -140,7 +167,7 @@ const Tickets = () => {
     if (isAuthenticated && user) {
       loadData();
     }
-  }, [isAuthenticated, user, isAdmin]);
+  }, [isAuthenticated, user, canManageAllTickets, isUserWithoutSector]);
 
   const calculatePercentageRemaining = (createdAt: string, deadline: string) => {
     const now = new Date();
@@ -195,9 +222,9 @@ const Tickets = () => {
         <div>
           <h1 className="text-3xl font-bold mb-2">Chamados</h1>
           <p className="text-muted-foreground">
-            {isAdmin 
-              ? "Gerencie e acompanhe todos os chamados" 
-              : "Gerencie e acompanhe seus chamados"}
+            {canOnlySeeOwnTickets 
+              ? "Gerencie e acompanhe seus chamados" 
+              : "Gerencie e acompanhe todos os chamados"}
           </p>
         </div>
         <button
@@ -243,21 +270,23 @@ const Tickets = () => {
             </div>
           </div>
           
-          <div>
-            <div className="flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-muted-foreground" />
-              <select
-                value={sectorFilter}
-                onChange={e => setSectorFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="all">Todos os Setores</option>
-                {sectors.map(sector => (
-                  <option key={sector.id} value={sector.id}>{sector.nome}</option>
-                ))}
-              </select>
+          {!canOnlySeeOwnTickets && (
+            <div>
+              <div className="flex items-center space-x-2">
+                <Filter className="h-5 w-5 text-muted-foreground" />
+                <select
+                  value={sectorFilter}
+                  onChange={e => setSectorFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                  className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">Todos os Setores</option>
+                  {sectors.map(sector => (
+                    <option key={sector.id} value={sector.id}>{sector.nome}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

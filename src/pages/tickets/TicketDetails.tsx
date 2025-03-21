@@ -45,7 +45,15 @@ const TicketDetails = () => {
     },
   });
 
-  const canManageTickets = user?.role === 'ADMIN' || user?.role === 'Gerente';
+  const isAdmin = user?.role === 'ADMIN';
+  const isSectorManager = user?.role === 'Gerente';
+  const isUserWithoutSector = user?.sectorId === null || user?.sectorId === 0;
+  const canManageAllTickets = isAdmin || isSectorManager;
+  
+  const isOwnTicket = ticket && user && ticket.requesterId === user.id;
+  
+  const canDeleteTicket = canManageAllTickets || (isUserWithoutSector && isOwnTicket);
+  const canEditTicket = canManageAllTickets && !isUserWithoutSector;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -101,6 +109,15 @@ const TicketDetails = () => {
         if (ticketData.descricao_conclusao) {
           form.setValue('completionDescription', ticketData.descricao_conclusao);
         }
+        
+        if (isUserWithoutSector && user && ticketData.solicitante_id !== user.id) {
+          toast({
+            title: "Acesso negado",
+            description: "Você só pode visualizar seus próprios chamados.",
+            variant: "destructive",
+          });
+          navigate('/tickets');
+        }
       }
     } catch (error) {
       console.error('Error loading ticket:', error);
@@ -142,6 +159,15 @@ const TicketDetails = () => {
   const handleDeleteTicket = async () => {
     if (!ticket) return;
     
+    if (!canDeleteTicket) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para excluir este chamado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsUpdating(true);
     try {
       await deleteTicket(ticket.id);
@@ -166,6 +192,15 @@ const TicketDetails = () => {
 
   const handleStatusUpdate = async (status: TicketStatus) => {
     if (!ticket) return;
+    
+    if (!canEditTicket) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para atualizar este chamado.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsUpdating(true);
     try {
@@ -323,11 +358,11 @@ const TicketDetails = () => {
               </div>
             </div>
             
-            {canManageTickets && (
+            {(canEditTicket || canDeleteTicket) && (
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4">Ações de Gerenciamento</h3>
                 <div className="flex flex-wrap gap-4">
-                  {ticket.status !== 'Em Andamento' && ticket.status !== 'Concluído' && (
+                  {canEditTicket && ticket.status !== 'Em Andamento' && ticket.status !== 'Concluído' && (
                     <Button 
                       variant="secondary" 
                       onClick={() => openStatusDialog('Em Andamento')}
@@ -337,7 +372,7 @@ const TicketDetails = () => {
                     </Button>
                   )}
                   
-                  {ticket.status !== 'Concluído' && (
+                  {canEditTicket && ticket.status !== 'Concluído' && (
                     <Button 
                       variant="default" 
                       onClick={() => openStatusDialog('Concluído')}
@@ -347,13 +382,15 @@ const TicketDetails = () => {
                     </Button>
                   )}
                   
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir Chamado
-                  </Button>
+                  {canDeleteTicket && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir Chamado
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
