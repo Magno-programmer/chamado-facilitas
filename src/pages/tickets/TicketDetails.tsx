@@ -21,8 +21,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 const completionSchema = z.object({
-  description: z.string().min(20, {
-    message: "A descrição deve ter no mínimo 20 caracteres para concluir o chamado."
+  completionDescription: z.string().min(20, {
+    message: "A descrição de conclusão deve ter no mínimo 20 caracteres para concluir o chamado."
   })
 });
 
@@ -42,7 +42,7 @@ const TicketDetails = () => {
   const form = useForm<CompletionFormValues>({
     resolver: zodResolver(completionSchema),
     defaultValues: {
-      description: '',
+      completionDescription: '',
     },
   });
 
@@ -68,6 +68,7 @@ const TicketDetails = () => {
           id: ticketData.id,
           title: ticketData.titulo,
           description: ticketData.descricao || '',
+          completionDescription: ticketData.descricao_conclusao || '',
           sectorId: ticketData.setor_id,
           requesterId: ticketData.solicitante_id,
           responsibleId: ticketData.responsavel_id,
@@ -96,9 +97,9 @@ const TicketDetails = () => {
         };
         
         setTicket(mappedTicket);
-        // Pre-fill the form with existing description if any
-        if (ticketData.descricao) {
-          form.setValue('description', ticketData.descricao);
+        // Pre-fill the form with existing completion description if any
+        if (ticketData.descricao_conclusao) {
+          form.setValue('completionDescription', ticketData.descricao_conclusao);
         }
       }
     } catch (error) {
@@ -181,7 +182,7 @@ const TicketDetails = () => {
         
         await updateTicket(ticket.id, { 
           status: status,
-          descricao: formValues.description
+          descricao_conclusao: formValues.completionDescription
         });
       } else {
         // For other statuses, we don't need to validate the description
@@ -268,6 +269,13 @@ const TicketDetails = () => {
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Descrição</h3>
               <p className="whitespace-pre-line">{ticket.description || 'Sem descrição'}</p>
             </div>
+            
+            {ticket.completionDescription && (
+              <div className="mb-6 bg-green-50 p-4 rounded-lg border border-green-200">
+                <h3 className="text-sm font-medium text-green-700 mb-2">Descrição de Conclusão</h3>
+                <p className="whitespace-pre-line text-green-800">{ticket.completionDescription}</p>
+              </div>
+            )}
             
             <div className="mb-6">
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Progresso</h3>
@@ -407,7 +415,7 @@ const TicketDetails = () => {
             <DialogDescription>
               {selectedStatus === 'Em Andamento' 
                 ? 'Iniciar o atendimento deste chamado? O status será alterado para "Em Andamento".'
-                : 'Para concluir este chamado, é necessário fornecer uma descrição da solução com pelo menos 20 caracteres.'}
+                : 'Para concluir este chamado, é necessário fornecer uma descrição de conclusão com pelo menos 20 caracteres.'}
             </DialogDescription>
           </DialogHeader>
           
@@ -419,10 +427,10 @@ const TicketDetails = () => {
               }} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="completionDescription"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descrição da Solução</FormLabel>
+                      <FormLabel>Descrição de Conclusão</FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Descreva a solução implementada em detalhes..."
@@ -437,14 +445,14 @@ const TicketDetails = () => {
                 <div className="flex items-center text-sm text-muted-foreground">
                   <MessageSquareText className="h-4 w-4 mr-2" />
                   <span>
-                    {form.watch('description')?.length || 0} / 20 caracteres mínimos
+                    {form.watch('completionDescription')?.length || 0} / 20 caracteres mínimos
                   </span>
                 </div>
-                {form.watch('description')?.length < 20 && (
+                {form.watch('completionDescription')?.length < 20 && (
                   <div className="flex items-center text-sm text-amber-500">
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     <span>
-                      É necessário uma descrição com pelo menos 20 caracteres
+                      É necessário uma descrição de conclusão com pelo menos 20 caracteres
                     </span>
                   </div>
                 )}

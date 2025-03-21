@@ -9,6 +9,7 @@ export interface Ticket {
   id: number;
   title: string;
   description: string;
+  completionDescription: string | null;
   sectorId: number;
   requesterId: string; // Already string for compatibility with Supabase
   responsibleId: string | null; // Already string for compatibility with Supabase

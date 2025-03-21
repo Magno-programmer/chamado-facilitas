@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           data_criacao: string
           descricao: string | null
+          descricao_conclusao: string | null
           id: number
           prazo: string
           responsavel_id: string
@@ -24,6 +25,7 @@ export type Database = {
         Insert: {
           data_criacao: string
           descricao?: string | null
+          descricao_conclusao?: string | null
           id?: number
           prazo: string
           responsavel_id: string
@@ -35,6 +37,7 @@ export type Database = {
         Update: {
           data_criacao?: string
           descricao?: string | null
+          descricao_conclusao?: string | null
           id?: number
           prazo?: string
           responsavel_id?: string
