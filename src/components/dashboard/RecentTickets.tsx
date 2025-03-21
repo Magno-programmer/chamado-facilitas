@@ -3,7 +3,7 @@ import React from 'react';
 import { List } from 'lucide-react';
 import { TicketWithDetails } from '@/lib/types';
 import TicketCard from '@/components/TicketCard';
-import { UserRole } from '@/lib/types';
+import { UserRole } from '@/lib/types/user.types';
 
 interface RecentTicketsProps {
   tickets: TicketWithDetails[];
