@@ -27,7 +27,9 @@ const Tickets = () => {
   }, [isAuthenticated, authLoading, navigate]);
 
   const convertToUserRole = (role: string): UserRole => {
-    return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
+    if (role === 'ADMIN') return 'ADMIN'; 
+    if (role === 'Gerente') return 'Gerente';
+    return 'CLIENT';
   };
 
   useEffect(() => {

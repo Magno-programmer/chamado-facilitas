@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -62,7 +61,9 @@ const TicketDetails = () => {
         const ticketData = await getTicketById(parseInt(id));
         
         const convertToUserRole = (role: string): UserRole => {
-          return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
+          if (role === 'ADMIN') return 'ADMIN'; 
+          if (role === 'Gerente') return 'Gerente';
+          return 'CLIENT';
         };
         
         const mappedTicket: TicketWithDetails = {
@@ -145,7 +146,6 @@ const TicketDetails = () => {
     
     setIsUpdating(true);
     try {
-      // Use the new deleteTicket function to actually delete the ticket
       await deleteTicket(ticket.id);
       
       toast({
@@ -172,7 +172,6 @@ const TicketDetails = () => {
     setIsUpdating(true);
     try {
       if (status === 'Concluído') {
-        // For "Concluído" status, we need to validate the description
         await form.trigger();
         if (!form.formState.isValid) {
           setIsUpdating(false);
@@ -186,7 +185,6 @@ const TicketDetails = () => {
           descricao_conclusao: formValues.completionDescription
         });
       } else {
-        // For other statuses, we don't need to validate the description
         await updateTicket(ticket.id, { 
           status: status
         });
@@ -198,7 +196,7 @@ const TicketDetails = () => {
       });
       
       setIsStatusUpdateDialogOpen(false);
-      loadTicket(); // Reload the ticket data
+      loadTicket();
     } catch (error) {
       console.error('Error updating ticket status:', error);
       toast({

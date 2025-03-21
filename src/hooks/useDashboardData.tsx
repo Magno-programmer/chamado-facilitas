@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { TicketWithDetails, UserRole } from '@/lib/types';
 import { DashboardStats } from '@/lib/types/dashboard.types';
@@ -25,7 +24,9 @@ export const useDashboardData = ({ isAuthenticated, user }: DashboardDataProps) 
 
   // Helper function to convert string role to UserRole type
   const convertToUserRole = (role: string): UserRole => {
-    return role === 'ADMIN' ? 'ADMIN' : role === 'Gerente' ? 'Gerente' : 'CLIENT';
+    if (role === 'ADMIN') return 'ADMIN'; 
+    if (role === 'Gerente') return 'Gerente';
+    return 'CLIENT';
   };
 
   // Calculate percentage of time remaining for a ticket
