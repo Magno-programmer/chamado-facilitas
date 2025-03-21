@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -92,11 +93,12 @@ const NewTicket = () => {
       const sectorId = selectedDeadline.setor_id ?? 1; // Default to 1 if null
 
       const prazoTime = selectedDeadline.prazo; // Format: "HH:MM:SS"
-      const [hours, minutes] = prazoTime.split(':').map(Number);
+      const [hours, minutes, seconds] = prazoTime.split(':').map(Number);
       
       const deadlineDate = new Date();
       deadlineDate.setHours(deadlineDate.getHours() + hours);
       deadlineDate.setMinutes(deadlineDate.getMinutes() + minutes);
+      deadlineDate.setSeconds(deadlineDate.getSeconds() + (seconds || 0));
 
       const newTicket = {
         titulo: title,
