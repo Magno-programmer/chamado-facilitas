@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Plus, RefreshCw, Search } from 'lucide-react';
@@ -8,6 +9,7 @@ import { updateTicket } from '@/lib/services/ticketService';
 import { toast } from '@/hooks/use-toast';
 import TicketCard from '@/components/TicketCard';
 import { useAuth } from '@/hooks/useAuth';
+import TicketsTableView from '@/components/dashboard/TicketsTableView';
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Tickets = () => {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   const [sectorFilter, setSectorFilter] = useState<number | 'all'>('all');
   const [sectors, setSectors] = useState<{id: number, nome: string}[]>([]);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   const isAdmin = user?.role === 'ADMIN';
   const isSectorManager = user?.role === 'Gerente';
@@ -128,8 +131,11 @@ const Tickets = () => {
         
         let userTickets;
         if (isAdmin) {
+          // Admin sees all tickets
           userTickets = mappedTickets;
         } else if (isSectorManager) {
+          // Fix: Sector managers should see ALL tickets from their sector
+          // as well as open tickets that haven't been assigned to a sector
           userTickets = mappedTickets.filter(ticket => 
             ticket.sectorId === user?.sectorId || 
             ticket.status === 'Aguardando Prazo' ||
@@ -143,6 +149,11 @@ const Tickets = () => {
         } else {
           userTickets = mappedTickets.filter(ticket => ticket.requesterId === user?.id);
         }
+        
+        console.log('User role:', user?.role);
+        console.log('User sector:', user?.sectorId);
+        console.log('Total tickets:', mappedTickets.length);
+        console.log('Filtered tickets for user:', userTickets.length);
         
         setTickets(userTickets);
         setFilteredTickets(userTickets);
@@ -239,13 +250,29 @@ const Tickets = () => {
               : "Gerencie e acompanhe todos os chamados"}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/tickets/new')}
-          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-sm inline-flex items-center justify-center whitespace-nowrap"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Novo Chamado
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-4 py-2 ${viewMode === 'cards' ? 'bg-primary text-white' : 'bg-background text-foreground'}`}
+            >
+              Cards
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-4 py-2 ${viewMode === 'table' ? 'bg-primary text-white' : 'bg-background text-foreground'}`}
+            >
+              Tabela
+            </button>
+          </div>
+          <button
+            onClick={() => navigate('/tickets/new')}
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-sm inline-flex items-center justify-center whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Novo Chamado
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border shadow-sm p-4 mb-6">
@@ -303,15 +330,19 @@ const Tickets = () => {
       </div>
 
       {filteredTickets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTickets.map(ticket => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              onClick={() => navigate(`/tickets/${ticket.id}`)}
-            />
-          ))}
-        </div>
+        viewMode === 'table' ? (
+          <TicketsTableView tickets={filteredTickets} userRole={user?.role as UserRole} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTickets.map(ticket => (
+              <TicketCard
+                key={ticket.id}
+                ticket={ticket}
+                onClick={() => navigate(`/tickets/${ticket.id}`)}
+              />
+            ))}
+          </div>
+        )
       ) : (
         <div className="flex flex-col items-center justify-center py-12">
           <div className="bg-secondary rounded-full p-4 mb-4">
