@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +26,6 @@ export const useEditCreateUsuario = (
   const [isGeralSector, setIsGeralSector] = useState(false);
   const { user: currentUser } = useAuth();
 
-  // Check if current user is from "Geral" sector
   useEffect(() => {
     const checkSector = async () => {
       if (!currentUser) return;
@@ -51,7 +49,6 @@ export const useEditCreateUsuario = (
   }, [currentUser]);
 
   const handleOpenEdit = (usuario: Usuario) => {
-    // Don't allow editing your own profile unless you're from Geral sector
     if (usuario.id === currentUser?.id && !isGeralSector) {
       toast({
         title: "Acesso negado",
@@ -61,7 +58,6 @@ export const useEditCreateUsuario = (
       return;
     }
     
-    // Only allow editing users from same sector unless user is from Geral sector
     if (!isGeralSector && usuario.setor?.id !== currentUser?.sectorId) {
       toast({
         title: "Acesso negado",
@@ -84,7 +80,6 @@ export const useEditCreateUsuario = (
     try {
       setLoading(true);
       
-      // Check if user is trying to edit their own profile and they're not from Geral sector
       if (isEditing && editingUsuario && currentUser && editingUsuario.id === currentUser.id && !isGeralSector) {
         toast({
           title: "Operação não permitida",
@@ -94,7 +89,6 @@ export const useEditCreateUsuario = (
         return;
       }
       
-      // If not from Geral sector, prevent creating/editing users from other sectors
       if (!isGeralSector) {
         if (parseInt(values.setorId) !== currentUser?.sectorId) {
           toast({
@@ -109,12 +103,13 @@ export const useEditCreateUsuario = (
       const userData = {
         nome: values.nome,
         email: values.email,
-        setor_id: values.setorId === "0" ? null : parseInt(values.setorId), // Handle "Sem Setor" case
+        setor_id: values.role === 'CLIENT' && (values.setorId === "0" || !values.setorId) 
+          ? null 
+          : parseInt(values.setorId),
         role: values.role
       };
       
       if (isEditing && editingUsuario) {
-        // If editing user from another sector and user is not from Geral, block
         if (!isGeralSector && editingUsuario.setor?.id !== currentUser?.sectorId) {
           toast({
             title: "Acesso negado",
@@ -126,7 +121,6 @@ export const useEditCreateUsuario = (
         
         const updateData: any = { ...userData };
         if (values.senha) {
-          // Use the secure hash function for password updates
           updateData.senha_hash = await createSecureHash(values.senha);
         }
         
@@ -144,7 +138,7 @@ export const useEditCreateUsuario = (
               nome: values.nome,
               email: values.email,
               role: values.role,
-              setor: values.setorId === "0" 
+              setor: values.role === 'CLIENT' && (values.setorId === "0" || !values.setorId)
                 ? { id: 0, nome: "Sem Setor" }
                 : {
                     id: parseInt(values.setorId),
@@ -160,7 +154,6 @@ export const useEditCreateUsuario = (
           description: `O usuário "${values.nome}" foi atualizado com sucesso.`,
         });
       } else {
-        // Generate a secure hash for the new user's password
         const secureHash = await createSecureHash(values.senha);
         
         const newUserData = {
