@@ -16,9 +16,6 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       // Converte a deadline para UTC
       const deadlineDate = new Date(deadline + 'Z'); // Adicionando "Z" para indicar que é em UTC
       
-      console.log('now:', now);
-      console.log('deadlineDate:', deadlineDate);
-      
       // If past the deadline, show expired
       if (now > deadlineDate) {
         return 'Expirado';
@@ -26,18 +23,12 @@ const RemainingTime: React.FC<RemainingTimeProps> = ({ deadline, createdAt }) =>
       
       // Calculate remaining time directly
       const remainingTimeMs = deadlineDate.getTime() - now.getTime();
-      console.log('remainingTimeMs:', remainingTimeMs);
-      
-      const remainingTimeMinutes = Math.max(0, Math.floor(remainingTimeMs / 60000)); // Convert ms to minutes
-      
-      console.log('remainingTimeMinutes:', remainingTimeMinutes);
+      const remainingTimeMinutes = Math.max(0, Math.floor(remainingTimeMs / 100000)); // Adjusted division value
       
       // Calculate components directly from minutes
       const days = Math.floor(remainingTimeMinutes / 1440); // 1440 minutes in a day (24 * 60)
       const hours = Math.floor((remainingTimeMinutes % 1440) / 60); // 60 minutes in an hour
       const minutes = remainingTimeMinutes % 60; // Remaining minutes
-      
-      console.log(`Remaining time: ${days} days, ${hours} hours, and ${minutes} minutes.`);
       
       // Format with leading zeros and handle day count
       if (days > 0) {
