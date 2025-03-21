@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -101,10 +100,12 @@ export const useEditCreateUsuario = (
         }
       }
       
+      const sectorIdValue = values.setorId === "0" ? 1 : parseInt(values.setorId);
+      
       const userData = {
         nome: values.nome,
         email: values.email,
-        setor_id: values.setorId === "0" ? null : parseInt(values.setorId),
+        setor_id: sectorIdValue,
         role: values.role
       };
       
