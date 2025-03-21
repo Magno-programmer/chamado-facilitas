@@ -33,9 +33,7 @@ const UserRoleField = ({ form, isEditingSelf, currentUser, isGeralSector }: User
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {isGeralSector && (
-                <SelectItem value="ADMIN">Administrador</SelectItem>
-              )}
+              <SelectItem value="ADMIN">Administrador</SelectItem>
               <SelectItem value="Gerente">Gerente</SelectItem>
               <SelectItem value="Funcionario">Funcionário</SelectItem>
               <SelectItem value="CLIENT">Usuário Comum</SelectItem>

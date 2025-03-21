@@ -97,16 +97,6 @@ export const useEditCreateUsuario = (
           });
           return;
         }
-        
-        // Non-Geral sector admins can't create ADMIN users
-        if (!isEditing && values.role === 'ADMIN') {
-          toast({
-            title: "Operação não permitida",
-            description: "Apenas administradores do setor Geral podem criar novos usuários administradores.",
-            variant: "destructive",
-          });
-          return;
-        }
       }
       
       const userData = {
